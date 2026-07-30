@@ -15,6 +15,13 @@ const SEED_STEP = 104729;
 export const timeLoop = ({ reduce, units, passes = 8, window = 12, draws = 200, reseeds = 5 }) => {
   const results = [];
   let prevGround = null;
+  // The PREVIOUS pass's material, retained because pattern()'s null is
+  // before's — not after's. Passing the current pass's material made every
+  // null draw a same-material sibling of `after` differing only by seed, so
+  // `moved` came out a coin landing true about 1/(reseeds+1) of the time
+  // whatever the document did. nul now refuses that call outright
+  // (incommensurate_extent) instead of quietly answering it.
+  let prevMaterial = null;
 
   for (let p = 0; p < passes; p++) {
     const fraction = (p + 1) / passes;
@@ -34,12 +41,15 @@ export const timeLoop = ({ reduce, units, passes = 8, window = 12, draws = 200, 
 
     let patternResult = null;
     if (prevGround) {
-      const pr = pattern({ before: prevGround, after: g, material, reseeds });
-      patternResult = isGap(pr) ? { gap: pr } : { moved: pr.moved, opened: pr.opened, displacement: pr.displacement, reseedNull: pr.reseedNull };
+      const pr = pattern({ before: prevGround, after: g, material: prevMaterial, reseeds });
+      patternResult = isGap(pr)
+        ? { gap: pr }
+        : { moved: pr.moved, opened: pr.opened, displacement: pr.displacement, reseedNull: pr.reseedNull, grewBy: pr.grewBy };
     }
 
     results.push({ pass: p, fraction, chunks: material.length, ananda: volume(g), pattern: patternResult, ground: g });
     prevGround = g;
+    prevMaterial = material;
   }
 
   return results;
