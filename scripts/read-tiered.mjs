@@ -16,6 +16,7 @@ import { createTier, foldThrough, massIsConsistent } from "../packages/engine/em
 import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
 import { projectReferents } from "../packages/engine/referents/index.js";
+import { resolveNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
 
 const SENTENCES_PER_FRAME = 6;
 
@@ -27,6 +28,7 @@ const TIERS = [
 ];
 
 const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
+const COREF_PATH = process.argv[3] || "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 
 const sentences = splitSentences(text);
@@ -50,13 +52,41 @@ const cast = projectReferents(referentEvents).filter((r) => !r.mergedInto);
 
 // surface -> referent id, longest surface first so "Victor Frankenstein"
 // wins over "Victor" when both could match
+// Surfaces must be at least 2 characters and must match on WORD BOUNDARIES.
+// Substring matching on a 1-char surface is catastrophic: "M." (Monsieur
+// Krempe, Monsieur Waldman) yields the surface "m", and `phrase.includes("m")`
+// then matches any phrase containing the letter — `ref:auto:m` appeared in 6
+// of the 8 strongest relations before this.
 const surfaceToId = [];
-for (const r of cast) for (const s of r.surfaces) surfaceToId.push([diaNorm(s), r.id]);
+for (const r of cast) for (const s of r.surfaces) {
+  const n = diaNorm(s);
+  if (n.length < 2) continue;
+  surfaceToId.push([n, new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u"), r.id]);
+}
 surfaceToId.sort((a, b) => b[0].length - a[0].length);
 
-const resolve = (phrase) => {
+// First-person surfaces resolve by SCOPE, never by string. Frankenstein is a
+// frame narrative (Walton > Victor > Creature); every "I" inside the
+// creature's tale is the creature, and the same three letters elsewhere are
+// someone else. Without this, referent-gated SVO kept 4 of 570 triples,
+// because in first-person narrative nearly every subject is a pronoun.
+const coref = JSON.parse(readFileSync(COREF_PATH, "utf8"));
+const narratorSource = coref.referents.find((r) => Array.isArray(r.narratorSpans) && r.narratorSpans.length);
+const { resolved: narratorSpans, unresolved: narratorGaps } = narratorSource
+  ? resolveNarratorSpans(text, `ref:narrator:${narratorSource.id}`, narratorSource.narratorSpans)
+  : { resolved: [], unresolved: [] };
+
+let firstPersonBound = 0, firstPersonGapped = 0;
+
+const resolve = (phrase, offset) => {
   const p = diaNorm(phrase);
-  for (const [surface, id] of surfaceToId) if (p.includes(surface)) return id;
+  if (isFirstPerson(p)) {
+    const n = narratorAt(offset, narratorSpans);
+    if (n.referentId) { firstPersonBound++; return n.referentId; }
+    firstPersonGapped++;
+    return null; // a typed absence: some narrator, and the prior does not say which
+  }
+  for (const [, re, id] of surfaceToId) if (re.test(p)) return id;
   return null;
 };
 
@@ -70,7 +100,7 @@ for (const f of frames) {
   const raw = extractRelations(f.text);
   statedTotal += raw.length;
   const triples = raw
-    .map((t) => ({ ...t, subject: resolve(t.subject), object: resolve(t.object), said: t }))
+    .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset), said: t }))
     .filter((t) => t.subject && t.object && t.subject !== t.object);
   totalTriples += triples.length;
   if (!triples.length) continue;
@@ -95,6 +125,8 @@ for (const t of tiers) {
 console.log(`READING ${TEXT_PATH.split("/").pop()} — ${frames.length} frames`);
 console.log(`SVO: ${statedTotal} stated, ${totalTriples} kept (both ends resolve to a referent)`);
 console.log(`cast discovered blind: ${cast.length} referents`);
+console.log(`narrator spans: ${narratorSpans.length} resolved, ${narratorGaps.length} unresolved`);
+console.log(`first-person: ${firstPersonBound} bound by scope, ${firstPersonGapped} typed gaps`);
 console.log(`graph: ${graph.nodes.size} nodes, ${graph.edges.size} live relations\n`);
 for (const t of tiers) console.log(`  ${t.name.padEnd(11)} observed ${t.observations}, shifted ${t.shifts}`);
 
