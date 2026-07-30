@@ -117,6 +117,61 @@ than assumed.
 
 ---
 
+## Reading left to right: what associative memory adds
+
+`node scripts/activation-clearings.mjs`. One left-to-right pass over
+Frankenstein (0.8s, recall answers on 738/753 frames), four channels out of it,
+each fed to the same `moved` clearing.
+
+| channel | tight recall | precision | rotated chapters (tight) |
+|---|---|---|---|
+| causal surprisal | 14/24 | 11/13 | p≈0.016 |
+| activation | 16/24 | 14/19 | p≈0.431 |
+| reach | 11/24 | 11/12 | p≈0.287 |
+| novelty | 9/24 | 8/9 | p≈0.191 |
+| **recalled** | **22/24** | **20/23** | **p≈0.005** |
+
+**`recalled` — how many distinct prior passages answered — is the strongest
+channel measured in this project so far.** 22/24 at 20/23 precision, p≈0.005
+against rotated chapters, on the tight (±window) matcher.
+
+Two things to be honest about:
+
+- **The stated hypothesis was wrong.** Before measuring, the prediction written
+  into the script was that `reach` would jump at a boundary — the material
+  stops echoing what was just read. `reach` is the second-weakest channel
+  (p≈0.29). It is not how far back the echo is; it is *how many things answer
+  at all*.
+- **The rotation null loses power as boundary count rises.** `recalled` emits
+  23 boundaries against 24 true ones, and on the wide causal window that
+  saturates — rotation alone scores 22.2±0.9, so p≈0.064 there. Only the tight
+  window discriminates for a dense detector. Causal surprisal, which emits 13,
+  is the reverse: strong on the causal window (p≈0.000), weaker tight
+  (p≈0.016). The two channels are not ranked by one number.
+
+## Where the embedding goes
+
+Not measured — there is no checkpoint on disk and the sandbox blocks the only
+host for the real one. The seam is built to the shape the measurement will
+need and claims nothing until it has one, per the growth rule.
+
+The placement is a tier decision, not a performance one. The sparse code fires
+only on forms that have **already recurred**: verbatim and keyword recurrence,
+engine tier, structurally unable to bridge `monster ≈ creature`. An embedding
+is exactly that bridge, which makes it model tier — so it is injected (never
+imported), it **reranks what the engine tier surfaced rather than retrieving on
+its own**, and where the engine tier surfaced nothing it returns a typed gap
+instead of a memory. Conformance holds that boundary against a deliberately
+degenerate embedder.
+
+The lineage's own benchmark argues for this rather than against it: the Hebbian
+sparse code came out *ahead* of ColBERT-style late interaction at the range
+these motifs recur (pg84 R@10 13 vs 10 of 60). The embedding is not a better
+retriever to swap in — it is a second ground for one figure, and SEED.md #6
+says the disagreement between two grounds is the only self-check available.
+So `resonance` reports whether the two channels agree, and does not reconcile
+them.
+
 ## The vital sign still points the wrong way
 
 Turn 1 flagged 2 of 7 regions opening. With the moved clearing on Frankenstein
