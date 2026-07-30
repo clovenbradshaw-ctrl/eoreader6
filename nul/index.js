@@ -98,7 +98,115 @@ export const burstiness = (series, { window }) => {
   return best;
 };
 
-export const STATISTICS = Object.freeze({ burstiness });
+/**
+ * Ordinal patterns (Bandt-Pompe). A window of `window` values is reduced to the
+ * permutation that sorts it — magnitudes discarded, order kept. Ties break by
+ * index, which is the standard choice and matters only on quantised material.
+ */
+const ordinalKey = (series, t, d) => {
+  const idx = Array.from({ length: d }, (_, i) => i);
+  idx.sort((a, b) => series[t + a] - series[t + b] || a - b);
+  return idx.join(",");
+};
+
+/**
+ * Reversing the series reverses each window, so the sorting permutation is read
+ * backwards: position p becomes d-1-p. An involution on the pattern space, which
+ * is what makes the reversed distribution a relabelling of the forward one
+ * rather than a separate measurement.
+ */
+const reversedKey = (key, d) =>
+  key.split(",").map((p) => d - 1 - Number(p)).join(",");
+
+const patternCounts = (series, d) => {
+  const counts = new Map();
+  const slots = series.length - d + 1;
+  for (let t = 0; t < slots; t++) {
+    const k = ordinalKey(series, t, d);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return { counts, slots };
+};
+
+const factorial = (n) => {
+  let f = 1;
+  for (let i = 2; i <= n; i++) f *= i;
+  return f;
+};
+
+/**
+ * The pattern space must be populable or the estimate is noise: fewer windows
+ * than possible patterns means most bins are empty by arithmetic, not by
+ * structure. Refused (NaN) rather than reported, so `ground` gaps instead of
+ * building a null out of a counting artefact.
+ */
+const patternSpaceAdmissible = (series, d) =>
+  Number.isInteger(d) && d >= 2 && d <= 8 && series.length - d + 1 >= factorial(d);
+
+/**
+ * ORDER. Normalised permutation entropy, in [0,1].
+ *
+ * Shuffle-sensitive by construction, and one-sided by theorem: shuffling a
+ * series destroys dependence, and for a stationary source subadditivity gives
+ * block entropy of the shuffled series >= that of the real one, with equality
+ * iff independent. So a real series can only sit at or BELOW its own shuffle
+ * null. Sitting below is `exceeds_witness` with direction "below" — regularity,
+ * which SEED.md #8 warns must not be mistaken for surfeit. Here regularity is
+ * the finding: the index is load-bearing.
+ *
+ * Note what this does NOT see: the pattern space is closed under reversal, so
+ * reversing a series permutes the bins without changing the distribution's
+ * entropy. This statistic is exactly blind to time's arrow. See `irreversibility`.
+ */
+export const permutationEntropy = (series, { window }) => {
+  if (!patternSpaceAdmissible(series, window)) return NaN;
+  const { counts, slots } = patternCounts(series, window);
+  let h = 0;
+  for (const c of counts.values()) {
+    const p = c / slots;
+    h -= p * Math.log(p);
+  }
+  return h / Math.log(factorial(window));
+};
+
+/**
+ * ARROW. Divergence between the ordinal-pattern distribution and its own
+ * reversal image, in [0,1].
+ *
+ * Zero exactly when the distribution is reversal-symmetric — which is what a
+ * time-reversible process has, however much memory it carries. A stationary
+ * Gaussian AR process and a sine wave are both strongly ordered and both read
+ * zero here; a ratchet does not.
+ *
+ * The quantity that literally is entropy production is the KL divergence
+ * between forward and reverse path distributions (Crooks). This uses the
+ * Jensen-Shannon form instead: same zero set, bounded, and finite when a
+ * pattern occurs forward but never in reverse — which on finite material is
+ * common and would send KL to infinity. A bounded surrogate for a real
+ * thermodynamic quantity, named as such rather than passed off as the thing.
+ *
+ * On shuffled material the pattern distribution is uniform, uniform is its own
+ * reversal image, so the null sits near zero and a real arrow is censored ABOVE
+ * it: surfeit, in the sense the seed already uses.
+ */
+export const irreversibility = (series, { window }) => {
+  if (!patternSpaceAdmissible(series, window)) return NaN;
+  const { counts, slots } = patternCounts(series, window);
+  const keys = new Set(counts.keys());
+  for (const k of [...keys]) keys.add(reversedKey(k, window));
+
+  let js = 0;
+  for (const k of keys) {
+    const p = (counts.get(k) ?? 0) / slots;
+    const q = (counts.get(reversedKey(k, window)) ?? 0) / slots;
+    const m = (p + q) / 2;
+    if (p > 0) js += 0.5 * p * Math.log(p / m);
+    if (q > 0) js += 0.5 * q * Math.log(q / m);
+  }
+  return js / Math.log(2);
+};
+
+export const STATISTICS = Object.freeze({ burstiness, permutationEntropy, irreversibility });
 
 /**
  * `window` is the reach of the present — how much of the material is contemporary
@@ -137,7 +245,8 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
 
   const samples = [];
   for (let d = 0; d < draws; d++) samples.push(stat(perturb(material, seed + d), { window }));
-  if (samples.some((v) => !Number.isFinite(v))) return gap("unknown_spec", { reason: "window exceeds material", window });
+  if (samples.some((v) => !Number.isFinite(v)))
+    return gap("unknown_spec", { reason: "the statistic could not be formed at this window", statistic, window });
   const sorted = [...samples].sort((a, b) => a - b);
   if (sorted[0] === sorted[sorted.length - 1])
     return gap("degenerate_ground", { reason: "zero width: this null would clear anything", statistic, perturbation });
