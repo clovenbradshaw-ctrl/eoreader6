@@ -1,0 +1,13 @@
+{
+  "name": "eoreader6",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Perceive only by difference from a ground you rebuild. See SEED.md.",
+  "exports": {
+    ".": "./nul/index.js"
+  },
+  "scripts": {
+    "test": "node --test conformance/"
+  }
+}
