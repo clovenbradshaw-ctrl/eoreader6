@@ -79,7 +79,7 @@ test("von neumann void: pattern (grain 2) cannot be built with only one real gro
 test("von neumann void: control — pattern succeeds with two real grounds", () => {
   const before = ground({ material: REAL_MATERIAL.slice(0, 30), draws: 20, window: 5, seed: 1 });
   const after = ground({ material: REAL_MATERIAL, draws: 20, window: 5, seed: 2 });
-  const pat = pattern({ before, after, material: REAL_MATERIAL, reseeds: 5 });
+  const pat = pattern({ before, after, material: REAL_MATERIAL.slice(0, 30), reseeds: 5 });
   assert.ok(!isGap(pat));
   assert.equal(typeof pat.moved, "boolean");
 });
@@ -88,7 +88,7 @@ test("von neumann void: witness (the record) refuses without a KEPT ground, even
   const before = ground({ material: REAL_MATERIAL.slice(0, 30), draws: 20, window: 5, seed: 1 });
   const after = ground({ material: REAL_MATERIAL, draws: 20, window: 5, seed: 2 });
   const fig = difference(REAL_MATERIAL[0], after);
-  const pat = pattern({ before, after, material: REAL_MATERIAL, reseeds: 5 });
+  const pat = pattern({ before, after, material: REAL_MATERIAL.slice(0, 30), reseeds: 5 });
   const w = witness({ ground: after, figure: fig, pattern: pat }); // after was never kept()
   assert.ok(isGap(w));
   assert.equal(w.gap, "no_ground");
@@ -107,7 +107,7 @@ test("von neumann void: witness refuses without an established (moved) pattern, 
 test("von neumann void: control — witness succeeds only when ground+figure+pattern are ALL real and pattern moved", () => {
   const before = ground({ material: REAL_MATERIAL.slice(0, 30), draws: 20, window: 5, seed: 1 });
   const after = ground({ material: REAL_MATERIAL, draws: 20, window: 5, seed: 2 });
-  const pat = pattern({ before, after, material: REAL_MATERIAL, reseeds: 5 });
+  const pat = pattern({ before, after, material: REAL_MATERIAL.slice(0, 30), reseeds: 5 });
   const fig = difference(REAL_MATERIAL[0], after);
   if (isGap(fig)) return; // censored figure — a legitimate outcome, not this test's concern
   const w = witness({ ground: keep(after), figure: fig, pattern: pat });
