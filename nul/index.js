@@ -1,32 +1,54 @@
 // eoreader6 · nul — the only module.
 //
-// NUL is `Differentiate · Existence · Ground` — clearing the ground of
-// existence. It is the first cell and, for now, the whole engine. Everything
-// else waits until the level test says it is above this.
+// One operation: difference against a nothing constructed by perturbing what is
+// present. Three uses, distinguished only by what the difference is measured
+// against:
 //
-// Pure by construction: no Date.now, no Math.random, no I/O, no ambient state.
-// A perturbation takes an explicit seed because a ground that cannot be
-// replayed cannot be testimony. Phase is a parameter, never a global.
+//   figure   — difference from its own ground
+//   pattern  — the difference that figure made to the next ground
+//   level    — the difference one figure makes to another's ground   (not here yet)
 //
-// The three refusals that are enforced here rather than described:
-//   · a figure cannot exist without the perturbation that made its ground
-//   · a sealed (kept) ground cannot be perceived through, only testified from
-//   · witness and zeroing cannot happen in the same act
+// Pattern is Bateson's: a difference that makes a difference. Not "the same
+// difference again" — that would need identity, which needs matching, which is
+// string-thinking in a numeric coat. A figure earns pattern by changing what
+// happens next, and the only next available is the ground.
+//
+// Two numbers are declared, never defaulted, because together they are the whole
+// physiology: `draws` is the resolution of testimony (the finest rank sayable is
+// 1/draws), and `reseeds` is the resolution of pattern. The third — how much
+// material a ground is built over — is NOT the seed's to choose. Whoever hands
+// material in has already declared the extent.
+//
+// Pure: no clock, no randomness, no I/O, no ambient state.
 //
 // Read SEED.md first. Especially before adding anything.
 
-import { gap, isGap, validateGround, validateFigure, validateTriad } from "./triad.js";
+const GAP = Symbol.for("eoreader6.gap");
 
-export { gap, isGap } from "./triad.js";
-export { GAP_TYPES, validateGround, validateFigure, validateTriad } from "./triad.js";
+// Every entry below is the same act at a different grain: refusing a claim.
+// See CUBE.md, "why this instrument earns its keep" — checked against real
+// exemplars, not asserted.
+export const GAP_TYPES = Object.freeze([
+  "no_ground", // a figure without the perturbation that made its ground
+  "kept_ground", // asked to perceive through a ground held for testimony
+  "unreceived_origin", // cites neither the material it perturbed nor a giver
+  "degenerate_ground", // zero width: a null that would clear anything
+  "undeclared", // a resolution was left to a default
+  "unknown_spec", // no such perturbation or statistic
+  "empty_material",
+  "exceeds_witness", // the rank is censored — the ground cannot place it
+  "made_no_difference", // perceived, and therefore not testimony
+  "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
+]);
 
-/**
- * Witness on the return, zero in the silence, never both at once. Two phases,
- * so there is no arbitration to design.
- */
-export const PHASES = Object.freeze(["zeroing", "witnessing"]);
+export const gap = (type, detail = {}) => {
+  if (!GAP_TYPES.includes(type)) throw new TypeError(`unknown gap type: ${type}`);
+  return Object.freeze({ [GAP]: true, gap: type, ...detail });
+};
 
-/** Deterministic PRNG. Purity is inherited, not negotiated. */
+export const isGap = (x) => Boolean(x && x[GAP] === true);
+
+/** Deterministic. A ground that cannot be replayed cannot be testimony. */
 const rng = (seed) => {
   let a = (seed | 0) + 0x6d2b79f5;
   return () => {
@@ -38,51 +60,40 @@ const rng = (seed) => {
 };
 
 /**
- * Perturbations of what is present. No parametric family, no z-table, no global
- * mean and sd: an unconditional null is a units change and preserves everything
- * it was meant to test. The nothing must be built out of this material.
+ * Perturbations of what is present. No parametric family, no global mean and sd:
+ * an unconditional null is a units change and preserves everything it was meant
+ * to test.
  */
 export const PERTURBATIONS = Object.freeze({
-  shuffle: {
-    id: "shuffle",
-    apply(material, seed) {
-      const next = rng(seed);
-      const out = material.slice();
-      for (let i = out.length - 1; i > 0; i--) {
-        const j = Math.floor(next() * (i + 1));
-        [out[i], out[j]] = [out[j], out[i]];
-      }
-      return out;
-    },
+  shuffle: (material, seed) => {
+    const next = rng(seed);
+    const out = material.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(next() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
   },
-  resample: {
-    id: "resample",
-    apply(material, seed) {
-      const next = rng(seed);
-      return material.map(() => material[Math.floor(next() * material.length)]);
-    },
+  resample: (material, seed) => {
+    const next = rng(seed);
+    return material.map(() => material[Math.floor(next() * material.length)]);
   },
 });
 
-const fingerprint = (material) =>
-  `n${material.length}:${material.reduce((h, v) => (Math.imul(h ^ Math.round(v * 1e6), 16777619) | 0), 2166136261) >>> 0}`;
-
 /**
- * The statistic must be sensitive to the structure the perturbation destroys, or
- * the ground is vacuous. A mean is shuffle-invariant: perturb-then-average
- * yields the identical number every draw, a null of width zero that would
- * cheerfully clear anything. `burstiness` — the largest windowed mean — is the
+ * The statistic must be sensitive to what the perturbation destroys or the
+ * ground is vacuous. A mean is shuffle-invariant: every draw returns the same
+ * number, a ground of width zero that clears anything put in front of it — an
+ * unconditional null wearing a different hat. Largest windowed mean is the
  * simplest honest choice for a series, and shuffling genuinely destroys it.
- * Order-blind statistic plus order-destroying perturbation is the same error as
- * an unconditional null, wearing a different hat.
  */
-export const burstiness = (series) => {
-  const w = Math.max(2, Math.floor(series.length / 4));
+export const burstiness = (series, { window }) => {
+  if (!Number.isInteger(window) || window < 2 || window > series.length) return NaN;
   let best = -Infinity;
-  for (let i = 0; i + w <= series.length; i++) {
+  for (let i = 0; i + window <= series.length; i++) {
     let s = 0;
-    for (let j = i; j < i + w; j++) s += series[j];
-    best = Math.max(best, s / w);
+    for (let j = i; j < i + window; j++) s += series[j];
+    best = Math.max(best, s / window);
   }
   return best;
 };
@@ -90,181 +101,256 @@ export const burstiness = (series) => {
 export const STATISTICS = Object.freeze({ burstiness });
 
 /**
- * Construct a ground by perturbing present material. Illegal during witnessing:
- * you cannot re-zero and testify in the same act.
+ * `window` is the reach of the present — how much of the material is contemporary
+ * with itself. It is declared, never derived from the material's length: a
+ * statistic whose window follows `n` means a different thing before and after
+ * material arrives, so the two grounds are silently incomparable and every
+ * comparison between them is an artefact of growth. It is the third and last
+ * declared number.
  */
-export const constructGround = ({
-  material,
-  perturbation = "shuffle",
-  statistic = "burstiness",
-  seed = 0,
-  draws = 64,
-  phase = "zeroing",
-}) => {
-  if (phase !== "zeroing") return gap("wrong_phase", { attempted: "constructGround", phase });
+const sameSpec = (a, b) =>
+  a.perturbation === b.perturbation &&
+  a.statistic === b.statistic &&
+  a.draws === b.draws &&
+  a.window === b.window;
+
+const fingerprint = (m) =>
+  `n${m.length}:${m.reduce((h, v) => (Math.imul(h ^ Math.round(v * 1e6), 16777619) | 0), 2166136261) >>> 0}`;
+
+const quantile = (sorted, q) => {
+  const i = (sorted.length - 1) * q;
+  const lo = Math.floor(i);
+  return sorted[lo] + (sorted[Math.ceil(i)] - sorted[lo]) * (i - lo);
+};
+
+/** Construct a nothing by perturbing present material. */
+export const ground = ({ material, draws, window, perturbation = "shuffle", statistic = "burstiness", seed = 0 }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
-  const p = PERTURBATIONS[perturbation];
-  if (!p) return gap("unknown_perturbation", { perturbation });
+  if (!Number.isInteger(draws) || draws < 2)
+    return gap("undeclared", { what: "draws", why: "the resolution of testimony is 1/draws and is never a default" });
+  if (!Number.isInteger(window) || window < 2)
+    return gap("undeclared", { what: "window", why: "the reach of the present is never derived from material length" });
+  const perturb = PERTURBATIONS[perturbation];
   const stat = STATISTICS[statistic];
-  if (!stat) return gap("unknown_perturbation", { statistic });
+  if (!perturb) return gap("unknown_spec", { perturbation });
+  if (!stat) return gap("unknown_spec", { statistic });
 
   const samples = [];
-  for (let d = 0; d < draws; d++) samples.push(stat(p.apply(material, seed + d)));
+  for (let d = 0; d < draws; d++) samples.push(stat(perturb(material, seed + d), { window }));
+  if (samples.some((v) => !Number.isFinite(v))) return gap("unknown_spec", { reason: "window exceeds material", window });
+  const sorted = [...samples].sort((a, b) => a - b);
+  if (sorted[0] === sorted[sorted.length - 1])
+    return gap("degenerate_ground", { reason: "zero width: this null would clear anything", statistic, perturbation });
+
   return Object.freeze({
-    kind: "constructed",
-    perturbation: Object.freeze({ id: p.id, statistic, seed, draws }),
+    spec: Object.freeze({ perturbation, statistic, seed, draws, window }),
     from: fingerprint(material),
-    samples: Object.freeze(samples),
-    sealed: false,
+    samples: Object.freeze(sorted),
+    kept: false,
   });
 };
 
 /**
- * The first ground is received, never derived. Deriving the origin is the wall
- * three independent mechanisms hit at r ≈ 0.974 — every one of them collapsed
- * toward the material's own vocabulary. A received ground is a gift and must
- * name its giver.
+ * The origin cannot be derived. Three independent mechanisms tried and every one
+ * collapsed toward the material's own vocabulary at r ≈ 0.974. A first ground is
+ * a gift and must name its giver.
  */
-export const receiveGround = ({ samples, provenance, phase = "zeroing" }) => {
-  if (phase !== "zeroing") return gap("wrong_phase", { attempted: "receiveGround", phase });
-  if (!Array.isArray(samples) || samples.length === 0) return gap("no_ground", { reason: "received nothing" });
-  if (!provenance) return gap("unreceived_origin", { reason: "received ground names no giver" });
-  return Object.freeze({
-    kind: "received",
-    provenance,
-    samples: Object.freeze(samples.slice()),
-    sealed: false,
-  });
+export const received = ({ samples, provenance }) => {
+  if (!Array.isArray(samples) || samples.length < 2) return gap("no_ground", { reason: "received nothing" });
+  if (!provenance) return gap("unreceived_origin", { reason: "names no giver" });
+  const sorted = [...samples].sort((a, b) => a - b);
+  if (sorted[0] === sorted[sorted.length - 1]) return gap("degenerate_ground", { provenance });
+  return Object.freeze({ provenance, samples: Object.freeze(sorted), kept: false });
 };
 
-/** Sealing is what makes a ground testimony — and what makes it unfit to perceive through. */
-export const seal = (ground) => Object.freeze({ ...ground, sealed: true });
-
-/** Re-zero: a fresh ground over the same material, never the stored one reused. */
-export const reZero = (ground, { material, phase = "zeroing" }) =>
-  constructGround({
-    material,
-    perturbation: ground?.perturbation?.id ?? "shuffle",
-    statistic: ground?.perturbation?.statistic ?? "burstiness",
-    seed: (ground?.perturbation?.seed ?? 0) + (ground?.perturbation?.draws ?? 64),
-    draws: ground?.perturbation?.draws ?? 64,
-    phase,
-  });
-
-/**
- * Ananda is the volume of the ground: the room left to be surprised in.
- * Extraction narrows it, encounter widens it. Never a gate, never a score —
- * a vital sign.
- */
-export const volume = (ground) => {
-  if (!ground?.samples?.length) return 0;
-  return Math.max(...ground.samples) - Math.min(...ground.samples);
+export const admissible = (g) => {
+  if (!g || typeof g !== "object" || !Array.isArray(g.samples) || g.samples.length < 2)
+    return gap("no_ground", {});
+  if (!g.spec && !g.provenance) return gap("unreceived_origin", { reason: "cites neither material nor giver" });
+  if (g.spec && g.from == null) return gap("unreceived_origin", { reason: "constructed but cites no material" });
+  return null;
 };
 
 /**
- * Sclerosis detector. A ground series that only ever tightens is a system on
- * its way to becoming an oracle: fluent, sourced, correct, and unable to be met.
+ * Keeping is what makes a ground testimony — and what makes it unfit to perceive
+ * through. Replay reconstructs a ground from its retained spec; it never reuses
+ * the kept samples. That is why this one boolean is the whole phase rule: an
+ * unkept ground is still in the silence, a kept one has returned and may speak.
  */
-export const volumeTrend = (grounds) => {
-  const vs = grounds.map(volume);
-  if (vs.length < 2) return "indeterminate";
-  return vs.every((v, i) => i === 0 || v <= vs[i - 1]) ? "closing" : "open";
-};
+export const keep = (g) => Object.freeze({ ...g, kept: true });
 
 /**
- * `exceeds_witness` is returned when the difference falls outside the ground's
- * entire support. That reads like the strongest possible finding and is
- * deliberately not reported as one: no retained sample can carry it, so
- * quantifying it would be fabrication. The honest utterance of a witness who
- * was present and cannot testify is a gap — and it is the trigger to re-zero.
- * Silence from surfeit, not from absence.
+ * A fresh nothing over the same material — never the stored one reused.
+ * The named trigger for this ("censored above is surfeit") is the Ramakrishna
+ * cell in CUBE.md: unravel the frame, return and cultivate.
  */
-export const difference = (observed, ground) => {
-  const bad = validateGround(ground);
-  if (bad) return bad;
-  const { samples } = ground;
-  const lo = Math.min(...samples);
-  const hi = Math.max(...samples);
-  if (observed > hi || observed < lo)
-    return gap("exceeds_witness", { observed, support: [lo, hi], reZero: true });
-  const beyond = samples.filter((s) => s >= observed).length / samples.length;
-  return Object.freeze({ observed, support: [lo, hi], beyond, volume: volume(ground) });
-};
+export const reZero = (g, { material, seed }) =>
+  ground({ ...g.spec, material, seed: seed ?? g.spec.seed + g.spec.draws });
 
 /**
- * Perceive by difference from a ground you rebuild.
+ * Ananda is the room left to be surprised in. Interquartile, not range: range
+ * grows without bound in `draws`, which would make the vital sign partly a
+ * measure of how many times we sampled.
+ */
+export const volume = (g) => (g?.samples?.length ? quantile(g.samples, 0.75) - quantile(g.samples, 0.25) : 0);
+
+/**
+ * Where the observation sits in its own nothing.
  *
- * Structural refusals are exhausted before anything is measured — type error
- * before null, always. A sealed ground is refused here without a single
- * arithmetic operation, because a system that perceives through a cached
- * nothing is a system whose nothing has become a thing.
+ * Outside the support the rank is CENSORED, not unmeasurable — the magnitude is
+ * right there and reporting it is honest; what the ground cannot supply is a
+ * place. Censored above is surfeit and is the trigger to re-zero: the honest
+ * silence of a witness who was present and cannot say how much. Censored below
+ * is its opposite, regularity, and must not be mistaken for it.
  */
-export const perceive = ({
-  material,
-  observed,
-  grounds,
-  perturbation,
-  statistic = "burstiness",
-  seed,
-  phase = "zeroing",
-}) => {
-  if (phase !== "zeroing") return gap("wrong_phase", { attempted: "perceive", phase });
+export const difference = (observed, g) => {
+  const bad = admissible(g);
+  if (bad) return bad;
+  if (g.kept) return gap("kept_ground", { reason: "cannot perceive through a ground held for testimony" });
+  if (!Number.isFinite(observed)) return gap("empty_material", { observed });
 
-  let live = grounds;
-  if (live) {
-    for (const g of live) if (g?.sealed) return gap("sealed_ground", { reason: "cannot perceive through a kept ground" });
-  } else {
-    const g = constructGround({ material, perturbation, statistic, seed, phase });
-    if (isGap(g)) return g;
-    live = [g];
-  }
-  if (observed == null) {
-    if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
-    const stat = STATISTICS[statistic];
-    if (!stat) return gap("unknown_perturbation", { statistic });
-    observed = stat(material);
-  }
-  for (const g of live) {
-    const bad = validateGround(g);
+  const s = g.samples;
+  const [lo, hi] = [s[0], s[s.length - 1]];
+  const censoredAt = 1 / s.length;
+  if (observed > hi) return gap("exceeds_witness", { observed, support: [lo, hi], direction: "above", censoredAt, reZero: true });
+  if (observed < lo) return gap("exceeds_witness", { observed, support: [lo, hi], direction: "below", censoredAt });
+  return Object.freeze({
+    observed,
+    support: Object.freeze([lo, hi]),
+    rank: s.filter((v) => v >= observed).length / s.length,
+    volume: volume(g),
+  });
+};
+
+/**
+ * A difference that makes a difference.
+ *
+ * Did the figure move the next ground further than merely re-zeroing would? The
+ * null is the ground's own reseeding variation — same spec, same material, fresh
+ * seed. `opened` carries the sign: a difference that narrows the ground is still
+ * a pattern, and it is extraction. Only widening is encounter.
+ */
+export const pattern = ({ before, after, material, reseeds }) => {
+  for (const g of [before, after]) {
+    const bad = admissible(g);
     if (bad) return bad;
   }
+  if (!Number.isInteger(reseeds) || reseeds < 2)
+    return gap("undeclared", { what: "reseeds", why: "the resolution of pattern is never a default" });
+  if (!before.spec || !after.spec) return gap("unreceived_origin", { reason: "a received ground has no reseeding null" });
+  if (!sameSpec(before.spec, after.spec))
+    return gap("unknown_spec", { reason: "two grounds built to different specs were never comparable" });
 
-  const differences = live.map((g) => difference(observed, g));
-  const surfeit = differences.find((d) => isGap(d) && d.gap === "exceeds_witness");
-  if (surfeit) return surfeit;
-  const anyGap = differences.find(isGap);
-  if (anyGap) return anyGap;
+  // A median is too robust to see reseeding at all: on a quantised statistic it
+  // returns the same value for every seed, so the null comes out zero-width and
+  // any displacement whatsoever reads as a pattern. Compare the whole shape.
+  const displacement = (a, b) => {
+    const grid = [0.1, 0.25, 0.5, 0.75, 0.9];
+    return grid.reduce((s, q) => s + Math.abs(quantile(a.samples, q) - quantile(b.samples, q)), 0) / grid.length;
+  };
 
-  return Object.freeze({ observed, grounds: Object.freeze(live), differences: Object.freeze(differences) });
+  const moved_by = displacement(after, before);
+  let nullMax = 0;
+  for (let r = 1; r <= reseeds; r++) {
+    const g = reZero(before, { material, seed: before.spec.seed + r * before.spec.draws });
+    if (isGap(g)) return g;
+    nullMax = Math.max(nullMax, displacement(g, before));
+  }
+  if (nullMax === 0)
+    return gap("degenerate_ground", {
+      reason: "reseeding moves this ground not at all: a null of zero width would clear any displacement",
+      reseeds,
+    });
+
+  const moved = moved_by > nullMax;
+  return Object.freeze({
+    moved,
+    displacement: moved_by,
+    reseedNull: nullMax,
+    censoredAt: 1 / reseeds,
+    opened: volume(after) > volume(before),
+  });
 };
 
 /**
- * Plural grounds for one figure are legal, and their disagreement is the only
- * self-check this system has. All judgement now lives in the choice of
- * perturbation; a bad perturbation fails invisibly and globally, which is worse
- * than a bad heuristic. This is the mitigation, and it is here from the start.
+ * The third use of the one operation: another figure's ground.
+ *
+ * Two figures are measured by the SAME observation against two different grounds.
+ * The relationship between the grounds is determined by how differently the
+ * observation ranks. If the observation is more extreme against the target ground
+ * than the figure's own, the figure's ground is "above" (it constrains what can
+ * be perceived). If less extreme, it's "below" (the target enables more). If the
+ * displacement is negligible, the grounds are "peer" — no level exists between
+ * them. This is the first sheath: identity by consequence, never by appearance.
+ *
+ * For the growth rule: a candidate organ is "above" the core if its observation
+ * ranks higher (more extreme) against the core's ground than against its own —
+ * the core's ground cannot anticipate what the organ perceives.
+ *
+ * Returns { relationship, displacement, rank, cross } or a gap.
  */
-export const disagreement = (figure) => {
-  const ds = (figure?.differences ?? []).filter((d) => !isGap(d));
-  if (ds.length < 2) return gap("unresolved_pattern", { reason: "one ground cannot disagree" });
-  const bs = ds.map((d) => d.beyond);
-  return Object.freeze({ spread: Math.max(...bs) - Math.min(...bs), n: ds.length });
+export const level = (observed, ownGround, targetGround) => {
+  const own = admissible(ownGround);
+  if (own && isGap(own)) return own;
+  const tgt = admissible(targetGround);
+  if (tgt && isGap(tgt)) return tgt;
+  if (ownGround.kept) return gap("kept_ground", { reason: "cannot level through a ground held for testimony" });
+  if (targetGround.kept) return gap("kept_ground", { reason: "cannot level against a ground held for testimony" });
+
+  const fig = difference(observed, ownGround);
+  if (isGap(fig)) return fig;
+
+  const cross = difference(observed, targetGround);
+  if (isGap(cross)) return gap("unstable", { reason: "cross-measurement failed", detail: cross });
+
+  const displacement = cross.rank - fig.rank;
+  const threshold = 2 / ownGround.samples.length;
+
+  let relationship;
+  if (Math.abs(displacement) < threshold) relationship = "peer";
+  else if (displacement > 0) relationship = "above";
+  else relationship = "below";
+
+  return Object.freeze({ relationship, displacement, threshold, rank: fig.rank, cross: cross.rank });
 };
 
 /**
- * Testify from a ground you kept. Legal only on the return — speech is
- * structurally impossible inside the reset, which is what Ramakrishna's silence
- * actually was.
+ * Plural grounds for one figure are legal and their disagreement is the only
+ * self-check here — all judgement now lives in the choice of perturbation, and a
+ * bad perturbation fails invisibly and globally. Censored differences are kept,
+ * not dropped: one perturbation calling something surfeit while another does not
+ * is the most informative signal this system can produce.
  */
-export const witness = ({ figure, pattern = null, phase = "witnessing" }) => {
-  if (phase !== "witnessing") return gap("wrong_phase", { attempted: "witness", phase });
-  const bad = validateFigure(figure);
+export const disagreement = (differences) => {
+  const censored = differences.filter((d) => isGap(d) && d.gap === "exceeds_witness").length;
+  const ranks = differences.filter((d) => !isGap(d)).map((d) => d.rank);
+  if (differences.length < 2) return gap("no_ground", { reason: "one ground cannot disagree" });
+  return Object.freeze({
+    n: differences.length,
+    censored,
+    split: censored > 0 && ranks.length > 0,
+    spread: ranks.length > 1 ? Math.max(...ranks) - Math.min(...ranks) : null,
+  });
+};
+
+/**
+ * Testify from a ground you kept.
+ *
+ * A difference that made no difference is not information, so it is not
+ * testimony either. That refusal is the witness gate, rederived: the system may
+ * perceive anything and may speak only of what changed the ground.
+ *
+ * Succeeding here requires binding to independent evidence (pattern.moved),
+ * never generating an unsupported claim — see CUBE.md, "why this instrument
+ * earns its keep."
+ */
+export const witness = ({ ground: g, figure, pattern: p }) => {
+  const bad = admissible(g);
   if (bad) return bad;
-
-  const sealedFigure = Object.freeze({ ...figure, grounds: Object.freeze(figure.grounds.map(seal)) });
-  const triad = Object.freeze({ figure: sealedFigure, pattern });
-  const invalid = validateTriad(triad);
-  if (invalid) return invalid;
-  if (pattern == null) return Object.freeze({ ...triad, gaps: Object.freeze([gap("unresolved_pattern", {})]) });
-  return triad;
+  if (!g.kept) return gap("no_ground", { reason: "testimony from a ground that was never kept" });
+  if (isGap(figure)) return figure;
+  if (!figure || !Number.isFinite(figure.observed)) return gap("no_ground", { reason: "no figure" });
+  if (!p || typeof p.moved !== "boolean") return gap("made_no_difference", { reason: "pattern not established" });
+  if (!p.moved) return gap("made_no_difference", { displacement: p.displacement, reseedNull: p.reseedNull });
+  return Object.freeze({ ground: g, figure, pattern: p });
 };
