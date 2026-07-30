@@ -229,6 +229,10 @@ export const difference = (observed, g) => {
  * null is the ground's own reseeding variation — same spec, same material, fresh
  * seed. `opened` carries the sign: a difference that narrows the ground is still
  * a pattern, and it is extraction. Only widening is encounter.
+ *
+ * The sign is measured against that same null, and is `null` when the volume
+ * moved no further than reseeding alone moves it. A sign is a claim; it is owed
+ * a null exactly like the magnitude is.
  */
 export const pattern = ({ before, after, material, reseeds }) => {
   for (const g of [before, after]) {
@@ -250,11 +254,14 @@ export const pattern = ({ before, after, material, reseeds }) => {
   };
 
   const moved_by = displacement(after, before);
+  const volumeBefore = volume(before);
   let nullMax = 0;
+  let volumeNull = 0;
   for (let r = 1; r <= reseeds; r++) {
     const g = reZero(before, { material, seed: before.spec.seed + r * before.spec.draws });
     if (isGap(g)) return g;
     nullMax = Math.max(nullMax, displacement(g, before));
+    volumeNull = Math.max(volumeNull, Math.abs(volume(g) - volumeBefore));
   }
   if (nullMax === 0)
     return gap("degenerate_ground", {
@@ -262,13 +269,25 @@ export const pattern = ({ before, after, material, reseeds }) => {
       reseeds,
     });
 
-  const moved = moved_by > nullMax;
+  // The SIGN gets the same null the magnitude gets. `opened` used to be the bare
+  // inequality volume(after) > volume(before) — measured, on real arrivals, to
+  // fall inside this null 77.8% of the time, to flip on a mere reseed 41.1% of
+  // the time, and to call an exact tie "extraction" 15.0% of the time. That is
+  // SEED.md #3 ("a null of zero width is refused, everywhere, at every level")
+  // and #4 in the one place the seed calls the whole physiology. Three-valued,
+  // because SEED.md #8: a gap is a result, and "no sign sayable" is a real
+  // finding about this arrival — not a quiet vote for extraction.
+  const volumeDelta = volume(after) - volumeBefore;
+  const opened = volumeNull === 0 || Math.abs(volumeDelta) <= volumeNull ? null : volumeDelta > 0;
+
   return Object.freeze({
-    moved,
+    moved: moved_by > nullMax,
     displacement: moved_by,
     reseedNull: nullMax,
     censoredAt: 1 / reseeds,
-    opened: volume(after) > volume(before),
+    opened,
+    volumeDelta,
+    volumeNull,
   });
 };
 
@@ -330,6 +349,71 @@ export const disagreement = (differences) => {
     censored,
     split: censored > 0 && ranks.length > 0,
     spread: ranks.length > 1 ? Math.max(...ranks) - Math.min(...ranks) : null,
+  });
+};
+
+/**
+ * Objective immortality: what a satisfaction adds to what comes after it.
+ *
+ * `keep()` is half of Whitehead's clause — "it closes up the entity." This is
+ * the other half — "and yet is the superject adding its character to the
+ * creativity whereby there is a becoming of entities superseding the one in
+ * question." Without it the engine has subjects and no superjects: every
+ * witnessed record is frozen, returned, and prehended by nothing.
+ *
+ * The character it adds is displacement in units of the reseeding null: how far
+ * this figure moved the ground beyond what the material moves it by itself.
+ * That ratio is the engine's name for "an origination not wholly traceable to
+ * the mere data" — the null IS the mere data.
+ *
+ * Returns a value, never a ground. A superject prehended as a prior would close
+ * the successor's ground and this would be sclerosis with extra steps; prehended
+ * as datum it can still be differed from. The depositor cannot read its own
+ * deposit, and needs no machinery to be stopped: its ground is kept, and a kept
+ * ground cannot be perceived through. Keeping makes a satisfaction unusable
+ * here; objectifying makes it usable there.
+ */
+export const objectify = (record) => {
+  if (isGap(record)) return record;
+  if (!record || !record.ground || !record.figure || !record.pattern) return gap("no_ground", { reason: "not a witnessed record" });
+  if (record.ground.kept !== true)
+    return gap("no_ground", { reason: "a satisfaction that never closed its entity is not a superject" });
+  if (record.pattern.moved !== true) return gap("made_no_difference", { reason: "nothing to pass on" });
+  if (!(record.pattern.reseedNull > 0)) return gap("degenerate_ground", { reason: "no null to express the excess in" });
+
+  const giver = record.ground.provenance ?? record.ground.from;
+  if (giver == null) return gap("unreceived_origin", { reason: "a satisfaction passed on must still name its giver" });
+
+  return Object.freeze({
+    value: record.pattern.displacement / record.pattern.reseedNull,
+    rank: record.figure.rank ?? null,
+    opened: record.pattern.opened,
+    provenance: giver,
+  });
+};
+
+/**
+ * A nexus: antecedent members objectified in the formal constitution of what
+ * follows. The material a successor's nothing is built by perturbing.
+ *
+ * Whitehead (ii) puts the objectification in the *formal constitution* — the
+ * process, not the outcome — so a nexus is material and nothing else. Its order
+ * is the order of the succession, which is real, and which perturbing destroys:
+ * that is what makes a statistic over it non-vacuous (SEED.md #4).
+ *
+ * One grain up from the material a figure was measured in, and unit-consistent
+ * with itself: every member is an excess-over-its-own-null, so satisfactions
+ * built over different domains are comparable here and nowhere else.
+ */
+export const nexus = (records) => {
+  if (!Array.isArray(records) || records.length === 0) return gap("empty_material", { reason: "a nexus of nothing" });
+  const members = records.map(objectify);
+  const bad = members.find(isGap);
+  if (bad) return bad;
+  return Object.freeze({
+    material: Object.freeze(members.map((m) => m.value)),
+    givers: Object.freeze(members.map((m) => m.provenance)),
+    n: members.length,
   });
 };
 
