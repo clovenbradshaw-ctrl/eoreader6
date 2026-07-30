@@ -12,6 +12,7 @@
 // material look like having read only this much of the real thing so far."
 
 import fs from "node:fs";
+import { contract } from "../consumption.js";
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 const MICROBITS = 1_000_000;
@@ -119,4 +120,66 @@ export const functionWordSet = (table, { threshold = DEFAULT_RELEVANCE_THRESHOLD
     if (count / table.total >= threshold) set.add(word);
   }
   return set;
+};
+
+// THE REACH OF THE PRESENT IN PROSE IS THE PARAGRAPH, AND THE WRITER DECLARED IT.
+//
+// This is the one number in the engine that had been a pure guess: every caller
+// passed `window: 12` to prose chunks, raw bytes, and audio frames alike. A
+// paragraph break is not a typographic convention here — it is the author
+// saying, in the only channel they have for saying it, "this much is
+// contemporary with itself; what follows is next." Taking them at their word
+// costs nothing and is checkable.
+//
+// Derived from FORM, never from LENGTH — the distinction SEED.md #5 turns on.
+// A paragraph does not get longer because the book is long, and that is
+// measurable rather than assertable: Frankenstein's median paragraph is 80
+// words at 25%, 50%, 75% and 100% read (78, 81, 84, 80). A window that drifted
+// with extent would be the forbidden kind; this one does not move.
+//
+// The median, not the mean: paragraph lengths are heavily right-skewed (q25 40,
+// median 80, q75 133, mean 95), and one page of unbroken description should not
+// widen the present for the whole book.
+export const paragraphWords = (text) =>
+  String(text ?? "")
+    .split(/\n\s*\n/)
+    .map((p) => tokenize(p).length)
+    .filter((n) => n > 0);
+
+export const consumption = (text, { chunkSize = 40 } = {}) => {
+  const lens = paragraphWords(text).sort((a, b) => a - b);
+  const median = lens.length ? lens[Math.floor((lens.length - 1) * 0.5)] : 0;
+  const present = Math.round(median / chunkSize);
+
+  // THE UNIT MUST BE FINER THAN THE PRESENT, or the present is not
+  // representable and clamping to the floor would fake one.
+  //
+  // A present of at least 2 units means the chunk can be at most half a
+  // paragraph. Chunk more coarsely than that and each unit already spans more
+  // than the present does — there is no "contemporary with itself" left to
+  // measure, because everything inside one unit has been averaged together
+  // before the reader sees it.
+  //
+  // This is not hypothetical housekeeping. Every Frankenstein number in
+  // scripts/RESULTS.md up to this point was computed at 100-word chunks
+  // against a median paragraph of 80 words, which is exactly this refusal —
+  // the whole reading happened at a grain where the reach of the present could
+  // not be expressed, and the 12 that was passed instead was a number about
+  // nothing.
+  if (median && present < 2)
+    throw new TypeError(
+      `consumption: a ${chunkSize}-word chunk is coarser than half this text's median paragraph (${median} words), ` +
+        `so its present would be ${present} unit(s). Chunk at ${Math.max(1, Math.floor(median / 2))} words or finer.`
+    );
+
+  return contract({
+    order: "sequential",
+    unit: `${chunkSize}-word chunk`,
+    // Where a text has no paragraphing at all there is nothing to derive from,
+    // and the floor stands with the basis saying so rather than inventing one.
+    present: median ? present : 2,
+    basis: median
+      ? `the median paragraph of this text is ${median} words, and a paragraph break is the writer's own declaration of what is contemporary with itself`
+      : "this text has no paragraph structure to declare a present with, so the floor stands and no claim is made",
+  });
 };

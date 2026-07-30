@@ -6,6 +6,7 @@
 // See perceiver/text/material.js for the shared load/reduce contract.
 
 import { spawn } from "node:child_process";
+import { contract } from "../consumption.js";
 
 const decodeGrayFrames = (path, { fps = 2, w = 32, h = 18 } = {}) =>
   new Promise((resolve, reject) => {
@@ -39,3 +40,16 @@ export const reduce = (frames, { fraction = 1 } = {}) => {
   }
   return material;
 };
+
+// Moving image is sequential and rate-set like audio, but the present is
+// shorter: the visual integration window over which motion is seen AS motion
+// rather than as a sequence of stills is conventionally ~0.4s. At the default
+// decode rate that is a handful of frames.
+export const consumption = ({ fps = 4 } = {}) =>
+  contract({
+    order: "sequential",
+    unit: `inter-frame difference at ${fps}fps`,
+    present: Math.max(2, Math.round(0.4 * fps) + 1),
+    rate: fps,
+    basis: "the visual integration window, ~0.4s: motion seen as motion rather than as successive stills",
+  });

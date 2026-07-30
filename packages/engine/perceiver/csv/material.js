@@ -4,6 +4,7 @@
 // See perceiver/text/material.js for the shared load/reduce contract.
 
 import fs from "node:fs";
+import { contract } from "../consumption.js";
 
 const parseCSV = (text) => {
   const rows = [];
@@ -63,3 +64,16 @@ export const columnName = (rows, column) => {
   const col = column ?? pickNumericColumn(rows);
   return col === -1 ? null : rows[0]?.[col];
 };
+
+// Rows have a file order. For a time series that order is the meaning; for a
+// set of measurements it is an accident of how the file was written, and
+// reading it forwards asserts a sequence the data does not have. This
+// perceiver cannot tell which it is holding, so the caller declares it and
+// the default is the one that refuses.
+export const consumption = ({ ordered = false, unit = "row", present = 2, basis } = {}) =>
+  contract({
+    order: ordered ? "sequential" : "unordered",
+    unit,
+    present,
+    basis: basis ?? "row order in a CSV carries meaning only when the caller says it does; unstated, it is an accident of writing",
+  });

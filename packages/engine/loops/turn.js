@@ -19,73 +19,12 @@
 // Ground grain is implemented; the other grains are honestly refused rather
 // than faked.
 
-import { ground, difference, pattern, admissible, volume, isGap, gap } from "../../../nul/index.js";
+import { gap } from "../../../nul/index.js";
+import { read } from "./reader.js";
 
-// ── EXISTENCE · Void ─────────────────────────────────────────────────────────
-
-/** ① NUL · Void · Clearing — a nothing built by perturbing what is present. */
-export const clearVoid = ({ material, draws, window, seed }) => ground({ material, draws, window, seed });
-
-/**
- * ② SIG · Void · Tending — keep the nothing fit to perceive through, and
- * report how much room is left to be surprised in. A ground that has gone
- * degenerate or been kept for testimony is no longer a void you can see
- * against; ananda (interquartile volume) is the sign of health, never a gate.
- */
-export const tendVoid = (g) => {
-  const bad = admissible(g);
-  if (bad) return { viable: false, reason: bad };
-  if (g.kept) return { viable: false, reason: gap("kept_ground", { reason: "held for testimony" }) };
-  const room = volume(g);
-  return { viable: room > 0, ananda: room };
-};
-
-/**
- * ③ INS · Void · Cultivating — what has come into being so far. Causal by
- * construction: a turn may only ever see material already arrived, never the
- * whole extent. This is the operator that makes the read a READING rather
- * than an analysis of a finished object.
- */
-export const cultivateVoid = (material, upTo) => material.slice(0, Math.max(0, Math.min(upTo, material.length)));
-
-// ── STRUCTURE · Field ────────────────────────────────────────────────────────
-
-/**
- * ④ SEG · Field · Clearing — partition the arena into reach-units. `window`
- * is the reach of the present (SEED.md's third declared number): how much
- * material is contemporary with itself. Declared, never derived from length.
- */
-export const clearField = (extent, { window, hop }) => {
-  const units = [];
-  for (let i = 0; i + window <= extent; i += hop) units.push({ start: i, end: i + window });
-  return units;
-};
-
-/** ⑤ CON · Field · Tending — two units are contemporary when they overlap. */
-export const tendField = (units) => {
-  const adjacency = new Map();
-  for (let i = 0; i < units.length; i++) {
-    const touching = [];
-    for (let j = 0; j < units.length; j++) {
-      if (i === j) continue;
-      if (units[j].start < units[i].end && units[i].start < units[j].end) touching.push(j);
-    }
-    adjacency.set(i, touching);
-  }
-  return adjacency;
-};
-
-/**
- * ⑥ SYN · Field · Cultivating — the arena as one extent. Reports coverage:
- * material no reach-unit touches is outside the field and cannot bear a
- * relation, which is a gap in the arena, not a silent omission.
- */
-export const cultivateField = (units, extent) => {
-  if (units.length === 0) return { covered: 0, extent, uncovered: extent, complete: false };
-  const covered = new Set();
-  for (const u of units) for (let i = u.start; i < u.end; i++) covered.add(i);
-  return { covered: covered.size, extent, uncovered: extent - covered.size, complete: covered.size === extent };
-};
+// ①-⑥ live in loops/operators.js and are re-exported here so that "the nine
+// operators" remains one importable place, which is what this file is for.
+export { clearVoid, tendVoid, cultivateVoid, clearField, tendField, cultivateField } from "./operators.js";
 
 // ── INTERPRETATION · Atmosphere ──────────────────────────────────────────────
 
@@ -148,137 +87,27 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   if (grain !== "Ground")
     return gap("unknown_spec", { reason: `grain "${grain}" is not yet earned — only Ground is built`, grain });
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
-  if (!Number.isInteger(tolerance) || tolerance < 1)
-    return gap("undeclared", { what: "tolerance", why: "the resolution of refusal is never a default" });
   if (!Number.isInteger(window) || window < 2)
     return gap("undeclared", { what: "window", why: "the reach of the present is never derived from material length" });
-  if (!Number.isInteger(draws) || draws < 2)
-    return gap("undeclared", { what: "draws", why: "the resolution of testimony is 1/draws and is never a default" });
-  const wantsMoved = clearOn.includes("moved");
-  if (wantsMoved && (!Number.isInteger(reseeds) || reseeds < 2))
-    return gap("undeclared", { what: "reseeds", why: "the resolution of pattern is never a default" });
-  for (const mode of clearOn)
-    if (mode !== "surfeit" && mode !== "moved") return gap("unknown_spec", { reason: `no such failure mode: ${mode}` });
-  if (clearOn.length === 0) return gap("undeclared", { what: "clearOn", why: "a ground that cannot fail is not a ground" });
 
-  // ④⑤⑥ FIELD — the arena, established before anything is interpreted in it
-  const units = clearField(material.length, { window, hop });
-  const adjacency = tendField(units);
-  const coverage = cultivateField(units, material.length);
-
-  const regions = [];
-  const events = [];
-  const driftGaps = new Map(); // a gap is a result: pattern refusing to rule is recorded, not swallowed
-  let regionStart = 0;
-  let g = null;
-  let gEnd = null; // how much material the standing ground was built over — pattern's null needs it
-  let clearings = 0;
-  let tended = 0;
-  let anandaAtOpen = null;
-
-  const buildAt = (start, end, s) => {
-    if (end - start < window + 2) return null;
-    // ① NUL · Void · Clearing
-    const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start });
-    if (isGap(built)) return null;
-    // ② SIG · Void · Tending
-    return tendVoid(built).viable ? built : null;
-  };
-
-  for (const unit of units) {
-    const i = unit.start;
-    if (i < window) continue;
-
-    if (!g) {
-      g = buildAt(regionStart, i, seed);
-      if (!g) continue;
-      gEnd = i;
-      anandaAtOpen = tendVoid(g).ananda;
-    }
-
-    let sum = 0;
-    for (let j = i; j < i + window; j++) sum += material[j];
-    const observed = sum / window;
-
-    // ⑦ DEF · Clearing, first failure: the figure exceeds what the ground can place.
-    const d = difference(observed, g);
-    let failure = null;
-    if (clearOn.includes("surfeit") && isGap(d) && d.gap === "exceeds_witness" && d.direction === "above")
-      failure = { mode: "surfeit", observed, support: d.support };
-
-    // ⑧ EVA · Tending is also the only place the SECOND failure becomes
-    // visible: you have to actually rebuild the ground over the region as it
-    // now stands before you can ask whether it moved. So the maintenance act
-    // happens here unconditionally, and what it returns is read twice —
-    // once as the maintained ground, once as evidence about the old one.
-    const maintained = buildAt(regionStart, i, seed);
-    let drift = null;
-    if (wantsMoved && maintained && gEnd != null && gEnd < i) {
-      // The null is BEFORE's own reseeding variation over BEFORE's own
-      // material — never the grown material, which would make `after` a
-      // member of its own null and force moved=false structurally.
-      drift = pattern({ before: g, after: maintained, material: material.slice(regionStart, gEnd), reseeds });
-      if (isGap(drift)) driftGaps.set(drift.gap, (driftGaps.get(drift.gap) || 0) + 1);
-      else if (drift.moved && !failure)
-        failure = { mode: "moved", displacement: drift.displacement, reseedNull: drift.reseedNull, opened: drift.opened };
-    }
-
-    if (failure) {
-      clearings++;
-      events.push({ at: i, op: "DEF", terrain: "Atmosphere", stance: "Clearing", ...failure });
-
-      // A failing ground is not maintained. The standing ground is held
-      // fixed while consecutive failures accumulate, for both modes alike —
-      // otherwise `tolerance` would be counting against a moving target.
-      if (clearings >= tolerance) {
-        const closing = tendVoid(g);
-        regions.push({
-          start: regionStart, end: i, tended,
-          anandaOpen: anandaAtOpen, anandaClose: closing.ananda,
-          opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
-          clearedBy: failure.mode,
-        });
-        events.push({ at: i, op: "REC", terrain: "Atmosphere", stance: "Cultivating", clearedBy: failure.mode });
-        regionStart = i;
-        g = null;
-        gEnd = null;
-        clearings = 0;
-        tended = 0;
-      }
-    } else {
-      clearings = 0;
-      tended++;
-      events.push({ at: i, op: "EVA", terrain: "Atmosphere", stance: "Tending" });
-      if (maintained) {
-        g = maintained;
-        gEnd = i;
-      }
-    }
-  }
-
-  const last = g ?? buildAt(regionStart, material.length, seed);
-  const lastAnanda = last ? tendVoid(last).ananda : null;
-  regions.push({
-    start: regionStart, end: material.length, tended,
-    anandaOpen: anandaAtOpen, anandaClose: lastAnanda,
-    opened: lastAnanda != null && anandaAtOpen != null ? lastAnanda > anandaAtOpen : null,
-    clearedBy: null, // the last region is ended by the material running out, not by a failure
-  });
-
-  const defs = events.filter((e) => e.op === "DEF");
-  return {
-    grain,
-    clearOn,
-    field: { units: units.length, coverage, adjacencyOf: (i) => adjacency.get(i) ?? [] },
-    regions,
-    events,
-    clearings: defs.length,
-    clearingsBy: {
-      surfeit: defs.filter((e) => e.mode === "surfeit").length,
-      moved: defs.filter((e) => e.mode === "moved").length,
+  // DELEGATES. loops/reader.js is the implementation; this is the one-shot
+  // door into it, kept because a caller who genuinely has the whole thing at
+  // once should not have to stage an arrival. Two implementations that agree
+  // today is how this repo has lost time before, so there is only one.
+  //
+  // A caller arriving here has a bare `window` and no consumption contract,
+  // which is the state everything was in before perceiver/consumption.js. It
+  // is wrapped in the most honest contract available: sequential, because
+  // reading it at all assumes that, and a basis that says plainly that nobody
+  // declared one.
+  return read(material, {
+    consumption: {
+      order: "sequential",
+      unit: "unnamed element",
+      present: window,
+      basis: "no perceiver declared how this material is consumed; the caller supplied a bare reach and reading it assumes sequence",
+      rate: null,
     },
-    driftGaps: Object.fromEntries(driftGaps),
-    rezeros: events.filter((e) => e.op === "REC").length,
-    tendings: events.filter((e) => e.op === "EVA").length,
-  };
+    draws, reseeds, tolerance, hop, seed, clearOn,
+  });
 };
