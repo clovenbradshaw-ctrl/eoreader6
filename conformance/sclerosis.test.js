@@ -17,6 +17,9 @@ import { ground, difference, pattern, reZero, volume, burstiness, disagreement, 
 const W = 5;
 const quiet = [1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 2];
 const bursty = [...quiet, 9, 9, 9, 9, 9];
+// A ground whose ananda clears its own reseeding null, so the sign has both
+// halves available. `quiet` has only the widening half.
+const roomy = Array.from({ length: 40 }, (_, i) => i % 7);
 
 test("the vital sign is not a measure of how many times we sampled", () => {
   // Range grows without bound in `draws`; interquartile does not. If ananda were
@@ -73,16 +76,33 @@ test("narrowing the ground is still a pattern — that one is extraction", () =>
   // Both make a difference. Only the sign says which kind. A system that
   // measured pattern without the sign would call this health.
   //
-  // This case is saturation: enough of the exceptional value and the ground
-  // stops being able to differ from it at all — volume falls to zero, which
-  // is this file's death written out in one number. The ground moved a long
-  // way and CLOSED, and only `opened` distinguishes that from encounter.
-  //
-  // The case that used to stand here — quiet + [2, 2] — no longer reads as a
-  // pattern, and it should not: 2 is a value quiet already contains, so
-  // continuing quiet by drawing from itself produces that displacement and
-  // more. It only looked like a pattern while the null was held at before's
-  // extent, which measured growth (see nul/index.js::pattern).
+  // Rebuilt twice, for two independent reasons, and both are kept. It stood on
+  // [...quiet, 2, 2], where volume(after) equals volume(before) EXACTLY: a tie
+  // read as "extraction" only because the sign was a bare `>`. That same case
+  // also stopped reading as a pattern at all once the null grew with extent —
+  // 2 is a value quiet already contains, so continuing quiet by drawing from
+  // itself produces that displacement and more. So the case needs a ground with
+  // room to lose: quiet's ananda (0.2) does not exceed its own reseeding null
+  // (0.2), and narrowing is not sayable from it. See intensity.test.js.
+  // The tail saturates toward roomy's MAXIMUM, not its mean. Filling with the
+  // mean (3) narrows the volume but does not move the shape further than
+  // continuing roomy from itself does — displacement 0.240 against a null of
+  // 0.480 — so it is not a pattern once the null grows with extent. Filling
+  // with 6 both moves it (1.480 > 0.480) and narrows it (-0.600 against a
+  // volume null of 0.200): a difference that made a difference, and the
+  // difference it made was to close the ground.
+  const before = ground({ material: roomy, draws: 256, window: W });
+  const after = ground({ material: [...roomy, ...Array(40).fill(6)], draws: 256, window: W });
+  const p = pattern({ before, after, material: roomy, reseeds: 16 });
+  assert.equal(p.moved, true);
+  assert.equal(p.opened, false);
+  assert.ok(Math.abs(p.volumeDelta) > p.volumeNull, "extraction must clear the null it is measured against");
+});
+
+test("saturation closes the ground, and only the sign tells it from encounter", () => {
+  // Enough of the exceptional value and the ground stops being able to differ
+  // from it at all — volume falls to zero, which is this file's death written
+  // out in one number. It moved a long way and CLOSED.
   const before = ground({ material: bursty, draws: 256, window: W });
   const after = ground({ material: [...bursty, ...Array(30).fill(9)], draws: 256, window: W });
   const p = pattern({ before, after, material: bursty, reseeds: 16 });
