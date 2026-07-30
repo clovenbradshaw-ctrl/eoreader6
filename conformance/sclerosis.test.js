@@ -72,11 +72,53 @@ test("a burst does, and it opens the ground", () => {
 test("narrowing the ground is still a pattern — that one is extraction", () => {
   // Both make a difference. Only the sign says which kind. A system that
   // measured pattern without the sign would call this health.
+  //
+  // This case is saturation: enough of the exceptional value and the ground
+  // stops being able to differ from it at all — volume falls to zero, which
+  // is this file's death written out in one number. The ground moved a long
+  // way and CLOSED, and only `opened` distinguishes that from encounter.
+  //
+  // The case that used to stand here — quiet + [2, 2] — no longer reads as a
+  // pattern, and it should not: 2 is a value quiet already contains, so
+  // continuing quiet by drawing from itself produces that displacement and
+  // more. It only looked like a pattern while the null was held at before's
+  // extent, which measured growth (see nul/index.js::pattern).
+  const before = ground({ material: bursty, draws: 256, window: W });
+  const after = ground({ material: [...bursty, ...Array(30).fill(9)], draws: 256, window: W });
+  const p = pattern({ before, after, material: bursty, reseeds: 16 });
+  assert.equal(p.moved, true);
+  assert.equal(p.opened, false);
+  assert.equal(volume(after), 0, "the ground closed: nothing can differ from it now");
+});
+
+test("a growth-matched null refuses what growth alone explains", () => {
+  // The correction that cost the most to find. `after` is built over MORE
+  // material than `before`, and burstiness is a max over windows, so its
+  // expectation rises with extent for no reason but extent. Continuing the
+  // material by drawing from itself is the counterfactual that isolates it.
   const before = ground({ material: quiet, draws: 256, window: W });
   const after = ground({ material: [...quiet, 2, 2], draws: 256, window: W });
   const p = pattern({ before, after, material: quiet, reseeds: 16 });
-  assert.equal(p.moved, true);
-  assert.equal(p.opened, false);
+  assert.equal(p.grewBy, 2);
+  assert.equal(p.moved, false, "two more values quiet already contains are not a difference that made a difference");
+
+  // ...and it still says yes to material the old regime could not have produced.
+  const burst = ground({ material: bursty, draws: 256, window: W });
+  const q = pattern({ before, after: burst, material: quiet, reseeds: 16 });
+  assert.equal(q.moved, true);
+});
+
+test("the null must be built over BEFORE's material, and handing in AFTER's is refused", () => {
+  // Not a hypothetical: loops/time.js did exactly this. Every null draw was
+  // then a same-material sibling of `after` differing only by seed, so
+  // `moved` was a coin landing true about 1/(reseeds+1) of the time whatever
+  // the material did. Type error before null (SEED.md #7).
+  const before = ground({ material: quiet, draws: 256, window: W });
+  const after = ground({ material: bursty, draws: 256, window: W });
+  const p = pattern({ before, after, material: bursty, reseeds: 16 });
+  assert.equal(p.gap, "incommensurate_extent");
+  assert.equal(p.before, quiet.length);
+  assert.equal(p.after, bursty.length);
 });
 
 test("censored differences are kept, not dropped — the split is the signal", () => {

@@ -39,6 +39,7 @@ export const GAP_TYPES = Object.freeze([
   "exceeds_witness", // the rank is censored — the ground cannot place it
   "made_no_difference", // perceived, and therefore not testimony
   "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
+  "incommensurate_extent", // a null built over a different amount of material than the thing it is the null FOR
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -145,6 +146,12 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
   return Object.freeze({
     spec: Object.freeze({ perturbation, statistic, seed, draws, window }),
     from: fingerprint(material),
+    // How much material this nothing was built by perturbing. Recorded because
+    // SEED.md #5 turns out to bite harder than it reads: `window` is declared
+    // so the statistic means one thing throughout, but the EXTENT still grows,
+    // and a max-over-windows statistic grows with it. Two grounds over
+    // different extents are not comparable unless the null grows the same way.
+    extent: material.length,
     samples: Object.freeze(sorted),
     kept: false,
   });
@@ -223,12 +230,57 @@ export const difference = (observed, g) => {
 };
 
 /**
+ * Continue a material by drawing from what is already in it. Not a third
+ * perturbation: it is `resample` asked for a length instead of the length it
+ * happened to have. What it produces is the same regime, carried on — which is
+ * exactly the counterfactual a growing ground needs its null to be.
+ */
+const continueBy = (material, k, seed) => {
+  const next = rng(seed);
+  const out = material.slice();
+  for (let i = 0; i < k; i++) out.push(material[Math.floor(next() * material.length)]);
+  return out;
+};
+
+/**
  * A difference that makes a difference.
  *
- * Did the figure move the next ground further than merely re-zeroing would? The
- * null is the ground's own reseeding variation — same spec, same material, fresh
- * seed. `opened` carries the sign: a difference that narrows the ground is still
- * a pattern, and it is extraction. Only widening is encounter.
+ * Did the figure move the next ground further than it would have moved anyway?
+ * `opened` carries the sign: a difference that narrows the ground is still a
+ * pattern, and it is extraction. Only widening is encounter.
+ *
+ * THE NULL MUST GROW THE WAY `after` GREW. This is the correction that cost the
+ * most to find, so it is written down at length.
+ *
+ * SEED.md's statement of the null is "same spec, same material, fresh seed,"
+ * and that is right for the case it was written for: two grounds over the SAME
+ * material, where the only thing that moved them apart is the figure. But the
+ * commonest real use is a reader accumulating material, where `after` is built
+ * over MORE material than `before` — and burstiness is a max over windows, so
+ * its expectation rises with extent for no reason but extent. Held at before's
+ * n, the null then measures seed noise while `moved_by` measures seed noise
+ * PLUS growth, and growth wins.
+ *
+ * What that looks like when you go and check: wired into atmosphere clearing,
+ * this fired on homogeneous noise at almost exactly even spacing — boundaries
+ * 28 apart, a clock, not a perception — and recovered 23 of Frankenstein's 24
+ * chapter boundaries while ALSO recovering 21–23 of them from the same series
+ * SHUFFLED. A statistic that scores the same on material whose order has been
+ * destroyed is reading its own arithmetic. (scripts/two-clearings.mjs)
+ *
+ * So the null is grown to `after`'s extent by drawing from `before`'s own
+ * material: the same regime, continued. Any displacement it shows is what
+ * growth alone contributes, and `moved` is what survives subtracting it. This
+ * is a CONDITIONAL null in the sense the lineage keeps having to relearn — it
+ * varies along the exact axis the artefact exploits, where an unconditional one
+ * is only a change of units. When the extents are equal it reduces to the
+ * reseeding null with nothing added.
+ *
+ * `material` is BEFORE's own material, and that is checked rather than trusted:
+ * handing in AFTER's material instead makes every null draw a sibling of
+ * `after` — same material, different seed — so `moved` becomes a coin that
+ * lands true about 1/(reseeds+1) of the time no matter what the material does.
+ * That is a real bug this check was written to catch, and it caught one.
  */
 export const pattern = ({ before, after, material, reseeds }) => {
   for (const g of [before, after]) {
@@ -240,6 +292,22 @@ export const pattern = ({ before, after, material, reseeds }) => {
   if (!before.spec || !after.spec) return gap("unreceived_origin", { reason: "a received ground has no reseeding null" });
   if (!sameSpec(before.spec, after.spec))
     return gap("unknown_spec", { reason: "two grounds built to different specs were never comparable" });
+  if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
+
+  // Type error before null, both ways round (SEED.md #7).
+  if (material.length !== before.extent)
+    return gap("incommensurate_extent", {
+      reason: "the null must be built over BEFORE's own material — anything else measures the wrong thing",
+      given: material.length,
+      before: before.extent,
+      after: after.extent,
+    });
+  if (after.extent < before.extent)
+    return gap("incommensurate_extent", {
+      reason: "the later ground was built over LESS material: there is no growth for the null to match",
+      before: before.extent,
+      after: after.extent,
+    });
 
   // A median is too robust to see reseeding at all: on a quantised statistic it
   // returns the same value for every seed, so the null comes out zero-width and
@@ -249,10 +317,13 @@ export const pattern = ({ before, after, material, reseeds }) => {
     return grid.reduce((s, q) => s + Math.abs(quantile(a.samples, q) - quantile(b.samples, q)), 0) / grid.length;
   };
 
+  const grewBy = after.extent - before.extent;
   const moved_by = displacement(after, before);
   let nullMax = 0;
   for (let r = 1; r <= reseeds; r++) {
-    const g = reZero(before, { material, seed: before.spec.seed + r * before.spec.draws });
+    const seed = before.spec.seed + r * before.spec.draws;
+    const nullMaterial = grewBy === 0 ? material : continueBy(material, grewBy, seed);
+    const g = reZero(before, { material: nullMaterial, seed });
     if (isGap(g)) return g;
     nullMax = Math.max(nullMax, displacement(g, before));
   }
@@ -267,6 +338,7 @@ export const pattern = ({ before, after, material, reseeds }) => {
     moved,
     displacement: moved_by,
     reseedNull: nullMax,
+    grewBy,
     censoredAt: 1 / reseeds,
     opened: volume(after) > volume(before),
   });

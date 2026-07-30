@@ -34,12 +34,15 @@ test("grain walk: reaches exactly as far as the data supports, never further", (
   assert.ok(!isGap(g));
 
   // no prior ground -> stops at figure, by construction, not by gap
-  const noPrior = grainWalk({ observed: material[10], ownGround: g, priorGround: null, material, reseeds: 3 });
+  const noPrior = grainWalk({ observed: material[10], ownGround: g, priorGround: null, priorMaterial: material, reseeds: 3 });
   assert.equal(noPrior.grain, "figure");
 
-  // a real prior ground -> can reach pattern or witness
-  const prior = ground({ material: material.slice(0, 20), draws: 30, window: 5, seed: 2 });
-  const withPrior = grainWalk({ observed: material[10], ownGround: g, priorGround: prior, material, reseeds: 3 });
+  // a real prior ground -> can reach pattern or witness. The prior's OWN
+  // material is what pattern's null is built over; handing in the later,
+  // longer material is now a typed refusal, not a quietly wrong answer.
+  const priorMaterial = material.slice(0, 20);
+  const prior = ground({ material: priorMaterial, draws: 30, window: 5, seed: 2 });
+  const withPrior = grainWalk({ observed: material[10], ownGround: g, priorGround: prior, priorMaterial, reseeds: 3 });
   assert.ok(["figure", "pattern", "witness"].includes(withPrior.grain));
   if (withPrior.grain === "witness") assert.equal(withPrior.result.pattern.moved, true);
 });
