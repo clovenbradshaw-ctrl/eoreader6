@@ -1,95 +1,96 @@
-// Death two: sclerosis. Metabolic failure — the ground absorbs everything,
-// nothing can differ from it, and it becomes an oracle: fluent, sourced,
-// correct, and incapable of encounter.
+// Death two: the ground closes. Nothing can differ from it, and the system
+// becomes an oracle — fluent, sourced, correct, incapable of encounter.
 //
-// There is no prior art for this family anywhere in the lineage. The tradition
-// armored itself against lying and then celebrated the property that kills it
-// the other way: "it can only get less wrong, never more wrong." An append-only
-// record that cannot forget is a ground that can only tighten.
+// There is no prior art for this family anywhere in the lineage. Every organ was
+// built against lying; the property that kills the other way was celebrated as a
+// virtue ("it can only get less wrong, never more wrong").
 //
-// Same input, same output is health over a frozen record and rigor mortis over a
-// lived one. E. coli would call it saturation, and would be right.
+// With pattern in place this death is largely self-announcing: a system where
+// figures stop moving grounds cannot form information at all, and `witness`
+// refuses. What still needs testing is that the instruments measuring it are not
+// themselves artefacts.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  burstiness,
-  constructGround,
-  perceive,
-  reZero,
-  volume,
-  volumeTrend,
-  disagreement,
-  isGap,
-} from "../nul/index.js";
+import { ground, difference, pattern, reZero, volume, burstiness, disagreement, isGap } from "../nul/index.js";
 
-const flat = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
-const bursty = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10, 10, 10, 10, 10];
+const W = 5;
+const quiet = [1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 2];
+const bursty = [...quiet, 9, 9, 9, 9, 9];
 
-test("the ground has volume — the statistic is not vacuous under its own perturbation", () => {
-  // A mean would be shuffle-invariant: 64 identical samples, a null of width
-  // zero that clears anything. That is an unconditional null in disguise.
-  const g = constructGround({ material: bursty, seed: 7 });
-  assert.ok(volume(g) > 0, "a ground of width zero is not a ground");
+test("the vital sign is not a measure of how many times we sampled", () => {
+  // Range grows without bound in `draws`; interquartile does not. If ananda were
+  // the range, a system could look healthier by sampling more.
+  const vs = [64, 256, 1024, 4096].map((draws) => volume(ground({ material: quiet, draws, window: W })));
+  for (const v of vs) assert.ok(Math.abs(v - vs[0]) < 0.05, `volume drifts with draws: ${vs.join(", ")}`);
+  assert.ok(vs[0] > 0);
 });
 
-test("a monotonically tightening ground series is sclerosis", () => {
-  const closing = [{ samples: [0, 10] }, { samples: [2, 8] }, { samples: [4, 6] }, { samples: [5, 5] }];
-  assert.equal(volumeTrend(closing), "closing");
+test("outside the support the rank is censored, not unmeasurable", () => {
+  const g = ground({ material: quiet, draws: 256, window: W });
+  const above = difference(g.samples[g.samples.length - 1] + 1, g);
+  assert.equal(above.gap, "exceeds_witness");
+  assert.equal(above.censoredAt, 1 / 256);
+  assert.ok(Number.isFinite(above.observed), "the magnitude is reportable; only the place is not");
 });
 
-test("a ground that reopens is alive", () => {
-  const open = [{ samples: [0, 10] }, { samples: [2, 8] }, { samples: [0, 20] }];
-  assert.equal(volumeTrend(open), "open");
+test("surfeit and regularity are opposite findings and only one is the breath", () => {
+  const g = ground({ material: quiet, draws: 256, window: W });
+  const above = difference(g.samples[g.samples.length - 1] + 1, g);
+  const below = difference(g.samples[0] - 1, g);
+  assert.equal(above.direction, "above");
+  assert.equal(above.reZero, true);
+  assert.equal(below.direction, "below");
+  assert.notEqual(below.reZero, true, "a series less clustered than any shuffle is not surfeit");
 });
 
-test("surfeit is a gap, and the gap is the trigger to re-zero", () => {
-  // The real series' burst clears the entire support of its own null. That reads
-  // as the strongest possible finding and is deliberately not reported as one:
-  // no retained sample can carry it, so quantifying it would be fabrication.
-  const out = perceive({ material: bursty, observed: burstiness(bursty), seed: 11 });
-  assert.ok(isGap(out));
-  assert.equal(out.gap, "exceeds_witness");
-  assert.equal(out.reZero, true);
+test("re-zeroing yields a different nothing; the same seed replays exactly", () => {
+  const a = ground({ material: quiet, draws: 256, window: W, seed: 3 });
+  const b = reZero(a, { material: quiet });
+  assert.notDeepEqual([...a.samples], [...b.samples]);
+  const replay = ground({ ...a.spec, material: quiet });
+  assert.deepEqual([...a.samples], [...replay.samples]);
 });
 
-test("re-zeroing yields a different nothing — the second reading is not the first", () => {
-  const first = constructGround({ material: bursty, seed: 3 });
-  const second = reZero(first, { material: bursty });
-  assert.notDeepEqual([...first.samples], [...second.samples]);
-  assert.notEqual(first.perturbation.seed, second.perturbation.seed);
+test("more of the same makes no difference", () => {
+  const before = ground({ material: quiet, draws: 256, window: W });
+  const after = ground({ material: [...quiet, 1, 0, 2, 1, 0], draws: 256, window: W });
+  const p = pattern({ before, after, material: quiet, reseeds: 16 });
+  assert.equal(p.moved, false);
+  assert.ok(p.reseedNull > 0, "a zero-width reseeding null would clear any displacement");
 });
 
-test("but testimony replays exactly — a kept ground is auditable", () => {
-  const a = constructGround({ material: bursty, seed: 3 });
-  const b = constructGround({ material: bursty, seed: 3 });
-  assert.deepEqual([...a.samples], [...b.samples]);
+test("a burst does, and it opens the ground", () => {
+  const before = ground({ material: quiet, draws: 256, window: W });
+  const after = ground({ material: bursty, draws: 256, window: W });
+  const p = pattern({ before, after, material: quiet, reseeds: 16 });
+  assert.equal(p.moved, true);
+  assert.equal(p.opened, true);
+  assert.ok(p.displacement > p.reseedNull);
 });
 
-test("flat material still earns a ground, and it is a narrow one", () => {
-  const g = constructGround({ material: flat, seed: 5 });
-  assert.equal(volume(g), 0, "nothing can differ from a perfectly flat world");
-  const out = perceive({ material: flat, seed: 5 });
-  // Observed equals the entire support, so there is nothing to say. Not a
-  // finding, not an error: a boundary the system reports rather than crosses.
-  assert.ok(!isGap(out) || out.gap === "exceeds_witness");
+test("narrowing the ground is still a pattern — that one is extraction", () => {
+  // Both make a difference. Only the sign says which kind. A system that
+  // measured pattern without the sign would call this health.
+  const before = ground({ material: quiet, draws: 256, window: W });
+  const after = ground({ material: [...quiet, 2, 2], draws: 256, window: W });
+  const p = pattern({ before, after, material: quiet, reseeds: 16 });
+  assert.equal(p.moved, true);
+  assert.equal(p.opened, false);
 });
 
-test("plural grounds disagree, and disagreement is the only self-check there is", () => {
-  const shuffled = constructGround({ material: bursty, perturbation: "shuffle", seed: 2 });
-  const resampled = constructGround({ material: bursty, perturbation: "resample", seed: 2 });
-  const observed = (volume(shuffled) > 0 ? Math.min(...shuffled.samples) : 0) + 0.01;
-  const figure = perceive({ material: bursty, observed, grounds: [shuffled, resampled] });
-  const d = isGap(figure) ? figure : disagreement(figure);
-  // Either the two perturbations disagree measurably, or one of them refuses.
-  // What is forbidden is silent agreement between a single ground and itself.
-  assert.ok(isGap(d) || typeof d.spread === "number");
+test("censored differences are kept, not dropped — the split is the signal", () => {
+  const shuffled = ground({ material: bursty, draws: 256, window: W, perturbation: "shuffle" });
+  const resampled = ground({ material: bursty, draws: 256, window: W, perturbation: "resample" });
+  const observed = burstiness(bursty, { window: W });
+  const d = disagreement([difference(observed, shuffled), difference(observed, resampled)]);
+  assert.equal(d.n, 2);
+  // One perturbation calling something surfeit while the other places it is the
+  // most informative thing this system can produce, and it used to be discarded.
+  assert.ok(d.censored > 0 || typeof d.spread === "number");
 });
 
 test("one ground cannot disagree with itself", () => {
-  const g = constructGround({ material: bursty, seed: 1 });
-  const figure = perceive({ material: bursty, observed: Math.min(...g.samples), grounds: [g] });
-  const d = disagreement(figure);
-  assert.ok(isGap(d));
-  assert.equal(d.gap, "unresolved_pattern");
+  const g = ground({ material: quiet, draws: 256, window: W });
+  assert.ok(isGap(disagreement([difference(1.4, g)])));
 });
