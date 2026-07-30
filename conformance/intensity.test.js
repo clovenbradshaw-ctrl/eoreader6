@@ -151,6 +151,20 @@ test("Whitehead (iii) is refuted here: intensity tracks dismissal, not contrast 
   // Kept as a tripwire, not as an endorsement: if contrast held ever starts
   // outperforming dismissal, this test breaks, and that break is the signal that
   // the superject work landed.
+  //
+  // ADDENDUM — the superject work has since landed (objectify/nexus,
+  // superject.test.js) and this tripwire DID NOT break. Re-run one grain up,
+  // over a nexus of 509 satisfactions, same sweep design: placed 0.000, split
+  // 0.000, dismissed 0.863, association beating 5,000/5,000 permuted trials.
+  // The refutation is unchanged and slightly stronger.
+  //
+  // Necessary but not sufficient, and the reason is structural: a ground is
+  // built by PERTURBING material, and both perturbation families destroy order,
+  // so ananda — a property of that order-free null — cannot see order at any
+  // grain. Objectifying satisfactions gives a successor its components; it does
+  // not give the successor a ground that can be surprised by how they are
+  // arranged. See superject.test.js, "order is legible to the figure and
+  // marginal in the intensity."
   const rows = [];
   for (let amp = 0; amp <= 14; amp += 0.125) {
     for (const len of [2, 3, 5, 8, 13]) {

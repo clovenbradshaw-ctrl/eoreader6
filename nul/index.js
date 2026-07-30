@@ -353,6 +353,71 @@ export const disagreement = (differences) => {
 };
 
 /**
+ * Objective immortality: what a satisfaction adds to what comes after it.
+ *
+ * `keep()` is half of Whitehead's clause — "it closes up the entity." This is
+ * the other half — "and yet is the superject adding its character to the
+ * creativity whereby there is a becoming of entities superseding the one in
+ * question." Without it the engine has subjects and no superjects: every
+ * witnessed record is frozen, returned, and prehended by nothing.
+ *
+ * The character it adds is displacement in units of the reseeding null: how far
+ * this figure moved the ground beyond what the material moves it by itself.
+ * That ratio is the engine's name for "an origination not wholly traceable to
+ * the mere data" — the null IS the mere data.
+ *
+ * Returns a value, never a ground. A superject prehended as a prior would close
+ * the successor's ground and this would be sclerosis with extra steps; prehended
+ * as datum it can still be differed from. The depositor cannot read its own
+ * deposit, and needs no machinery to be stopped: its ground is kept, and a kept
+ * ground cannot be perceived through. Keeping makes a satisfaction unusable
+ * here; objectifying makes it usable there.
+ */
+export const objectify = (record) => {
+  if (isGap(record)) return record;
+  if (!record || !record.ground || !record.figure || !record.pattern) return gap("no_ground", { reason: "not a witnessed record" });
+  if (record.ground.kept !== true)
+    return gap("no_ground", { reason: "a satisfaction that never closed its entity is not a superject" });
+  if (record.pattern.moved !== true) return gap("made_no_difference", { reason: "nothing to pass on" });
+  if (!(record.pattern.reseedNull > 0)) return gap("degenerate_ground", { reason: "no null to express the excess in" });
+
+  const giver = record.ground.provenance ?? record.ground.from;
+  if (giver == null) return gap("unreceived_origin", { reason: "a satisfaction passed on must still name its giver" });
+
+  return Object.freeze({
+    value: record.pattern.displacement / record.pattern.reseedNull,
+    rank: record.figure.rank ?? null,
+    opened: record.pattern.opened,
+    provenance: giver,
+  });
+};
+
+/**
+ * A nexus: antecedent members objectified in the formal constitution of what
+ * follows. The material a successor's nothing is built by perturbing.
+ *
+ * Whitehead (ii) puts the objectification in the *formal constitution* — the
+ * process, not the outcome — so a nexus is material and nothing else. Its order
+ * is the order of the succession, which is real, and which perturbing destroys:
+ * that is what makes a statistic over it non-vacuous (SEED.md #4).
+ *
+ * One grain up from the material a figure was measured in, and unit-consistent
+ * with itself: every member is an excess-over-its-own-null, so satisfactions
+ * built over different domains are comparable here and nowhere else.
+ */
+export const nexus = (records) => {
+  if (!Array.isArray(records) || records.length === 0) return gap("empty_material", { reason: "a nexus of nothing" });
+  const members = records.map(objectify);
+  const bad = members.find(isGap);
+  if (bad) return bad;
+  return Object.freeze({
+    material: Object.freeze(members.map((m) => m.value)),
+    givers: Object.freeze(members.map((m) => m.provenance)),
+    n: members.length,
+  });
+};
+
+/**
  * Testify from a ground you kept.
  *
  * A difference that made no difference is not information, so it is not
