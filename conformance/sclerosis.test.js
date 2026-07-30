@@ -17,6 +17,9 @@ import { ground, difference, pattern, reZero, volume, burstiness, disagreement, 
 const W = 5;
 const quiet = [1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 2];
 const bursty = [...quiet, 9, 9, 9, 9, 9];
+// A ground whose ananda clears its own reseeding null, so the sign has both
+// halves available. `quiet` has only the widening half.
+const roomy = Array.from({ length: 40 }, (_, i) => i % 7);
 
 test("the vital sign is not a measure of how many times we sampled", () => {
   // Range grows without bound in `draws`; interquartile does not. If ananda were
@@ -72,11 +75,18 @@ test("a burst does, and it opens the ground", () => {
 test("narrowing the ground is still a pattern — that one is extraction", () => {
   // Both make a difference. Only the sign says which kind. A system that
   // measured pattern without the sign would call this health.
-  const before = ground({ material: quiet, draws: 256, window: W });
-  const after = ground({ material: [...quiet, 2, 2], draws: 256, window: W });
-  const p = pattern({ before, after, material: quiet, reseeds: 16 });
+  //
+  // This used to be asserted on [...quiet, 2, 2], where volume(after) equals
+  // volume(before) exactly: an exact tie, read as "extraction" only because the
+  // sign was a bare `>`. The case had to be rebuilt on a ground with room to
+  // lose — quiet's ananda (0.2) does not exceed its own reseeding null (0.2),
+  // so narrowing is not sayable from it at all. See intensity.test.js.
+  const before = ground({ material: roomy, draws: 256, window: W });
+  const after = ground({ material: [...roomy, ...Array(40).fill(3)], draws: 256, window: W });
+  const p = pattern({ before, after, material: roomy, reseeds: 16 });
   assert.equal(p.moved, true);
   assert.equal(p.opened, false);
+  assert.ok(Math.abs(p.volumeDelta) > p.volumeNull, "extraction must clear the null it is measured against");
 });
 
 test("censored differences are kept, not dropped — the split is the signal", () => {

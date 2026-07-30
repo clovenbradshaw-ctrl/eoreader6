@@ -229,6 +229,10 @@ export const difference = (observed, g) => {
  * null is the ground's own reseeding variation — same spec, same material, fresh
  * seed. `opened` carries the sign: a difference that narrows the ground is still
  * a pattern, and it is extraction. Only widening is encounter.
+ *
+ * The sign is measured against that same null, and is `null` when the volume
+ * moved no further than reseeding alone moves it. A sign is a claim; it is owed
+ * a null exactly like the magnitude is.
  */
 export const pattern = ({ before, after, material, reseeds }) => {
   for (const g of [before, after]) {
@@ -250,11 +254,14 @@ export const pattern = ({ before, after, material, reseeds }) => {
   };
 
   const moved_by = displacement(after, before);
+  const volumeBefore = volume(before);
   let nullMax = 0;
+  let volumeNull = 0;
   for (let r = 1; r <= reseeds; r++) {
     const g = reZero(before, { material, seed: before.spec.seed + r * before.spec.draws });
     if (isGap(g)) return g;
     nullMax = Math.max(nullMax, displacement(g, before));
+    volumeNull = Math.max(volumeNull, Math.abs(volume(g) - volumeBefore));
   }
   if (nullMax === 0)
     return gap("degenerate_ground", {
@@ -262,13 +269,25 @@ export const pattern = ({ before, after, material, reseeds }) => {
       reseeds,
     });
 
-  const moved = moved_by > nullMax;
+  // The SIGN gets the same null the magnitude gets. `opened` used to be the bare
+  // inequality volume(after) > volume(before) — measured, on real arrivals, to
+  // fall inside this null 77.8% of the time, to flip on a mere reseed 41.1% of
+  // the time, and to call an exact tie "extraction" 15.0% of the time. That is
+  // SEED.md #3 ("a null of zero width is refused, everywhere, at every level")
+  // and #4 in the one place the seed calls the whole physiology. Three-valued,
+  // because SEED.md #8: a gap is a result, and "no sign sayable" is a real
+  // finding about this arrival — not a quiet vote for extraction.
+  const volumeDelta = volume(after) - volumeBefore;
+  const opened = volumeNull === 0 || Math.abs(volumeDelta) <= volumeNull ? null : volumeDelta > 0;
+
   return Object.freeze({
-    moved,
+    moved: moved_by > nullMax,
     displacement: moved_by,
     reseedNull: nullMax,
     censoredAt: 1 / reseeds,
-    opened: volume(after) > volume(before),
+    opened,
+    volumeDelta,
+    volumeNull,
   });
 };
 
