@@ -547,3 +547,65 @@ prior that is wrong about this document.
 
 Proposed as a constitutional amendment in `specs/chrome-is-recognised.md`
 (a PROPOSAL — IV.2, agents propose and humans dispose).
+
+## EARNED: the prequential run completes, and the scoped path is the same belief
+
+`node scripts/scoped-prediction.mjs`. Heidi on NET material — container
+subtracted at offset 2,470 — standpoint at form 46,637 (75%), present set by
+surf's coordinate division at form 45,596. 132 sentences x 12 withheld forms =
+1,584 sealed, revealed, leakage-guarded targets. `order=4 alpha=0.7 every=30
+hop=4 stride=5 seed=20260731`.
+
+### Teacher-forced: the representation, isolated
+
+| | cumulative loss | per form | entries sealed | seal time |
+|---|---|---|---|---|
+| scoped | 11,238 | **7.095** | 581,328 | 384ms |
+| full | 11,238 | **7.095** | 5,513,904 | 4,205ms |
+
+**EXACT agreement, at 10.9x cheaper sealing over 9.5x fewer entries.** The
+settled ground carried by reference is the same belief, not an approximation
+of it — proved on real material, not only on a fixture.
+
+### Free-running: the reader, honestly
+
+| | per form |
+|---|---|
+| scoped | 11.051 |
+| full | 11.015 |
+
+The two diverge by 57 nats over 1,584 targets (0.3%) because they are
+genuinely different emitters free-running: the scoped one takes its mode over
+the LIVE support and the full one over everything, so a differing choice at any
+step compounds. That difference is a decision declared on the emission as
+`selection_scope`, not a defect — and **the cost of speaking only from what is
+in play is 0.3%, not the 3x the first run reported.**
+
+### THREE DEFECTS, ALL IN THE SCORER, NONE FOUND BY READING
+
+The first run reported scoped 30.9 against full 11.0 and I nearly published it
+as "scoping costs 3x". Every one of the three was found by refusing to trust a
+number, and the third was found only because the second control still failed.
+
+1. **The settled ground consulted only as a fallback.** The first scorer read
+   `step.live[form]` and asked memory only when the present had no entry. A
+   form BOTH grounds know receives mass from both, and belief.js sums them.
+   Under-priced every common word: 0.045 against 0.033 on a three-form target.
+   Caught by the conformance identity test.
+
+2. **The free-running comparison was not a control.** Two emitters walking
+   different paths price a target at different contexts, so it measures the
+   emitters, not the representation. Teacher-forcing holds contexts identical
+   and is the actual control. `emitScoped` could not teacher-force at all,
+   which is a real gap given the task record DECLARES conditioning.
+
+3. **NO UNSEEN RESERVE — the one that produced the 3x.** A form neither ground
+   has met is UNMET, and `sequenceLogLoss` routes it to the reserve. The
+   scoped scorer charged the finite floor: **708 nats for one unmet form,
+   dominating an entire continuation** — 815 against 81 on one twelve-form
+   target. Conditional on `covers_vocabulary`, which a scoped emission may
+   honestly assert because both its grounds back off to order 0.
+
+The conformance fixture never exposed defect 3 because its small vocabulary
+had no unmet forms. **A fixture with no unmet form cannot test the reserve**,
+which is exactly the sort of hole the repo's own history keeps recording.

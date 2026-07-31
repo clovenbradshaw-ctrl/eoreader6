@@ -256,10 +256,30 @@ export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, 
  * apparatus: a stretch where the reader keeps reaching back is a stretch its
  * present does not cover.
  */
-export const emitScoped = ({ live, settled, context, horizon, selection, seed = 0, order }) => {
+export const emitScoped = ({
+  live,
+  settled,
+  context,
+  horizon,
+  selection,
+  seed = 0,
+  order,
+  conditioning = "free-running",
+  target = null,
+}) => {
   if (!Number.isInteger(horizon) || horizon < 1) throw new TypeError("standpoint: horizon must be an integer >= 1");
   if (selection !== "mode" && selection !== "sampled")
     throw new TypeError("standpoint: selection must be mode or sampled, and is never defaulted");
+  // The same distinction emit.js draws, and for the same reason: free-running
+  // conditions each step on the emitter's OWN previous choice and
+  // teacher-forced hands the true prefix back between steps. They score
+  // dramatically differently for reasons that have nothing to do with
+  // competence at continuing anything, so which one ran is stamped on the
+  // emission rather than inferred.
+  if (conditioning !== "free-running" && conditioning !== "teacher-forced")
+    throw new TypeError("standpoint: conditioning must be free-running or teacher-forced, and is never defaulted");
+  if (conditioning === "teacher-forced" && (!Array.isArray(target) || target.length < horizon))
+    throw new TypeError("standpoint: teacher-forced conditioning needs the true prefix it is being handed");
 
   let a = (seed | 0) + 0x6d2b79f5;
   const uniform = () => {
@@ -278,7 +298,10 @@ export const emitScoped = ({ live, settled, context, horizon, selection, seed = 
   for (let h = 0; h < horizon; h++) {
     const d = scopedDistribution({ live, settled, context: ctx });
     if (isGap(d)) return d;
-    steps.push(d);
+    // The context is carried ON the step. A scorer needs it to ask the settled
+    // ground what it would have placed here, and `order` forms per step is the
+    // trade that removes a whole remembered vocabulary per step.
+    steps.push(Object.freeze({ ...d, context: Object.freeze([...ctx]) }));
 
     let form = null;
     if (selection === "mode") {
@@ -326,16 +349,33 @@ export const emitScoped = ({ live, settled, context, horizon, selection, seed = 
 
     if (form === null) return gap("no_ground", { reason: "neither the present nor what it settled would say anything", at: h });
     emitted.push(form);
-    ctx = [...ctx, form].slice(-Math.max(1, reach));
+    // The one line that is the whole distinction — the same shape emit.js has.
+    const nextForm = conditioning === "free-running" ? form : target[h];
+    ctx = [...ctx, nextForm].slice(-Math.max(1, reach));
   }
 
   return Object.freeze({
-    kind: "sequence",
+    // A DIFFERENT KIND, deliberately. `sequence-log-loss` reads a materialised
+    // probs object per step and would silently price every remembered form at
+    // the floor here. Declaring the kind is what makes the scorer refuse
+    // rather than mis-score — see prediction/scoring.js, scopedSequenceLogLoss.
+    kind: "sequence-scoped",
     register: "imagined",
+    // TRUE BY CONSTRUCTION, and asserted rather than assumed. Both grounds
+    // back off to order 0, whose context is empty and whose successor table
+    // therefore holds every form that ground has ever met. So a form absent
+    // from a scoped step is genuinely UNMET by both, which is the only thing
+    // that makes routing it to the reserve honest — see prediction/scoring.js
+    // on the loophole this condition exists to close.
+    covers_vocabulary: true,
     selection,
+    conditioning,
     selection_scope: "live-support — the mode is over what is in play, never over everything remembered",
-    conditioning: "free-running",
     emitted: Object.freeze(emitted),
+    // Each step carries the CONTEXT it was taken at — at most `order` forms —
+    // so a scorer can query the settled ground without the emission having to
+    // carry a copy of it. That trade is the whole point: `order` forms per
+    // step instead of the whole remembered vocabulary per step.
     steps: Object.freeze(steps),
     settled: settled === null ? null : Object.freeze({ hash: settled.hash, at: settled.at }),
     reached_back: reachedBack,

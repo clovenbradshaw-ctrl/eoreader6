@@ -184,3 +184,76 @@ test("the perished past may say a form the live ground has never met", () => {
   const m = scopedMassOf({ live, settled, context: ["the", "old"], form: "walked" });
   assert.ok(m.p > 0, "the reader must be able to remember its own past");
 });
+
+// ── Scoring: the scoped path must price a target identically ───────────────
+
+test("EXACT: scoped scoring agrees with unscoped scoring on the same belief", async () => {
+  const { emitScoped } = await import("../packages/engine/generation/standpoint.js");
+  const { emitSequence } = await import("../packages/engine/generation/emit.js");
+  const { score } = await import("../packages/engine/prediction/scoring.js");
+  const { live, settled, full } = build();
+
+  // The same targets, priced two ways: through a materialised distribution and
+  // through a live support plus a reference.
+  const targets = [
+    ["the", "young", "girl"],
+    ["the", "old", "man"],
+    ["ran", "quickly", "."],
+    ["walked", "slowly", "."],
+  ];
+  for (const target of targets) {
+    const context = ["."];
+    // TEACHER-FORCED ON BOTH SIDES, and that is what makes this an identity
+    // test at all. Free-running, the two emitters walk DIFFERENT paths — the
+    // scoped one takes its mode over the live support and the full one over
+    // everything — so their contexts diverge and they price a target at
+    // different places. That is two emitters being compared, not two ways of
+    // scoring one belief. Handing both the true prefix holds the contexts
+    // identical, so the only thing left that could differ is the arithmetic.
+    const scoped = emitScoped({ live, settled, context, horizon: target.length, selection: "mode", order: ORDER, conditioning: "teacher-forced", target });
+    const plain = emitSequence({ belief: full, context, horizon: target.length, conditioning: "teacher-forced", selection: "mode", target });
+
+    const a = score(scoped, target, { rule: "scoped-sequence-log-loss", settled });
+    const b = score(plain, target, { rule: "sequence-log-loss" });
+    assert.ok(
+      Math.abs(a.loss - b.loss) < 1e-9,
+      `loss disagrees on ${JSON.stringify(target)}: scoped ${a.loss} vs full ${b.loss}`,
+    );
+  }
+});
+
+test("a scoped emission cannot be scored without the ground it referenced", async () => {
+  const { emitScoped } = await import("../packages/engine/generation/standpoint.js");
+  const { score } = await import("../packages/engine/prediction/scoring.js");
+  const { live, settled } = build();
+  const e = emitScoped({ live, settled, context: ["."], horizon: 3, selection: "mode", order: ORDER });
+  // Absent ground: refuse. Scoring from the live support alone would price
+  // every remembered form at the floor and report it as a measurement.
+  assert.throws(() => score(e, ["the", "young", "girl"], { rule: "scoped-sequence-log-loss" }), /not a zero/);
+});
+
+test("a substituted settled ground is refused by its hash", async () => {
+  const { emitScoped } = await import("../packages/engine/generation/standpoint.js");
+  const { score } = await import("../packages/engine/prediction/scoring.js");
+  const { live, settled } = build();
+  const e = emitScoped({ live, settled, context: ["."], horizon: 3, selection: "mode", order: ORDER });
+
+  const other = createLayer({ id: "p", tier: "received", world: "this", giver: "g", order: ORDER, gamma: 1, alpha: ALPHA });
+  other.train([...PAST, "unexpected", "arrival", "."]);
+  const swapped = settleGround({ layer: other, at: BOUNDARY, giver: "g" });
+  // The seal covers the emitter's freedom; the hash covers what it inherited.
+  assert.throws(
+    () => score(e, ["the", "young", "girl"], { rule: "scoped-sequence-log-loss", settled: swapped }),
+    /this is a substitution/,
+  );
+});
+
+test("the wrong rule refuses a scoped emission rather than mis-scoring it", async () => {
+  const { emitScoped } = await import("../packages/engine/generation/standpoint.js");
+  const { score } = await import("../packages/engine/prediction/scoring.js");
+  const { live, settled } = build();
+  const e = emitScoped({ live, settled, context: ["."], horizon: 3, selection: "mode", order: ORDER });
+  const wrong = score(e, ["the", "young", "girl"], { rule: "sequence-log-loss" });
+  assert.equal(wrong.proper, false, "a materialised-probs rule must not silently read a scoped emission");
+  assert.equal(wrong.loss, null);
+});
