@@ -65,7 +65,23 @@ export const UNSEEN = "\u0000UNSEEN";
 
 export const TIERS = Object.freeze(["read", "received"]);
 
-const ctxKey = (tokens, from, order) => (order === 0 ? "" : tokens.slice(from - order, from).join(""));
+/**
+ * The separator inside a context key.
+ *
+ * Named and escaped rather than written inline, because it began life as an
+ * invisible literal control character and the second place that built a key
+ * spelled it as the empty string instead. The two agreed for single-form
+ * contexts and disagreed for every longer one, so order-2-and-deeper lookups
+ * missed silently and fell back to a shorter context — which is
+ * indistinguishable, from the outside, from a belief that is merely weak.
+ * Caught by the fast-path identity test in conformance, not by reading.
+ *
+ * It must be a character no tokenizer emits, or `the cat` and `thecat` would
+ * be the same context.
+ */
+const CTX_SEP = "\u0001";
+
+const ctxKey = (tokens, from, order) => (order === 0 ? "" : tokens.slice(from - order, from).join(CTX_SEP));
 
 /**
  * One layer of belief: counts over forms at every context order 0..order,
@@ -136,7 +152,7 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
     const out = new Map();
     let remaining = 1;
     for (let j = Math.min(order, context.length); j >= 0; j--) {
-      const key = j === 0 ? "" : context.slice(context.length - j).join("");
+      const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
       const entry = tables[j].get(key);
       if (!entry) continue;
       const total = cellValue(entry.total);
@@ -180,10 +196,43 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
       return this;
     },
     successors,
+    /**
+     * The mass this layer puts on ONE form, without materialising the whole
+     * distribution.
+     *
+     * Algebraically identical to reading `successors(context).get(form)` — the
+     * same interpolation, the same Witten-Bell shares — but O(order) lookups
+     * instead of O(vocabulary) iterations. That difference is not a
+     * micro-optimisation: `candidates.js` needs a causal surprisal for EVERY
+     * token it consumes in order to feed atmosphere, and doing that through
+     * the full distribution made a book-length read quadratic in vocabulary
+     * (measured: ~1.3e9 map iterations on Frankenstein, before this existed).
+     */
+    massOf(context, form) {
+      let mass = 0;
+      let remaining = 1;
+      for (let j = Math.min(order, context.length); j >= 0; j--) {
+        const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
+        const entry = tables[j].get(key);
+        if (!entry) continue;
+        const total = cellValue(entry.total);
+        if (!(total > 0)) continue;
+        const lambda = total / (total + alpha);
+        const share = remaining * lambda;
+        const cell = entry.succ.get(form);
+        if (cell) mass += (share * cellValue(cell)) / total;
+        remaining -= share;
+        if (remaining <= 0) break;
+      }
+      // The leftover is this layer's unseen reserve, returned alongside so a
+      // caller scoring a form the layer never met can price it the same way
+      // `distribution` would, instead of taking the zero-probability floor.
+      return { mass, reserve: Math.max(0, remaining) };
+    },
     /** Evidence this layer holds for `context` at its deepest matching order. */
     evidence(context) {
       for (let j = Math.min(order, context.length); j >= 0; j--) {
-        const key = j === 0 ? "" : context.slice(context.length - j).join("");
+        const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
         const entry = tables[j].get(key);
         if (entry) {
           const total = cellValue(entry.total);
@@ -379,8 +428,41 @@ export const createBelief = ({ layers }) => {
     });
   };
 
+  /**
+   * p(form | context) across the layered belief, without building the
+   * distribution. Same mixture as `distribution`, same lambda, same peer
+   * weighting among gifts — see `createLayer.massOf` for why this exists.
+   * Returns { p, reserve }. `p` is 0 for a form no layer has met, and
+   * `reserve` is the mass this belief holds for "a form I have not met" — the
+   * same quantity `distribution` parks under UNSEEN, so a caller can price an
+   * unmet form exactly as the full distribution would.
+   */
+  const probabilityOf = (context, form) => {
+    const ctx = Array.isArray(context) ? context : [];
+    const readEvidence = readLayer.evidence(ctx);
+    const lambda = readEvidence / (readEvidence + readLayer.alpha);
+    const own = readLayer.massOf(ctx, form);
+    let p = lambda * own.mass;
+    let reserve = lambda * own.reserve;
+    const giftShare = 1 - lambda;
+    if (giftShare > 0 && received.length > 0) {
+      const weights = received.map((l) => l.evidence(ctx) + l.alpha);
+      const weightTotal = weights.reduce((a, b) => a + b, 0);
+      received.forEach((layer, k) => {
+        const share = giftShare * (weights[k] / weightTotal);
+        const out = layer.massOf(ctx, form);
+        p += share * out.mass;
+        reserve += share * out.reserve;
+      });
+    } else if (giftShare > 0) {
+      reserve += giftShare;
+    }
+    return { p, reserve };
+  };
+
   return Object.freeze({
     distribution,
+    probabilityOf,
     mode,
     draw,
     // The longest context any layer can use. Callers pass histories that are

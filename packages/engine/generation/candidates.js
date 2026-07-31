@@ -43,11 +43,10 @@
 //
 // Pure: no clock, no randomness, no I/O. Read SEED.md first.
 
-import { createLayer, createBelief, UNSEEN } from "./belief.js";
+import { createLayer, createBelief } from "./belief.js";
 import { emitSequence } from "./emit.js";
 import { asEmitter, plainBelief } from "./baselines.js";
 import { createRegimeTracker } from "../loops/atmosphere.js";
-import { isGap } from "../../../nul/index.js";
 
 /**
  * The reader's fading memory. gamma < 1 or this is just markov-k with extra
@@ -108,14 +107,14 @@ export const regimeBelief = ({ order, alpha, window, draws, tolerance, seed = 0 
   const resetAt = [];
 
   const consume = (tok) => {
-    // Causal surprisal: what this token cost the belief that had not yet met it.
+    // Causal surprisal: what this token cost the belief that had not yet met
+    // it. Read through `probabilityOf` rather than through the full
+    // distribution — this runs once per token of the whole material, and
+    // materialising a vocabulary-sized object here made the read quadratic.
     const ctx = seen.slice(Math.max(0, seen.length - belief.maxOrder));
-    const d = belief.distribution(ctx);
-    let surprisal = 0;
-    if (!isGap(d)) {
-      const p = d.probs[tok] ?? d.probs[UNSEEN] ?? 0;
-      surprisal = p > 0 ? -Math.log(p) : -Math.log(Number.MIN_VALUE);
-    }
+    const { p, reserve } = belief.probabilityOf(ctx, tok);
+    const mass = p > 0 ? p : reserve;
+    const surprisal = mass > 0 ? -Math.log(mass) : -Math.log(Number.MIN_VALUE);
 
     seen.push(tok);
     belief.readLayer.observe(seen, seen.length - 1);

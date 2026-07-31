@@ -204,6 +204,28 @@ test("a belief places mass on every form it has met — so its reserve claim is 
     assert.ok(d.probs[form] > 0, `met "${form}" but placed no mass on it — the reserve claim would be a lie`);
 });
 
+test("the fast path and the full distribution are the same belief", () => {
+  // `probabilityOf` exists because building a vocabulary-sized distribution
+  // once per token made a book-length read quadratic. It is an optimisation of
+  // an identity, so the identity is pinned here: two code paths computing the
+  // same quantity is exactly the situation that drifts silently.
+  const gift = createLayer({ id: "g", tier: "received", giver: "elsewhere", order: 2, gamma: 1, alpha: 1 });
+  gift.train("the cat vanished into the night".split(" "));
+  for (const belief of [beliefOver(), createBelief({ layers: [readLayer(), gift] })]) {
+    for (const ctx of [[], ["the"], ["the", "cat"], ["never", "seen"]]) {
+      const d = belief.distribution(ctx);
+      for (const form of [...new Set(TOKENS), "vanished", "aardvark"]) {
+        const { p, reserve } = belief.probabilityOf(ctx, form);
+        assert.ok(
+          Math.abs(p - (d.probs[form] ?? 0)) < 1e-12,
+          `p(${form} | ${ctx.join(" ")}) disagreed: fast ${p} vs full ${d.probs[form] ?? 0}`,
+        );
+        assert.ok(Math.abs(reserve - (d.probs[UNSEEN] ?? 0)) < 1e-12, "and the reserves agree");
+      }
+    }
+  }
+});
+
 test("horizon mismatch is refused, never truncated", () => {
   const emission = emitSequence({ belief: beliefOver(), context: ["the"], horizon: 3, conditioning: "free-running", selection: "mode" });
   assert.throws(() => sequenceLogLoss(emission, ["cat", "sat"]), /horizon mismatch/);
