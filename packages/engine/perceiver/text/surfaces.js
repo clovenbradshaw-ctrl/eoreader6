@@ -23,6 +23,11 @@ const DIA_TO = { á:"a",à:"a",â:"a",ä:"a",é:"e",è:"e",ê:"e",ë:"e",í:"i",
 
 export const diaNorm = (t) => String(t ?? "").toLowerCase().trim().replace(DIA_RE, (c) => DIA_TO[c]);
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// SIG · Void · Tending — candidate referent surfaces, from the text's own
+// statistics. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "SIG", grain: "Ground" });
+
 const tokensOf = (id) => diaNorm(id).split(/\s+/).filter((t) => t.length > 2);
 
 /** Two NAMES corefer: containment, or a shared final token (surname). */

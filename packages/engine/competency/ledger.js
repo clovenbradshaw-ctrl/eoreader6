@@ -24,6 +24,11 @@
 
 import { canonicalHashSync } from "../../spec/canonical-json/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Paradigm · Tracing — the prequential fold: competency against declared
+// baselines, never nothing. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Pattern" });
+
 /** An empty ledger for one candidate on one task, against a declared baseline set. */
 export const createLedger = ({ task_id, candidate_id, baseline_ids, scoring_rule = "crps" }) => {
   if (typeof task_id !== "string" || !task_id) throw new TypeError("ledger: task_id is required");

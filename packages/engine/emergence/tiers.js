@@ -27,6 +27,11 @@
 
 import { bayesianSurprise } from "./surprise.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Lens · Binding — meaning folds on itself; atmosphere, lens, and
+// paradigm ARE priors. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Figure" });
+
 const HISTORY = 60; // how much of its own movement a tier remembers, for the rank test
 
 export const createTier = ({ name, gamma, quantile }) => {

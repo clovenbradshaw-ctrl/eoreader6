@@ -54,6 +54,11 @@
 
 import { ground, difference, volume, isGap, gap } from "../../../nul/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// SYN · Network · Composing — a whole composed from parts that already exist
+// (header CELL note above). Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "SYN", grain: "Pattern" });
+
 /**
  * Where a position stands to a standpoint — and every one of these is DECIDED,
  * not read off the indices.

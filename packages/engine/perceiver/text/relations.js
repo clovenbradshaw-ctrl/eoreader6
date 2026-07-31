@@ -21,6 +21,11 @@
 // The extraction is heuristic and declared as such. It will not fabricate:
 // no triple is emitted without a literal verb match in the clause.
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// CON · Link · Binding — subject · verb · object triples; the graph's
+// medium-specific mouth. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "CON", grain: "Figure" });
+
 export const RELATION_VERBS =
   "married|fought|led|wrote|built|destroyed|founded|ruled|served|worked|lived|died|born|moved|traveled|said|told|asked|gave|took|made|found|held|stood|sat|ran|walked|spoke|thought|knew|saw|heard|felt|wanted|needed|loved|hated|feared|hoped|believed|claimed|stated|argued|showed|proved|revealed|demonstrated|indicated|suggested|implied|meant|intended|planned|tried|attempted|managed|failed|succeeded|won|lost|beat|defeated|conquered|controlled|dominated|influenced|shaped|changed|transformed|developed|grew|improved|declined|fell|rose|increased|decreased|remained|stayed|became|turned|seemed|appeared|looked|sounded|tasted|smelled";
 

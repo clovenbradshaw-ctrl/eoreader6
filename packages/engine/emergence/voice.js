@@ -31,6 +31,12 @@
 // nothing here says which" is a result; guessing is the cardinal regression.
 
 export const TIERS = Object.freeze(["received", "derived"]);
+
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// DEF · Lens · Unraveling — who is speaking, or being cited; outside every
+// asserted voice, a typed gap. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "DEF", grain: "Figure" });
+
 export const MODES = Object.freeze(["speaks", "cited"]);
 
 export const createVoiceLog = () => ({ events: [], seq: 0 });

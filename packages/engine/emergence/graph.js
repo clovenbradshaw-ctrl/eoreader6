@@ -32,6 +32,11 @@
 
 import { bayesianSurprise } from "./surprise.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// SYN · Network · Composing — the prior is a graph; nodes are Entity, edges
+// Link, whole Network. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "SYN", grain: "Pattern" });
+
 const PRUNE_BELOW = 1e-4; // a relation decayed past this is forgotten, not carried as noise
 
 export const createGraph = ({ gamma }) => {

@@ -28,6 +28,21 @@
 // tolerance the length of the material finds none.
 
 import { ground, difference, isGap, gap, volume } from "../../../nul/index.js";
+import { cellOf } from "../operators.js";
+
+// The cells this organ occupies on the operator grid (engine/operators.js):
+// DEF · Atmosphere · Clearing, EVA · Atmosphere · Tending, REC · Atmosphere ·
+// Cultivating — the three refuse/witness/concede acts of the one regime.
+// Declared, checked by conformance. The event cells below are derived from
+// the algebra, never hand-listed.
+export const CELLS = Object.freeze([
+  Object.freeze({ op: "DEF", grain: "Ground" }),
+  Object.freeze({ op: "EVA", grain: "Ground" }),
+  Object.freeze({ op: "REC", grain: "Ground" }),
+]);
+
+const DEF_GROUND = cellOf("DEF", "Ground"); // Atmosphere · Clearing
+const REC_GROUND = cellOf("REC", "Ground"); // Atmosphere · Cultivating
 
 export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0 }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
@@ -75,12 +90,12 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
     if (isGap(d) && d.gap === "exceeds_witness" && d.direction === "above") {
       // DEF · Clearing — this material does not belong to the ground so far
       clearings++;
-      events.push({ at: i, op: "DEF", stance: "Clearing", direction: d.direction });
+      events.push({ at: i, op: "DEF", terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, direction: d.direction });
 
       if (clearings >= tolerance) {
         // REC · Cultivating — concede the ground and grow a new one here
         regions.push({ start: regionStart, end: i, ananda: volume(g), tended });
-        events.push({ at: i, op: "REC", stance: "Cultivating", reason: "ground conceded after repeated clearing" });
+        events.push({ at: i, op: "REC", terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, reason: "ground conceded after repeated clearing" });
         regionStart = i;
         g = null;
         clearings = 0;

@@ -83,6 +83,11 @@
 import { ground, difference, volume, isGap, gap } from "../../../nul/index.js";
 import { clearField, tendField, cultivateField } from "./turn.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Lens · Binding — one anticipation, one arrival, bound (header CELL
+// note above). Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Figure" });
+
 /**
  * Three outcomes, and two of them are not the same failure.
  *

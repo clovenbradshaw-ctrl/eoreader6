@@ -26,6 +26,11 @@
 const GUTENBERG_START = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
 const GUTENBERG_END = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// SEG · Field · Clearing — sentence segmentation; abbreviations are injected
+// priors, never a list. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "SEG", grain: "Ground" });
+
 export const stripContainer = (text) => {
   let s = String(text ?? "");
   let offset = 0;

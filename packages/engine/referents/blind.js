@@ -14,6 +14,11 @@
 
 const windowShape = (series, start, size) => series.slice(start, start + size);
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// SIG · Void · Tending — existence detection with no human-named prior;
+// noticing needs no name. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "SIG", grain: "Ground" });
+
 const distance = (a, b) => {
   let sum = 0;
   for (let i = 0; i < a.length; i++) sum += (a[i] - b[i]) ** 2;

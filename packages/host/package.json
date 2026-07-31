@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
-    "./corpus": "./corpus.js"
+    "./corpus": "./corpus.js",
+    "./surfer": "./surfer.js"
   }
 }
