@@ -23,6 +23,12 @@ const ALPHA = 0.7;
 const GAMMA = 0.99995; // decayed-belief's fading rate — same value RESULTS.md already earned on Frankenstein
 const PREFIX = 0; // no forms handed over: the whole sentence is imagined
 const HORIZON = 20; // forms withheld and scored; sentences longer than this are truncated, not dropped
+// DECLARED, not a convenience. Scoring every sentence in the last quarter is
+// ~1,000 draws x 6 emitters x 20 free-running steps, each materialising a
+// vocabulary-sized distribution, and it does not finish. Taking every Nth
+// sentence is a statement about which draws were scored, and a reader of the
+// numbers has to be told it rather than infer it from a runtime.
+const SENTENCE_STRIDE = 7;
 const READ_UP_TO = 0.75; // fraction of the book read before the reader is ever asked what comes next
 const SEED = 20260731;
 const WINDOW = 6; // atmosphere: the reach of the present
@@ -37,6 +43,7 @@ import { decayedBelief, regimeBelief } from "../packages/engine/generation/candi
 import { runGeneration } from "../packages/engine/generation/run.js";
 import { emitSequence, admissibleAsTestimony } from "../packages/engine/generation/emit.js";
 import { stripContainer, splitSentences } from "../packages/engine/perceiver/text/spans.js";
+import { isGap } from "../nul/index.js";
 
 const READ = process.argv[2] ?? "scripts/corpus/pg84.txt";
 const WORD = /[\p{L}\p{N}']+|[.,;:!?—"()]/gu;
@@ -90,7 +97,11 @@ const task = createGenerationTask({
 const started = process.hrtime.bigint();
 const out = runGeneration({
   tokens,
-  draws: walkSentenceCompletions(sentences, { warmupSentences, prefix: PREFIX, horizon: HORIZON }),
+  draws: (function* () {
+    let i = 0;
+    for (const d of walkSentenceCompletions(sentences, { warmupSentences, prefix: PREFIX, horizon: HORIZON }))
+      if (i++ % SENTENCE_STRIDE === 0) yield d;
+  })(),
   candidates,
   baselines,
   task,
@@ -158,7 +169,7 @@ for (let i = 0; i < evalSentences.length; i++) {
     });
     const truth = sentence.slice(0, Math.min(HORIZON, sentence.length));
     console.log(`at form ${seenForms.toLocaleString()} (${((seenForms / tokens.length) * 100).toFixed(1)}%)`);
-    if (out && !out.kind) {
+    if (isGap(out)) {
       console.log(`  [refused: ${out.gap}]`);
     } else {
       const crossing = admissibleAsTestimony(out);
