@@ -18,12 +18,49 @@ test("the doctrine is present, and the instrument is held outside the code", () 
   assert.ok(!existsSync(join(root, "nul", "cube.js")), "the cube is an instrument, not a runtime");
 });
 
+// Organs are earned. Data is staged. `bin` is the second kind and is listed
+// apart from the first so the distinction cannot erode: it holds language
+// priors on their way to eoPriors and has no importable surface. The test
+// below enforces that — the moment `bin` contains code it has become an organ
+// and has to be earned like one.
+const ORGANS = ["conformance", "discourse", "event_log", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
+const STAGED_DATA = ["bin"];
+
 test("only earned organs exist alongside the core", () => {
   const dirs = readdirSync(root, { withFileTypes: true })
     .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
     .map((e) => e.name)
     .sort();
-  assert.deepEqual(dirs, ["conformance", "discourse", "event_log", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"], `unearned organ planted: ${dirs.join(", ")}`);
+  assert.deepEqual(dirs, [...ORGANS, ...STAGED_DATA].sort(), `unearned organ planted: ${dirs.join(", ")}`);
+});
+
+test("staged data is data — bin carries no code", () => {
+  const walk = (dir) =>
+    readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+      e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)],
+    );
+  for (const file of walk(join(root, "bin"))) {
+    assert.ok(
+      /\.(json|md|txt|csv)$/.test(file),
+      `${file} is executable content in bin/ — a prior is data, and code there is an organ that was never earned`,
+    );
+  }
+});
+
+test("no module hardcodes what a language prior supplies", () => {
+  // The English abbreviations live in bin/priors/lang/en.json and nowhere else.
+  // A copy inside packages/ would make the prior decorative.
+  const en = JSON.parse(readFileSync(join(root, "bin/priors/lang/en.json"), "utf8"));
+  const spans = readFileSync(join(root, "packages/engine/perceiver/text/spans.js"), "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|[^:])\/\/.*$/gm, "$1");
+  for (const abbr of ["Mrs", "Prof", "Messrs", "Corp"]) {
+    assert.ok(
+      !new RegExp(`["']${abbr}["']`).test(spans),
+      `spans.js hardcodes "${abbr}" — that is English, and it belongs in a prior`,
+    );
+  }
+  assert.ok(en.abbreviations.includes("Mrs"), "the prior must carry what the derived fallback misses");
 });
 
 test("nothing is ported — no organ vocabulary has crept in", () => {
