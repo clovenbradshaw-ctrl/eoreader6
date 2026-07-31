@@ -391,6 +391,8 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstr
       return 0;
     },
     abstraction: abstraction ? Object.freeze({ id: abstraction.id, giver: abstraction.giver }) : null,
+    /** Has this layer ever met this form? The existence gate consults it. */
+    has: (form) => vocabulary.has(form),
     get vocabularySize() {
       return vocabulary.size;
     },
@@ -409,7 +411,7 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstr
  * two — "the material being read" is one thing, and two of them would make
  * groundedness ambiguous at precisely the moment it is load-bearing.
  */
-export const createBelief = ({ layers, rho }) => {
+export const createBelief = ({ layers, rho, referents = null }) => {
   if (!Array.isArray(layers) || layers.length === 0) throw new TypeError("belief: at least one layer is required");
   const read = layers.filter((l) => l.tier === "read");
   if (read.length !== 1)
@@ -428,6 +430,66 @@ export const createBelief = ({ layers, rho }) => {
   // log w_l, one per received layer, all equal at the start: before this
   // reader has met any of this material, no gift has earned anything and
   // pretending otherwise would be a prior on the priors that nobody declared.
+  /**
+   * THE EXISTENCE GATE — may a gift say this form at all?
+   *
+   * Admitted if this book has met it, OR if at least two independent givers
+   * attest it.
+   *
+   * The first version of this gate admitted only forms the read text had
+   * already met, and that was too strict in a way that defeats the point of
+   * having read anything else: a reader confined to the vocabulary of the book
+   * in front of it can never learn a word, and "having read widely" would buy
+   * nothing but reordering. What actually went wrong on real material was
+   * narrower — reading Frankenstein against Moby-Dick produced `peleg`, a
+   * named individual who exists in exactly one world.
+   *
+   * So the question is not "is this word ours" but "is this word OF THIS
+   * UNIVERSE", and SEED.md #6 already says how to ask it: plural grounds, and
+   * their disagreement is the only self-check. A form only one giver attests
+   * is that giver's own — its characters, its places, its proper names. A form
+   * several independent givers attest is the shared world's, and borrowing it
+   * is how a reader's vocabulary grows at all.
+   *
+   * The threshold is structural rather than tuned: one versus more than one,
+   * the same singleton/plural distinction the repo uses everywhere instead of
+   * a hand-set constant. Noise controls are excluded from attestation — a
+   * shuffled gift carries its source's vocabulary exactly, so counting it
+   * would let a single giver attest itself twice and vote its own referents in.
+   */
+  const attestors = new Map();
+  const sources = received.filter((l) => !l.id.startsWith("shuffled:"));
+  const isReferent = typeof referents === "function" ? referents : (f) => referents?.has?.(f) === true;
+
+  const attestedBy = (form) => {
+    let n = attestors.get(form);
+    if (n === undefined) {
+      n = 0;
+      for (const l of sources) if (l.has(form)) n++;
+      attestors.set(form, n);
+    }
+    return n;
+  };
+
+  const admits = (form) => {
+    if (readLayer.has(form)) return true; // our own world, referents included
+    // A REFERENT DOES NOT CROSS. Attestation by two givers is the right bar for
+    // ordinary vocabulary and much too weak here: `elizabeth`, `london` and
+    // `god` are attested by several worlds and are exactly the things that must
+    // not travel. A name is the existence tier — it picks out a particular in
+    // one world — and importing it does not enrich this book's vocabulary, it
+    // populates this book with somebody else's characters.
+    //
+    // "Or at least require very high intensity" has a reading here that costs
+    // no constant: climb the ladder of structural quantifiers rather than pick
+    // a number. One giver, more than one, ALL of them. A referent every
+    // independent world attests is not really a referent of any of them — it is
+    // furniture of the shared world (`god`, `england`) — and unanimity is the
+    // strongest bar expressible without inventing a threshold.
+    const n = attestedBy(form);
+    return isReferent(form) ? sources.length > 0 && n === sources.length : n >= 2;
+  };
+
   const logW = new Map(received.map((l) => [l.id, 0]));
   const relevanceObservations = { n: 0 };
   // The discounted count of encounters the weights are a sum over: Z <- rho*Z + 1.
@@ -510,6 +572,7 @@ export const createBelief = ({ layers, rho }) => {
     const grounded = new Set();
 
     let readMass = 0;
+    let giftMass = 0;
     for (const [form, p] of readOut.successors) {
       const m = lambda * p;
       if (m <= 0) continue;
@@ -531,12 +594,19 @@ export const createBelief = ({ layers, rho }) => {
       received.forEach((layer, k) => {
         const share = giftShare * earned[k];
         const out = layer.successors(ctx);
+        // THE EXISTENCE GATE — see `admits`. A gift may place mass only on forms
+        // of this universe, and its structure is renormalised over those.
+        let admissible = 0;
+        for (const [form, p] of out.successors) if (admits(form)) admissible += p;
+        if (!(admissible > 0)) return; // this gift has nothing sayable here
         let mass = 0;
         for (const [form, p] of out.successors) {
-          const m = share * p;
+          if (!admits(form)) continue;
+          const m = (share * p) / admissible;
           if (m <= 0) continue;
           probs[form] = (probs[form] ?? 0) + m;
           mass += m;
+          giftMass += m;
         }
         attribution[layer.id] = (attribution[layer.id] ?? 0) + mass;
       });
@@ -567,7 +637,13 @@ export const createBelief = ({ layers, rho }) => {
       attribution: Object.freeze(attribution),
       grounded: Object.freeze([...grounded]),
       read_mass: readMass,
-      received_mass: Math.max(0, placed - readMass),
+      // Summed from what the gifts actually placed, NOT derived as
+      // (placed - readMass). The subtraction accumulates float error, so a
+      // read-only belief reported a received mass of ~1e-17 instead of zero —
+      // and since the crossing now turns on "was any gift audible", that
+      // epsilon refused every read-only continuation as testimony. A gate that
+      // fires on rounding noise is worse than no gate.
+      received_mass: giftMass,
       unseen_mass: reserve,
       lambda_read: lambda,
     });
@@ -675,9 +751,23 @@ export const createBelief = ({ layers, rho }) => {
       const earned = shares();
       received.forEach((layer, k) => {
         const share = giftShare * earned[k];
-        const out = layer.massOf(ctx, form);
-        p += share * out.mass;
-        reserve += share * out.reserve;
+        // The same existence gate `distribution` applies, and it must be the
+        // same or the fast path and the full distribution stop being one
+        // belief. Renormalising needs the gift's admissible total, so this is
+        // O(successors) rather than O(order) whenever gifts are present — the
+        // price of the gate, paid here and not hidden.
+        const out = layer.successors(ctx);
+        let admissible = 0;
+        for (const [f, q] of out.successors) if (admits(f)) admissible += q;
+        if (admissible > 0) {
+          // Renormalised, so an admitted gift places its WHOLE share and keeps
+          // no reserve of its own. Adding one here was the fast path's second
+          // disagreement with the full distribution, and the identity test
+          // caught it the same way it caught the first.
+          if (admits(form)) p += (share * (out.successors.get(form) ?? 0)) / admissible;
+        } else {
+          reserve += share; // nothing this gift wanted to say exists in this book
+        }
       });
     } else if (giftShare > 0) {
       reserve += giftShare;
@@ -703,6 +793,7 @@ export const createBelief = ({ layers, rho }) => {
       observations: relevanceObservations.n,
       rho: received.length > 1 ? rho : null,
       effective_encounters: discountedZ,
+      referent_gate: referents ? "referents require unanimity" : "no referent inventory supplied — nothing is treated as a name",
       noise_floor: floor > 0 ? floor : null,
       layers: Object.freeze(
         received.map((l, k) =>

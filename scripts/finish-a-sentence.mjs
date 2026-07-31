@@ -27,6 +27,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { createLayer, createBelief } from "../packages/engine/generation/belief.js";
 import { emitSequence, admissibleAsTestimony } from "../packages/engine/generation/emit.js";
 import { stripContainer, splitSentences } from "../packages/engine/perceiver/text/spans.js";
+import { properNounsOf } from "../packages/engine/perceiver/text/proper.js";
 import { isGap } from "../nul/index.js";
 
 const HOW_MANY = Number(process.argv[2] ?? 3);
@@ -49,9 +50,18 @@ const text = load(READ);
 const tokens = tok(text);
 const cut = Math.floor(tokens.length * READ_UP_TO);
 
+// Which forms this modality marks as names. Detected from ORIGINAL-CASE text,
+// before any lowercasing, and pooled across every source — the gate needs to
+// know a name when a gift offers one, so a name anywhere is a name here.
+const referents = new Set();
+const noteNames = (text) => { for (const n of properNounsOf(text).names) referents.add(n); };
+noteNames(text);
+
 const gifts = GIFTS.filter((g) => existsSync(g.path)).map((g) => {
+  const raw = load(g.path);
+  noteNames(raw);
   const layer = createLayer({ id: g.id, tier: "received", giver: g.giver, order: ORDER, gamma: 1, alpha: ALPHA });
-  layer.train(tok(load(g.path)).slice(0, PRIOR_CAP));
+  layer.train(tok(raw).slice(0, PRIOR_CAP));
   return { ...g, layer };
 });
 
@@ -63,16 +73,17 @@ const read = createLayer({ id: "read", tier: "read", order: ORDER, gamma: GAMMA,
 for (let i = 0; i < cut; i++) read.observe(tokens, i);
 
 const readers = [
-  { label: "this book only", belief: createBelief({ layers: [read] }) },
-  ...gifts.map((g) => ({ label: `+ ${g.id}`, belief: createBelief({ layers: [read, g.layer] }) })),
+  { label: "this book only", belief: createBelief({ layers: [read], referents }) },
+  ...gifts.map((g) => ({ label: `+ ${g.id}`, belief: createBelief({ layers: [read, g.layer], referents }) })),
   {
     label: "+ all three",
-    belief: createBelief({ layers: [read, ...gifts.map((g) => g.layer)], rho: RHO }),
+    belief: createBelief({ layers: [read, ...gifts.map((g) => g.layer)], rho: RHO, referents }),
   },
 ];
 
 console.log(`\nread ${cut.toLocaleString()} of ${tokens.length.toLocaleString()} forms of Frankenstein (${(READ_UP_TO * 100).toFixed(0)}%)`);
 for (const g of gifts) console.log(`gift ${g.id.padEnd(11)} ${g.giver}`);
+console.log(`names ${String(referents.size).padStart(9)} forms marked as referents across all sources — a name needs every giver to cross`);
 console.log(`declared order=${ORDER} alpha=${ALPHA} gamma=${GAMMA} rho=${RHO} prefix=${PREFIX} horizon=${HORIZON} seed=${SEED}`);
 console.log(`selection=sampled  conditioning=free-running — every form after the first conditions on the reader's OWN previous word\n`);
 
