@@ -44,7 +44,10 @@ import { readForward, seriesOf } from "../packages/engine/emergence/activation.j
 
 const CHUNK = 100;
 const WINDOW = 12;
-const DRAWS = 400;
+// Placement saturates at 97% by 1600 draws for a stationary channel and stays
+// at 86% at 400 — the earlier run was under-declared. For a NON-stationary one
+// it never saturates, which is the point of reporting both below.
+const DRAWS = 1600;
 // windowedMean, not burstiness. A max-over-windows null has its support at the
 // top of the range, so real observations censor below it and level() gaps before
 // it is asked anything — measured: 639 of 742 below, 102 inside. See
@@ -75,11 +78,21 @@ for (const [name, path] of BOOKS) {
   const core = causalSurprisalSeries(chunks);
   const { records } = readForward(chunks.map((ws, order) => ({ order, offset: order * CHUNK, words: ws })));
 
+  // RAW AND RATE, SIDE BY SIDE. The raw counts are non-stationary by
+  // construction — `recalled` correlates with position at r=0.995 — and a
+  // shuffle null over a ramp tests the ramp. The rates ask the question the
+  // counts were a proxy for: of the past that COULD have answered, how much
+  // did. Both are reported because swapping quietly to the better-behaved
+  // channel after seeing a verdict is the move this project retracted a
+  // result for.
   const candidates = {
-    activation: seriesOf(records, "activation", { missing: 0 }),
-    reach: seriesOf(records, "reach", { missing: 0 }),
+    "activation (raw)": seriesOf(records, "activation", { missing: 0 }),
+    "reach (raw)": seriesOf(records, "reach", { missing: 0 }),
+    "recalled (raw)": seriesOf(records, "recalled", { missing: 0 }),
     novelty: seriesOf(records, "novelty", { missing: 1 }),
-    recalled: seriesOf(records, "recalled", { missing: 0 }),
+    activationRate: seriesOf(records, "activationRate", { missing: 0 }),
+    reachRate: seriesOf(records, "reachRate", { missing: 0 }),
+    recalledRate: seriesOf(records, "recalledRate", { missing: 0 }),
   };
 
   console.log(`=== ${name} — ${chunks.length} frames`);
@@ -92,7 +105,7 @@ for (const [name, path] of BOOKS) {
   for (const [cname, series] of Object.entries(candidates)) {
     const own = ground({ material: series, draws: DRAWS, window: WINDOW, seed: 1, statistic: STATISTIC });
     if (isGap(own)) {
-      console.log(`  ${cname.padEnd(11)} own ground gapped: ${own.gap} — ${own.reason ?? ""}`);
+      console.log(`  ${cname.padEnd(17)} own ground gapped: ${own.gap} — ${own.reason ?? ""}`);
       continue;
     }
     // THE SAME MOMENTS, MEASURED IN EACH SERIES' OWN UNITS.
@@ -158,8 +171,8 @@ for (const [name, path] of BOOKS) {
     verdicts.set(`${name}·${cname}`, joins ? "joins" : `${rel} ${(share * 100).toFixed(0)}%`);
 
     const spread = ranked.map(([k, n]) => `${k} ${((n / sampled) * 100).toFixed(0)}%`).join(", ");
-    console.log(`  ${cname.padEnd(11)} over ${sampled} moments: ${spread}`);
-    console.log(`  ${" ".repeat(11)} cross-family: ${famsStr}   →   ${joins ? "JOINS" : "WAITS"}`);
+    console.log(`  ${cname.padEnd(17)} over ${sampled} moments: ${spread}`);
+    console.log(`  ${" ".repeat(17)} cross-family: ${famsStr}   →   ${joins ? "JOINS" : "WAITS"}`);
   }
   console.log("");
 }
