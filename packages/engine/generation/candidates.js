@@ -75,7 +75,7 @@ export const decayedBelief = ({ order, alpha, gamma }) => {
  * make them a copy of the read layer with a different name, and every
  * attribution number downstream would be a fiction.
  */
-export const priorAugmented = ({ order, alpha, gamma = 1, priors }) => {
+export const priorAugmented = ({ order, alpha, gamma = 1, rho, priors, noiseFloor = true, seed = 0 }) => {
   if (!Array.isArray(priors) || priors.length === 0)
     throw new TypeError("candidates: prior-augmented needs at least one received prior — without one it IS the baseline");
   const layers = [createLayer({ id: "read", tier: "read", order, gamma, alpha })];
@@ -84,9 +84,56 @@ export const priorAugmented = ({ order, alpha, gamma = 1, priors }) => {
     layer.train(p.tokens);
     layers.push(layer);
   }
-  const belief = createBelief({ layers });
+  // A gift's earned share means nothing without something that should earn
+  // nothing sitting beside it. See `shuffledGift`.
+  if (noiseFloor) layers.push(shuffledGift({ order, alpha, from: priors[0], seed }));
+  const belief = createBelief({ layers, rho });
   const id = `candidate:prior-augmented-${priors.length}`;
   return asEmitter(id, belief);
+};
+
+/**
+ * THE NOISE FLOOR. A gift whose ORDER has been destroyed and whose VOCABULARY
+ * has not.
+ *
+ * Shuffling a real prior's token stream leaves its unigram distribution
+ * exactly intact and destroys every sequential regularity above it. So this
+ * layer knows precisely as much English word-frequency as its source and
+ * precisely nothing about how English words follow one another — which is the
+ * right null for the question relevance asks. If a real gift cannot earn more
+ * standing than this, then whatever it was contributing was word frequency,
+ * and word frequency is something the read text supplies for itself.
+ *
+ * SEED.md #4, and Amendment I: sensitivity is a property of the (statistic,
+ * perturbation) pair. What this perturbation destroys is order. It says
+ * nothing about a gift that might be relevant for its vocabulary alone, and it
+ * is not licensed to.
+ *
+ * Seeded and declared, never `Math.random`, so a run is a run.
+ */
+export const shuffledGift = ({ order, alpha, from, seed = 0 }) => {
+  const tokens = [...from.tokens];
+  let a = (seed | 0) + 0x6d2b79f5;
+  const uniform = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  for (let i = tokens.length - 1; i > 0; i--) {
+    const j = Math.floor(uniform() * (i + 1));
+    [tokens[i], tokens[j]] = [tokens[j], tokens[i]];
+  }
+  const layer = createLayer({
+    id: `shuffled:${from.id}`,
+    tier: "received",
+    giver: `${from.giver} — ORDER DESTROYED BY SHUFFLE, seed ${seed}. A noise floor, not a source.`,
+    order,
+    gamma: 1,
+    alpha,
+  });
+  layer.train(tokens);
+  return layer;
 };
 
 /**
@@ -201,12 +248,12 @@ export const boundaryControl = ({ order, alpha, boundaries, id = "candidate:boun
  * ones: if it beats both, the organs carry independent information; if it
  * beats neither, at least one of them was doing nothing the other was not.
  */
-export const decayedPriorAugmented = ({ order, alpha, gamma, priors }) => {
+export const decayedPriorAugmented = ({ order, alpha, gamma, rho, priors }) => {
   const layers = [createLayer({ id: "read", tier: "read", order, gamma, alpha })];
   for (const p of priors) {
     const layer = createLayer({ id: p.id, tier: "received", giver: p.giver, order, gamma: 1, alpha });
     layer.train(p.tokens);
     layers.push(layer);
   }
-  return asEmitter("candidate:decayed+priors", createBelief({ layers }));
+  return asEmitter("candidate:decayed+priors", createBelief({ layers, rho }));
 };

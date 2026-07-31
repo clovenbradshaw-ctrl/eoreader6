@@ -150,12 +150,75 @@ test("the gift fills the silence and does not overwrite the ground", () => {
 
 test("a received layer never observes the material under test", () => {
   const priors = [{ id: "dracula", giver: "Bram Stoker", tokens: ["the", "cat", "vanished"] }];
-  const emitter = priorAugmented({ order: 2, alpha: 1, priors });
-  const before = emitter.belief.receivedLayers[0].observations;
+  const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors });
+  const before = emitter.belief.receivedLayers.map((l) => l.observations);
   emitter.prime(TOKENS);
   emitter.observe(TOKENS);
-  assert.equal(emitter.belief.receivedLayers[0].observations, before, "the gift does not grow by reading this text");
-  assert.deepEqual(emitter.belief.givers, [{ id: "dracula", giver: "Bram Stoker" }]);
+  assert.deepEqual(
+    emitter.belief.receivedLayers.map((l) => l.observations),
+    before,
+    "no gift — real or control — grows by reading this text",
+  );
+  // The noise floor rides along as a received layer and names itself as one.
+  assert.deepEqual(
+    emitter.belief.givers.map((g) => g.id),
+    ["dracula", "shuffled:dracula"],
+  );
+  assert.match(emitter.belief.givers[1].giver, /ORDER DESTROYED BY SHUFFLE/);
+});
+
+test("relevance is earned against this text, not assigned by what a gift knows", () => {
+  // Two gifts. One continues THIS material; the other is fluent English that
+  // never continues it. Under the old peer weighting they would split the
+  // borrowed share by their evidence for the context — so the irrelevant one
+  // would be loudest wherever it happened to know the context best.
+  const relevant = { id: "relevant", giver: "a book that goes on like this one", tokens: [...TOKENS, ...TOKENS] };
+  const irrelevant = { id: "irrelevant", giver: "a book about something else", tokens: "whale ship sea captain whale ship sea captain".split(" ") };
+  const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors: [relevant, irrelevant], noiseFloor: false });
+  emitter.prime([...TOKENS, ...TOKENS, ...TOKENS]);
+
+  const report = emitter.belief.relevanceReport();
+  const share = Object.fromEntries(report.layers.map((l) => [l.id, l.share]));
+  assert.ok(
+    share.relevant > share.irrelevant,
+    `the gift that anticipates this text should earn more: ${JSON.stringify(share)}`,
+  );
+  assert.equal(report.observations, TOKENS.length * 3);
+  assert.equal(report.rho, 0.999);
+});
+
+test("a gift's share is only a finding if it beats a gift that should earn nothing", () => {
+  const priors = [{ id: "dracula", giver: "Bram Stoker", tokens: "the cat sat on the mat and then it sat again".split(" ") }];
+  const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors, seed: 7 });
+  emitter.prime(TOKENS);
+
+  const report = emitter.belief.relevanceReport();
+  const control = report.layers.find((l) => l.is_noise_control);
+  assert.ok(control, "a noise floor is present by default — a share with nothing under it is not a finding");
+  assert.ok(report.noise_floor > 0);
+  // The shuffle keeps the source's word frequencies exactly and destroys only
+  // its order, so this is a real bar rather than a formality.
+  for (const l of report.layers) assert.equal(typeof l.above_noise, "boolean");
+
+  // With no control supplied, the absence is stated rather than read as cleared.
+  const bare = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors, noiseFloor: false });
+  bare.prime(TOKENS);
+  const bareReport = bare.belief.relevanceReport();
+  assert.equal(bareReport.noise_floor, null);
+  assert.equal(bareReport.layers[0].above_noise, null);
+});
+
+test("rho is declared whenever there is a share to divide", () => {
+  const two = [
+    { id: "a", giver: "someone", tokens: ["x", "y"] },
+    { id: "b", giver: "someone else", tokens: ["y", "z"] },
+  ];
+  assert.throws(() => priorAugmented({ order: 2, alpha: 1, priors: two, noiseFloor: false }), /rho/);
+  // One gift and no control: there is no share to divide, so demanding the
+  // number would be ceremony.
+  assert.doesNotThrow(() =>
+    priorAugmented({ order: 2, alpha: 1, priors: [two[0]], noiseFloor: false }),
+  );
 });
 
 // ── Refusing to speak is a result ───────────────────────────────────────────

@@ -49,6 +49,37 @@
 // large — which is the failure mode a mixture weighted by corpus size would
 // have had, and the reason it is not weighted that way.
 //
+// ── RELEVANCE IS MEASURED, NOT ASSIGNED ────────────────────────────────────
+//
+// That leaves the question of how the gifts divide the share they collectively
+// earn. The first cut of this file split it by each gift's own evidence for
+// the context, which is wrong in a way worth naming: it makes a book audible
+// for KNOWING THIS CONTEXT rather than for BEING RELEVANT TO THIS TEXT. Moby
+// Dick knows "of the" extremely well. That is not a qualification.
+//
+// So each received layer carries an earned weight, updated causally against
+// the only evidence that bears on the question — how well it has been placing
+// mass on what actually came next IN THIS MATERIAL:
+//
+//   log w_l  ←  rho · log w_l  +  log p_l(observed | context)
+//   share_l  =  softmax(log w_l)
+//
+// This is a discounted Bayesian mixture-of-experts update, so nothing is
+// chosen: a gift that keeps anticipating this text correctly compounds, and
+// one that does not decays exponentially without anyone deciding it should.
+// `rho` is the forgetting rate — declared, never defaulted, for the same
+// reason gamma is: a prior that was relevant for one chapter and not the next
+// must be able to lose the standing it earned, or relevance becomes a verdict
+// passed once at the start of the book.
+//
+// AND RELEVANCE NEEDS A NOISE FLOOR, or "this gift earned 0.31 of the share"
+// is a number with nothing underneath it. SEED.md #4: a statistic must be
+// sensitive to what its perturbation destroys. A gift's relevance is only a
+// finding if it beats a gift whose ORDER has been destroyed and whose
+// vocabulary has not — see `shuffledGift` in ./candidates.js, and
+// `relevanceReport` below, which puts the real gifts and the noise floor in
+// one table so the comparison cannot be skipped.
+//
 // GROUNDEDNESS IS BINARY AND CARRIES NO CONSTANT. A form is grounded in this
 // material iff the read layer had any evidence for it in this context at any
 // order. Not "mostly read" — there is no threshold here to pick, because a
@@ -259,13 +290,60 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
  * two — "the material being read" is one thing, and two of them would make
  * groundedness ambiguous at precisely the moment it is load-bearing.
  */
-export const createBelief = ({ layers }) => {
+export const createBelief = ({ layers, rho }) => {
   if (!Array.isArray(layers) || layers.length === 0) throw new TypeError("belief: at least one layer is required");
   const read = layers.filter((l) => l.tier === "read");
   if (read.length !== 1)
     throw new TypeError(`belief: exactly one read layer is required, got ${read.length}`);
   const received = layers.filter((l) => l.tier === "received");
   const readLayer = read[0];
+
+  // The forgetting rate of relevance. Required exactly when there is more than
+  // one gift to choose between — with none, or one, there is no share to
+  // divide and demanding the number would be ceremony.
+  if (received.length > 1 && (!Number.isFinite(rho) || rho <= 0 || rho > 1))
+    throw new TypeError(
+      "belief: rho is the forgetting rate of relevance, declared in (0,1], never defaulted — without it a prior's standing is a verdict passed once at the start of the book",
+    );
+
+  // log w_l, one per received layer, all equal at the start: before this
+  // reader has met any of this material, no gift has earned anything and
+  // pretending otherwise would be a prior on the priors that nobody declared.
+  const logW = new Map(received.map((l) => [l.id, 0]));
+  const relevanceObservations = { n: 0 };
+
+  /** softmax over the earned log-weights, in the order of `received`. */
+  const shares = () => {
+    if (received.length === 0) return [];
+    if (received.length === 1) return [1];
+    let max = -Infinity;
+    for (const l of received) max = Math.max(max, logW.get(l.id));
+    const raw = received.map((l) => Math.exp(logW.get(l.id) - max));
+    const total = raw.reduce((a, b) => a + b, 0);
+    return total > 0 ? raw.map((r) => r / total) : received.map(() => 1 / received.length);
+  };
+
+  /**
+   * Update every gift's standing against a form that has actually arrived.
+   *
+   * Causal by construction: the caller passes the context the form arrived in
+   * and the form itself, and it is only ever called for material already read.
+   * A gift that placed no mass at all is priced at its own unseen reserve
+   * rather than at zero, so "I did not know" costs less than "I was confident
+   * and wrong" — which is the ordering a proper score gives and the one that
+   * stops a narrow gift from being annihilated for being narrow.
+   */
+  const witnessForm = (context, form) => {
+    if (received.length === 0) return;
+    const ctx = Array.isArray(context) ? context : [];
+    for (const layer of received) {
+      const { mass, reserve } = layer.massOf(ctx, form);
+      const p = mass > 0 ? mass : reserve;
+      const ll = p > 0 ? Math.log(p) : Math.log(Number.MIN_VALUE);
+      logW.set(layer.id, (received.length > 1 ? rho : 1) * logW.get(layer.id) + ll);
+    }
+    relevanceObservations.n++;
+  };
 
   /**
    * The conditional distribution over what comes next.
@@ -303,10 +381,12 @@ export const createBelief = ({ layers }) => {
     // subordinate to the read layer.
     const giftShare = 1 - lambda;
     if (giftShare > 0 && received.length > 0) {
-      const weights = received.map((l) => l.evidence(ctx) + l.alpha);
-      const weightTotal = weights.reduce((a, b) => a + b, 0);
+      // Earned relevance, not context evidence. See the header: splitting by
+      // evidence made a gift audible for knowing the context rather than for
+      // being relevant to this text.
+      const earned = shares();
       received.forEach((layer, k) => {
-        const share = giftShare * (weights[k] / weightTotal);
+        const share = giftShare * earned[k];
         const out = layer.successors(ctx);
         let mass = 0;
         for (const [form, p] of out.successors) {
@@ -446,10 +526,12 @@ export const createBelief = ({ layers }) => {
     let reserve = lambda * own.reserve;
     const giftShare = 1 - lambda;
     if (giftShare > 0 && received.length > 0) {
-      const weights = received.map((l) => l.evidence(ctx) + l.alpha);
-      const weightTotal = weights.reduce((a, b) => a + b, 0);
+      // Earned relevance, not context evidence. See the header: splitting by
+      // evidence made a gift audible for knowing the context rather than for
+      // being relevant to this text.
+      const earned = shares();
       received.forEach((layer, k) => {
-        const share = giftShare * (weights[k] / weightTotal);
+        const share = giftShare * earned[k];
         const out = layer.massOf(ctx, form);
         p += share * out.mass;
         reserve += share * out.reserve;
@@ -460,9 +542,46 @@ export const createBelief = ({ layers }) => {
     return { p, reserve };
   };
 
+  /**
+   * What each gift has earned, and what a gift would earn by accident.
+   *
+   * Returned as a table rather than a verdict. A share is only a finding if it
+   * beats the noise floor a `shuffled:` control sets, and this puts both in
+   * one place so the comparison cannot be skipped by reading only the number
+   * you hoped for.
+   */
+  const relevanceReport = () => {
+    const earned = shares();
+    const floor = received
+      .map((l, k) => ({ l, k }))
+      .filter(({ l }) => l.id.startsWith("shuffled:"))
+      .reduce((m, { k }) => Math.max(m, earned[k]), 0);
+    return Object.freeze({
+      observations: relevanceObservations.n,
+      rho: received.length > 1 ? rho : null,
+      noise_floor: floor > 0 ? floor : null,
+      layers: Object.freeze(
+        received.map((l, k) =>
+          Object.freeze({
+            id: l.id,
+            giver: l.giver,
+            share: earned[k],
+            log_weight: logW.get(l.id),
+            is_noise_control: l.id.startsWith("shuffled:"),
+            // null when no control was supplied — an absent floor is stated,
+            // never silently read as "cleared".
+            above_noise: floor > 0 ? earned[k] > floor : null,
+          }),
+        ),
+      ),
+    });
+  };
+
   return Object.freeze({
     distribution,
     probabilityOf,
+    witnessForm,
+    relevanceReport,
     mode,
     draw,
     // The longest context any layer can use. Callers pass histories that are

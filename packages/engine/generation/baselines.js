@@ -38,29 +38,36 @@ import { emitSequence } from "./emit.js";
  */
 export const asEmitter = (id, belief, { onObserve = null } = {}) => {
   const seen = [];
+  // Every gift is scored against the arriving form BEFORE the read layer
+  // absorbs it, using the context that preceded it. Relevance is therefore
+  // earned causally — no gift is ever credited against material the reader had
+  // already been shown at the moment of the guess.
+  const consume = (tok) => {
+    const ctx = seen.slice(Math.max(0, seen.length - belief.maxOrder));
+    belief.witnessForm(ctx, tok);
+    seen.push(tok);
+    belief.readLayer.observe(seen, seen.length - 1);
+    onObserve?.(seen, seen.length - 1, belief);
+  };
   return {
     id,
     belief,
     prime(tokens) {
-      for (const tok of tokens) {
-        seen.push(tok);
-        belief.readLayer.observe(seen, seen.length - 1);
-        onObserve?.(seen, seen.length - 1, belief);
-      }
+      for (const tok of tokens) consume(tok);
       return this;
     },
     emit({ horizon, conditioning, selection, seed, target }) {
       return emitSequence({ belief, context: seen, horizon, conditioning, selection, seed, target });
     },
     observe(revealed) {
-      for (const tok of revealed) {
-        seen.push(tok);
-        belief.readLayer.observe(seen, seen.length - 1);
-        onObserve?.(seen, seen.length - 1, belief);
-      }
+      for (const tok of revealed) consume(tok);
       return this;
     },
-    state: () => ({ observations: seen.length, vocabulary: belief.readLayer.vocabularySize }),
+    state: () => ({
+      observations: seen.length,
+      vocabulary: belief.readLayer.vocabularySize,
+      ...(belief.receivedLayers.length ? { relevance: belief.relevanceReport() } : {}),
+    }),
   };
 };
 
