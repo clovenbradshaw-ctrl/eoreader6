@@ -425,15 +425,69 @@ export const level = (observed, ownGround, targetGround) => {
   const cross = difference(targetObserved, targetGround);
   if (isGap(cross)) return gap("unstable", { reason: "cross-measurement failed", detail: cross, paired });
 
-  const displacement = cross.rank - fig.rank;
-  const threshold = 2 / ownGround.samples.length;
+  // EXTREMENESS, NOT RANK. This was comparing `cross.rank - fig.rank`, and
+  // `rank` is one-sided: it counts samples at or above the observation, so it
+  // runs from ~0 at the top of a null to ~1 at the bottom. Subtracting two of
+  // them does not compare how EXTREME an observation is against two grounds,
+  // it compares where it sits on two upper tails — and the sign came out
+  // backwards from this function's own definition.
+  //
+  // Demonstrated on a constructed case: own ground tight (support 9.27..10.82),
+  // target ground wide (0.38..17.65), observation 10.53. That sits at rank
+  // 0.030 in its own ground and 0.318 in the target's — extreme for its own,
+  // thoroughly ordinary for the target. The target ground anticipates it
+  // easily, which is `below` by the definition below, and this returned
+  // `above`. A growth-rule verdict computed with it is inverted.
+  //
+  // Two-sided is also the correct notion on its own merits. A ground fails to
+  // anticipate an observation that is extreme in EITHER direction, and there
+  // is no reason a low outlier should count as anticipated while a high one
+  // does not. Extremeness is 0 in the middle of a null and 1 at either edge.
+  const extremeness = (r) => 1 - 2 * Math.min(r, 1 - r);
+  const figE = extremeness(fig.rank);
+  const crossE = extremeness(cross.rank);
+
+  // ABOVE: the observation is MORE extreme against the target's ground than
+  // against its own — the target cannot place what this figure perceives, so
+  // the figure's ground reaches something the target's does not.
+  // BELOW: the target places it more comfortably; the target enables more.
+  // PEER: neither ground is better at anticipating it, and no level exists.
+  // THE THRESHOLD IS A SAMPLING RESOLUTION, NOT A QUANTISATION STEP.
+  //
+  // This was `2 / samples.length`, which is the spacing between adjacent
+  // achievable ranks — the finest difference the null can REPRESENT. That is
+  // not the finest difference it can DISTINGUISH. A rank estimated from n
+  // draws carries a standard error of about sqrt(r(1-r)/n), which at n=400 is
+  // ~0.025 against a quantisation step of 0.005: five times too tight, so
+  // sampling noise was being reported as a level relationship. It showed:
+  // across three books and four channels, `peer` came back on 2-3% of moments
+  // and almost everything resolved to above or below.
+  //
+  // Two grounds built to the SAME spec from independent samples of the same
+  // distribution must be peers — there is no level between them — and with the
+  // old threshold they were not.
+  //
+  // Derived, not tuned: se(rank) is at most 0.5/sqrt(n) (its maximum, at
+  // r=0.5, so the bound holds everywhere); extremeness doubles it; comparing
+  // two independent grounds multiplies by sqrt(2). Two standard errors is a
+  // stated convention rather than a fitted number, and it is the only choice
+  // here that is not derived.
+  const displacement = crossE - figE;
+  const threshold = (2 * Math.SQRT2) / Math.sqrt(ownGround.samples.length);
 
   let relationship;
   if (Math.abs(displacement) < threshold) relationship = "peer";
   else if (displacement > 0) relationship = "above";
   else relationship = "below";
 
-  return Object.freeze({ relationship, displacement, threshold, rank: fig.rank, cross: cross.rank });
+  return Object.freeze({
+    relationship,
+    displacement,
+    threshold,
+    rank: fig.rank,
+    cross: cross.rank,
+    extremeness: Object.freeze({ own: figE, target: crossE }),
+  });
 };
 
 /**

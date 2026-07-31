@@ -322,3 +322,55 @@ the material remains unplaceable and the verdict rests on the remainder. And
 `below` is the modal resolved relationship, which is a stronger claim than
 `peer` — it says the core's ground places these moments more comfortably than
 the organ's own does — and I do not yet have an account of why that should be so.
+
+---
+
+## `level()` was broken a third time, and the verdict survived it
+
+Chasing the one thing flagged as unexplained above — why `below` dominated —
+turned up two more defects in `level()`, on top of the shared-scalar one already
+fixed. Both were found by constructing cases with a known right answer, which is
+what should have been done before quoting any verdict from it.
+
+**The comparison was on the wrong quantity.** It subtracted raw ranks, and
+`rank` is one-sided: it counts samples at or above the observation, running from
+~0 at the top of a null to ~1 at the bottom. Subtracting two of those does not
+compare how *extreme* an observation is against two grounds. Demonstrated: own
+ground tight (support 9.27–10.82), target wide (0.38–17.65), observation 10.53 —
+rank 0.030 in its own, 0.318 in the target's, so extreme for its own and
+thoroughly ordinary for the target. The target anticipates it easily, which is
+`below` by this function's own definition, and it returned `above`.
+
+Extremeness is now two-sided: `1 - 2·min(r, 1-r)`, zero in the middle of a null
+and one at either edge. A ground fails to anticipate an outlier in *either*
+direction, and there is no reason a low one should count as anticipated.
+
+**The threshold was a quantisation step, not a resolution.** `2/draws` is the
+spacing between adjacent achievable ranks — the finest difference the null can
+*represent*. The finest it can *distinguish* is the sampling error, about
+`sqrt(r(1-r)/n)`, which at n=400 is ~0.025 against a step of 0.005. Five times
+too tight, so noise was being reported as a level relationship: `peer` came back
+on 2–3% of moments and nearly everything resolved to above or below. Two grounds
+built to the same spec from independent samples of the same distribution were
+not peers, which is a contradiction in terms.
+
+Now `2·√2/√draws`, derived: se(rank) ≤ 0.5/√n at its maximum so the bound holds
+everywhere, extremeness doubles it, comparing two independent grounds multiplies
+by √2. Two standard errors is a stated convention and the only part not derived.
+
+**The verdict did not change.** With all three fixed, across the same three
+books and four channels: `above` 10–22% of moments, `below` 16–34%, `peer`
+9–24%, censored 22–55%. Nothing reaches a majority `above` anywhere. Nothing
+joins.
+
+I expected the sign correction to invert the result and said so; it did not,
+because replacing a rank difference with a two-sided extremeness difference is
+not a sign flip but a different quantity. What the fixes did change is the
+shape: `peer` rose from 2–3% to 9–24%, absorbing most of what the old threshold
+had been calling `below`. That is the honest picture — the two grounds are
+frequently indistinguishable, which the instrument previously could not say.
+
+So: the conclusion stands, and the reasoning that first produced it did not. A
+verdict reached with an instrument broken in three places was worth exactly
+nothing until the instrument was checked, and it was only checked because the
+one anomaly in it was chased instead of shipped.
