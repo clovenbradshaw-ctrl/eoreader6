@@ -49,7 +49,17 @@
 // large — which is the failure mode a mixture weighted by corpus size would
 // have had, and the reason it is not weighted that way.
 //
-// ── RELEVANCE IS MEASURED, NOT ASSIGNED ────────────────────────────────────
+// ── RELEVANCE IS MEASURED, NOT ASSIGNED — SEED.md AMENDMENT IV ─────────────
+//
+//   "A prior is relevant exactly insofar as it lowers the surprise of what is
+//    encountered. Relevance is not a property of a prior. It is a property of
+//    the meeting between a prior and this material, and its measure is the
+//    surprise that did not happen."
+//
+// This module is where that clause is spent, so the amendment's four
+// restrictions are this file's obligations and not background reading:
+// relevance is never similarity, it must be able to decay, it needs a null,
+// and it earns audibility rather than standing.
 //
 // That leaves the question of how the gifts divide the share they collectively
 // earn. The first cut of this file split it by each gift's own evidence for

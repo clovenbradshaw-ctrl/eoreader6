@@ -208,6 +208,74 @@ test("a gift's share is only a finding if it beats a gift that should earn nothi
   assert.equal(bareReport.layers[0].above_noise, null);
 });
 
+test("AMENDMENT IV: relevance is never similarity — it is the surprise that did not happen", () => {
+  // The clause that costs something. Two gifts:
+  //
+  //   lookalike  shares this text's whole vocabulary and NONE of its order.
+  //              Maximally similar by any appearance measure — same words,
+  //              same frequencies — and it anticipates nothing.
+  //   stranger   shares almost none of this text's vocabulary but continues
+  //              the one context that actually recurs here.
+  //
+  // Every appearance-based rule picks the lookalike. SEED.md #0 refuses
+  // identity by appearance "never by appearance, not even in principle", and
+  // Amendment IV extends that refusal to relevance. So the stranger must win.
+  const lookalike = {
+    id: "lookalike",
+    giver: "a book with this book's words in the wrong order",
+    tokens: "mat the on sat floor cat the dog sat the on mat cat the".split(" "),
+  };
+  const stranger = {
+    id: "stranger",
+    giver: "a book that shares little but continues what recurs",
+    tokens: "quoth zarathustra the cat sat on the mat the cat sat on the mat".split(" "),
+  };
+  const emitter = priorAugmented({
+    order: 2,
+    alpha: 1,
+    rho: 0.999,
+    priors: [lookalike, stranger],
+    noiseFloor: false,
+  });
+  emitter.prime([...TOKENS, ...TOKENS, ...TOKENS]);
+
+  const share = Object.fromEntries(emitter.belief.relevanceReport().layers.map((l) => [l.id, l.share]));
+  assert.ok(
+    share.stranger > share.lookalike,
+    `relevance must follow surprise-reduction, not resemblance: ${JSON.stringify(share)}`,
+  );
+});
+
+test("AMENDMENT IV: standing can be lost — a prior relevant once is not relevant forever", () => {
+  // Restriction 2. Standing that cannot decay is a verdict passed once at the
+  // beginning, which is sclerosis at the level of the priors.
+  const early = { id: "early", giver: "carries the opening", tokens: "a b a b a b a b".split(" ") };
+  const late = { id: "late", giver: "carries the ending", tokens: "y z y z y z y z".split(" ") };
+  const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.9, priors: [early, late], noiseFloor: false });
+
+  emitter.prime("a b a b a b a b a b a b".split(" "));
+  const first = Object.fromEntries(emitter.belief.relevanceReport().layers.map((l) => [l.id, l.share]));
+  assert.ok(first.early > first.late, "the gift carrying this stretch leads");
+
+  emitter.observe("y z y z y z y z y z y z y z y z".split(" "));
+  const second = Object.fromEntries(emitter.belief.relevanceReport().layers.map((l) => [l.id, l.share]));
+  assert.ok(second.late > second.early, "and loses that lead when the material moves on");
+});
+
+test("AMENDMENT IV: lowering surprise earns audibility, never standing", () => {
+  // Restriction 4. A gift can become the loudest voice in the mixture and
+  // still cannot make the continuation testimony — the crossing does not
+  // consult relevance at all.
+  const gift = { id: "loud", giver: "a very relevant book", tokens: "the cat vanished into the night".split(" ") };
+  const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors: [gift], noiseFloor: false });
+  emitter.prime(["the", "cat"]);
+
+  const emission = emitter.emit({ horizon: 2, conditioning: "free-running", selection: "mode", seed: 0 });
+  assert.ok(emission.received_fraction > 0, "the gift is audible");
+  assert.equal(emission.grounded, false);
+  assert.equal(admissibleAsTestimony(emission).gap, "unreceived_origin", "and still cannot testify");
+});
+
 test("rho is declared whenever there is a share to divide", () => {
   const two = [
     { id: "a", giver: "someone", tokens: ["x", "y"] },
