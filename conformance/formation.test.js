@@ -163,12 +163,33 @@ test("an ordinary regime stays a protogon — peer means it waits", () => {
   assert.equal(p.level, "peer");
 });
 
+// A short, locally-distinct patch in a long quiet field. The mean inside it
+// genuinely differs from the mean outside, so possibility-constraint fires; and
+// removing four values out of sixty genuinely does not move the ground, so
+// existence-dependency does not. The gates disagree for a reason — distinct in
+// level, inessential in structure — and `unstable` is the honest reading.
+//
+// THIS FIXTURE REPLACED ONE THAT WAS USING A DEFECT. The previous material was
+// `quiet` at regime 10-15, which returned `unstable` only because `regimeNull`
+// was an UNCONDITIONAL null: it zeroed a fixed window and compared a ground over
+// extent n against one over extent n-L. Under the conditional null that material
+// returns `peer` — which is what the sibling test above asserts for regime 3-6
+// on the same material, and is the right answer, because no regime in flat
+// material is a level. A test whose fixture depends on a bug passes for the
+// wrong reason and fails the moment the bug is fixed. See `holon_level/index.js`.
+const speckled = [...quiet, ...quiet, ...quiet];
+for (let i = 20; i < 24; i++) speckled[i] = 3;
+
 test("disagreeing gates are a typed gap, a result and not an error", () => {
-  const e = emanon({ material: quiet, window: W, draws: D, firstGround: recPlain });
-  const c = collapse({ emanon: e, observed: 1.0, regime: { start: 10, end: 15 } });
+  const e = emanon({ material: speckled, window: W, draws: D, firstGround: recPlain });
+  const c = collapse({ emanon: e, observed: 1.0, regime: { start: 20, end: 24 } });
   assert.equal(c.phase, "protogon");
   const s = sustain({ protogon: c, reseeds: 8 });
   assert.equal(s.gap, "unstable");
+  // The disagreement is the finding (SEED.md #6), so assert its DIRECTION —
+  // otherwise any two gates failing for any two reasons would pass this test.
+  assert.equal(s.existence.exists, false);
+  assert.equal(s.constraint.constrains, true);
 });
 
 test("the full arc: diffuse, surfeit, re-zero, cut, sustain", () => {

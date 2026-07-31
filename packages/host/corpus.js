@@ -3,6 +3,7 @@ import { canonicalHashSync, CORPUS_API_VERSION } from "../spec/index.js";
 import { createRegistry, register } from "../../provenance/index.js";
 import { createSession as makeDiscourseSession } from "../../discourse/index.js";
 import { lineIndex, outlineOfIndex, discoverSegment } from "../engine/perceiver/text/segments.js";
+import { tokenize } from "../engine/perceiver/text/material.js";
 
 // The cells this host organ occupies on the operator grid (engine/operators.js):
 // INS · Void · Cultivating — material comes into being, admitted chunked by
@@ -129,18 +130,28 @@ export function ingestFile(session, filePath) {
 
 export function searchSpans(session, { query, limit = 10 }) {
   if (!query || !query.trim()) return { spans: [], gaps: null };
-  const q = query.toLowerCase();
+  const phraseWords = tokenize(query);
+  if (phraseWords.length === 0) return { spans: [], gaps: null };
+
+  // Lexical presence, never derivation: a span earns a match by containing a
+  // query word as a token — no stemming, no synonymy, no fuzzy distance. The
+  // query need not be a contiguous substring (a reader asks in words, not in
+  // strings), and a span's score is the honest fraction of query words it
+  // actually contains, so a query that shares only its common words with a
+  // span ranks it below one that shares its rare ones. Tokens come from the
+  // perceiver's WORD_RE — letters, numbers, apostrophes — so "town" matches
+  // "town." and a query in any script matches the same material.
   const matches = [];
   for (const span of session.spans.values()) {
-    if (span.text && span.text.toLowerCase().includes(q)) {
-      const words = span.text.toLowerCase().split(/\s+/);
-      const phraseWords = q.split(/\s+/);
-      const coverage = phraseWords.filter((w) => words.includes(w)).length / phraseWords.length;
-      span.score = coverage;
-      span.coverage = coverage;
-      span.phrase = query;
-      matches.push(span);
-    }
+    if (!span.text) continue;
+    const words = tokenize(span.text);
+    const present = phraseWords.filter((w) => words.includes(w));
+    if (present.length === 0) continue;
+    const coverage = present.length / phraseWords.length;
+    span.score = coverage;
+    span.coverage = coverage;
+    span.phrase = query;
+    matches.push(span);
   }
   matches.sort((a, b) => (b.score || 0) - (a.score || 0));
   return { spans: matches.slice(0, limit), gaps: null };

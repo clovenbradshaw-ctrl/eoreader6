@@ -48,6 +48,7 @@ export const GAP_TYPES = Object.freeze([
   "made_no_difference", // perceived, and therefore not testimony
   "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
   "incommensurate_extent", // a null built over a different amount of material than the thing it is the null FOR
+  "missing_kind_prior", // emergence/people: the reader has no received understanding of this population as a kind — a typed gap, never a silently wrong number
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -279,6 +280,48 @@ export const burstiness = (series, { window }) => {
 };
 
 /**
+ * LEVEL. The mean of ONE window of the material — not a max over all of them.
+ *
+ * This exists because `burstiness` is the wrong null for a question that is
+ * asked constantly: "is THIS window's mean unusual?" The observation there is a
+ * single window's mean, and `burstiness`'s samples are the max over ~n windows
+ * of a shuffle. A single draw placed against an extreme of many sits below the
+ * support almost always — measured on the competency battery, an ordinary real
+ * window is censored BELOW on 248–272 of ~314 steps (79–87%). That is not
+ * regularity, which is what the reading had to be; it is the arithmetic of
+ * comparing one draw against a maximum of many.
+ *
+ * It is `extremeGround`'s defect with the sides swapped. There the observation
+ * was an extreme of n and the null was one arrival, so everything looked
+ * significant. Here the observation is one arrival and the null is an extreme of
+ * n, so nothing does. Both are the same failure: the null did not undergo what
+ * the observation underwent.
+ *
+ * SHUFFLE-SENSITIVE, and not by the argument that fails for a global mean. The
+ * mean of the WHOLE material is shuffle-invariant — every draw returns the same
+ * number, the zero-width ground #3 refuses. The mean of one WINDOW is not:
+ * shuffling changes which values land in it, so the draws spread as the mean of
+ * `window` values drawn without replacement, and the ground has real width.
+ * `ground` still refuses the degenerate case by type, so material that happens
+ * to be constant is caught rather than assumed away.
+ *
+ * TWO-SIDED, which is the point. `burstiness` over a growing prefix is monotone
+ * non-decreasing — a max can only rise — so once a series has visited a high
+ * level it can never signal a return to a low one. On the competency battery's
+ * level-shift control (40-step legs alternating 0 and 4) burstiness jumps once,
+ * from 0.491 to 4.737, and is then frozen for the remaining 280 steps
+ * regardless of which leg is current. This statistic is not a running extreme
+ * and reads a drop as readily as a rise, so censored above and censored below
+ * are both live — Amendment II in the one place it changes a result.
+ */
+export const windowMean = (series, { window }) => {
+  if (!Number.isInteger(window) || window < 2 || window > series.length) return NaN;
+  let s = 0;
+  for (let j = 0; j < window; j++) s += series[j];
+  return s / window;
+};
+
+/**
  * Ordinal patterns (Bandt-Pompe). A window of `window` values is reduced to the
  * permutation that sorts it — magnitudes discarded, order kept. Ties break by
  * index, which is the standard choice and matters only on quantised material.
@@ -386,7 +429,7 @@ export const irreversibility = (series, { window }) => {
   return js / Math.log(2);
 };
 
-export const STATISTICS = Object.freeze({ burstiness, permutationEntropy, irreversibility });
+export const STATISTICS = Object.freeze({ burstiness, windowMean, permutationEntropy, irreversibility });
 
 /**
  * Which (statistic, perturbation) pairs have actually been established.
@@ -407,6 +450,9 @@ export const STATISTICS = Object.freeze({ burstiness, permutationEntropy, irreve
  */
 export const LICENSED = Object.freeze({
   "burstiness/shuffle": Object.freeze({ where: "conformance/temporality.test.js — vacuity controls; goldens/surprise" }),
+  "windowMean/shuffle": Object.freeze({
+    where: "scripts/predictive-competency.mjs — candidate:regime-mean-windowMean recovers all 7 planted level-shift boundaries where burstiness recovers 2, and cuts the loss to baseline:moving-mean-6 from -118.7 to -23.3. NOT EARNED by the growth rule: it still loses the positive control, so it waits",
+  }),
   "permutationEntropy/shuffle": Object.freeze({ where: "conformance/temporality.test.js — the three rows" }),
   "irreversibility/shuffle": Object.freeze({ where: "conformance/temporality.test.js — the three rows" }),
   "irreversibility/phase": Object.freeze({
@@ -448,11 +494,18 @@ export const preserves = (perturbation, what) => (PRESERVES[perturbation] ?? [])
  * comparison between them is an artefact of growth. It is the third and last
  * declared number.
  */
+// #5: two grounds are comparable only if built to the same spec. `n` and
+// `direction` are part of that spec — a best-of-fifty nothing and a one-arrival
+// nothing answer different questions over the same material, and comparing them
+// is exactly the artefact #5 refuses. Ordinary grounds carry neither field, so
+// `undefined === undefined` leaves them comparable as before.
 const sameSpec = (a, b) =>
   a.perturbation === b.perturbation &&
   a.statistic === b.statistic &&
   a.draws === b.draws &&
-  a.window === b.window;
+  a.window === b.window &&
+  a.n === b.n &&
+  a.direction === b.direction;
 
 const fingerprint = (m) =>
   `n${m.length}:${m.reduce((h, v) => (Math.imul(h ^ Math.round(v * 1e6), 16777619) | 0), 2166136261) >>> 0}`;
@@ -491,6 +544,110 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
     // so the statistic means one thing throughout, but the EXTENT still grows,
     // and a max-over-windows statistic grows with it. Two grounds over
     // different extents are not comparable unless the null grows the same way.
+    extent: material.length,
+    samples: Object.freeze(sorted),
+    kept: false,
+  });
+};
+
+/**
+ * A nothing for the BEST OF N, when n observations are placed against one ground.
+ *
+ * The defect this closes is arithmetic and silent. `ground` builds the null for
+ * ONE arrival. Place fifty candidates against it and keep the most extreme, and
+ * the most extreme of fifty null draws clears a one-draw support most of the
+ * time — so "generate more candidates" becomes a mechanism for manufacturing
+ * findings, and it reads as productivity. Nothing in the record would show it:
+ * every surviving candidate cites a real ground, a real rank, a real spec.
+ *
+ * This is #3 at a grain the seed states only for a single arrival. A support
+ * that the maximum of n draws clears by construction is a null of zero width
+ * for the question actually being asked, even though it has perfectly good
+ * width for the question it was built for.
+ *
+ * MEASURED, 2026-07-31, burstiness/shuffle over 400 iid values, draws=200,
+ * window=8, 40 trials per row. Every "observation" is a statistic of perturbed
+ * material — signal-free by construction, so a correct null places it uniformly
+ * and the median rank should sit near 1/2:
+ *
+ *   n     median rank vs one-arrival   vs best-of-n   censored above (naive)
+ *   1     0.633                        0.633          0%
+ *   5     0.185                        0.615          0%
+ *   20    0.040                        0.438          0%
+ *   50    0.038                        0.537          3%
+ *   200   0.010                        0.573          25%
+ *
+ * At n=200 a one-arrival ground ranks pure noise at 0.010 and calls a quarter
+ * of the trials surfeit outright. The corrected column stays near uniform
+ * throughout. n=1 is identical in both columns, which is the identity the
+ * suite asserts directly. Evidence: `conformance/extreme.test.js`.
+ *
+ * `n` IS NOT A FOURTH DECLARED NUMBER. It is counted, not chosen — the same
+ * standing `extent` has: "the extent of the material is not among them. Whoever
+ * hands material in has already declared it." Whoever hands in n observations
+ * has likewise already declared n, and a caller that has to *pick* n has
+ * misunderstood the call. Three declared numbers still.
+ *
+ * `direction` IS REQUIRED and is never defaulted. Amendment II: above and below
+ * are both measurements and neither is the informative one. Pooling them would
+ * be a two-sided test smuggled in under a one-sided name, and #6 refuses the
+ * averaging of grounds. The extreme of n maxima and the extreme of n minima are
+ * different nothings and this returns whichever was asked for.
+ *
+ * The result is the same shape `ground` returns, so `difference`, `volume`,
+ * `admissible` and `keep` consume it unchanged — there is no second mechanism
+ * here, only the same construction asked a question about n arrivals.
+ *
+ * Cost is n×draws statistic evaluations, paid here and not hidden.
+ */
+export const extremeGround = ({
+  material,
+  draws,
+  window,
+  perturbation = "shuffle",
+  statistic = "burstiness",
+  seed = 0,
+  n,
+  direction,
+}) => {
+  if (!Number.isInteger(n) || n < 1)
+    return gap("undeclared", { what: "n", why: "how many observations are placed against this ground is counted, never defaulted" });
+  if (direction !== "above" && direction !== "below")
+    return gap("undeclared", { what: "direction", why: "above and below are different findings and are never pooled (Amendment II)" });
+
+  // One arrival is the ordinary case and must be bit-identical to it, or two
+  // callers asking the same question get two different nothings.
+  if (n === 1) return ground({ material, draws, window, perturbation, statistic, seed });
+
+  if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
+  if (!Number.isInteger(draws) || draws < 2)
+    return gap("undeclared", { what: "draws", why: "the resolution of testimony is 1/draws and is never a default" });
+  if (!Number.isInteger(window) || window < 2)
+    return gap("undeclared", { what: "window", why: "the reach of the present is never derived from material length" });
+  const perturb = PERTURBATIONS[perturbation];
+  const stat = STATISTICS[statistic];
+  if (!perturb) return gap("unknown_spec", { perturbation });
+  if (!stat) return gap("unknown_spec", { statistic });
+
+  const samples = [];
+  for (let d = 0; d < draws; d++) {
+    let best = null;
+    for (let k = 0; k < n; k++) {
+      const v = stat(perturb(material, seed + d * n + k), { window });
+      if (!Number.isFinite(v))
+        return gap("unknown_spec", { reason: "the statistic could not be formed at this window", statistic, window });
+      if (best === null) best = v;
+      else best = direction === "above" ? Math.max(best, v) : Math.min(best, v);
+    }
+    samples.push(best);
+  }
+  const sorted = [...samples].sort((a, b) => a - b);
+  if (sorted[0] === sorted[sorted.length - 1])
+    return gap("degenerate_ground", { reason: "zero width: this null would clear anything", statistic, perturbation, n });
+
+  return Object.freeze({
+    spec: Object.freeze({ perturbation, statistic, seed, draws, window, n, direction }),
+    from: fingerprint(material),
     extent: material.length,
     samples: Object.freeze(sorted),
     kept: false,

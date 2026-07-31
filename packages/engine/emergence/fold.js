@@ -256,6 +256,108 @@ export const alternatives = (folds) => {
 };
 
 /**
+ * What no standpoint in this material can reach.
+ *
+ * `beyond` from ONE here is that here's own surfeit — an encounter, and the
+ * seed's named trigger to re-zero. `beyond` from EVERY here is a different
+ * claim entirely: there is no place to stand in this material from which the
+ * position is reachable at all. It is not of this world.
+ *
+ * THE LADDER IS THE SAME ONE `generation/belief.js` ALREADY CLIMBS, one grain
+ * over. There, a form attested by one giver is that giver's own and a form
+ * attested by all of them is furniture of the shared world. Here, a position
+ * beyond from one standpoint is that standpoint's encounter and a position
+ * beyond from all of them is not this material's at all. Same act, positions
+ * instead of forms, and it was not invented twice — it is #6 spent, plural
+ * grounds and their disagreement as the only self-check.
+ *
+ * WHY UNANIMITY AND NOT A THRESHOLD. A conjunction gets STRICTER as standpoints
+ * are added, so adding evidence can only ever remove a verdict, never
+ * manufacture one. That is the opposite of the best-of-n hazard `extremeGround`
+ * exists for, and it is why no extreme-value correction is owed here and no
+ * constant appears below. "More than half the standpoints" would have needed
+ * both.
+ *
+ * MEASURED, 2026-07-31, Heidi (Project Gutenberg 20781), 1376 chunks of 40
+ * words, window=8 draws=200, seven standpoints spread over the material:
+ *
+ *   foreign (beyond from all 7)   13 positions — chunks 0-4 and 1360-1367
+ *   edge    (beyond from some)    49 positions — 5-8, 18-31, 1325-1359
+ *   reachable                     everything else, including all of 32-1324
+ *
+ * Chunks 0-4 are "the project gutenberg ebook of heidi ... title heidi author
+ * johanna spyri illustrator maria louise kirk translator elisabeth"; 1360-1367
+ * are the licence and donation notice. **No marker string was consulted.**
+ *
+ * The ragged `edge` is a result, not noise. Title page, translator credit and
+ * table of contents are genuinely undecidable — different givers cut there
+ * differently — and unanimity leaves them undecided rather than guessing.
+ *
+ * THIS IS NOT A CONTAINER DETECTOR, and the same run says so. Heidi's wrapper
+ * is roughly 101 positions (front matter below 32, back matter from 1300);
+ * `foreign` + `edge` together reach 62 of them, and the other 39 come back
+ * `reachable`. Worse, they come back reachable AT THE TOP OF THE RANKING — of
+ * the 60 placed-and-not-foreign positions from a standpoint at chunk 547, 38
+ * (63%) are wrapper and only 22 are Heidi.
+ *
+ * The reason is a real distinction and not a tuning failure: `beyond` exceeds a
+ * max-over-windows support, which is a SPIKE test, and a distributor's wrapper
+ * is a PLATEAU — sustained mild elevation that places comfortably inside the
+ * support and ranks high there. Reach and regime are different questions. This
+ * organ answers reach. The wrapper is a regime, and finding it wants `level`,
+ * `pattern`, or a changepoint, none of which this is.
+ *
+ * `perceiver/text/spans.js` still matches the whole wrapper with two regexes
+ * that name a publisher and work in one language. That trade is unresolved and
+ * is not resolved by fiat here.
+ *
+ * WHAT THIS DOES NOT ESTABLISH, and the line matters. That a position is
+ * foreign is a claim about REACH. That it is a container, a distributor's
+ * boilerplate, an epigraph in another language, or a corrupted block is a claim
+ * about WHAT IT IS, and Amendment V puts that beyond derivation: function is
+ * measurable, denotation is received and must name its giver. This organ says
+ * "no here reaches it." It never says whose it is.
+ *
+ * Refuses folds not built to one spec over one material — #5, same as
+ * `alternatives`.
+ */
+export const foreign = (folds) => {
+  if (!Array.isArray(folds) || folds.length < 2)
+    return gap("no_ground", { reason: "one standpoint cannot establish that a position is beyond every standpoint" });
+  for (const f of folds) if (isGap(f)) return f;
+  const [first] = folds;
+  for (const f of folds) {
+    if (f.spec.window !== first.spec.window || f.spec.draws !== first.spec.draws || f.spec.perturbation !== first.spec.perturbation || f.spec.of !== first.spec.of)
+      return gap("unknown_spec", { reason: "reach across different specs was never comparable" });
+  }
+
+  const byPosition = [];
+  let foreignCount = 0, edge = 0, reachable = 0;
+  for (let i = 0; i < first.projection.length; i++) {
+    let beyondFrom = 0;
+    for (const f of folds) if (f.projection[i].placement === "beyond") beyondFrom++;
+    // Three verdicts, one ladder, no constant: none of them, some of them, all
+    // of them. `edge` is not a weak `foreign` — it is the undecided nexus for
+    // reach, and it is counted apart for the same reason `contemporary` is.
+    const verdict = beyondFrom === 0 ? "reachable" : beyondFrom === folds.length ? "foreign" : "edge";
+    if (verdict === "foreign") foreignCount++;
+    else if (verdict === "edge") edge++;
+    else reachable++;
+    byPosition.push(Object.freeze({ at: first.projection[i].at, beyondFrom, of: folds.length, verdict }));
+  }
+
+  return Object.freeze({
+    quanta: Object.freeze(folds.map((f) => f.here)),
+    standpoints: folds.length,
+    n: byPosition.length,
+    foreign: foreignCount,
+    edge,
+    reachable,
+    byPosition: Object.freeze(byPosition),
+  });
+};
+
+/**
  * How two standpoints stand to each other. Whitehead's trichotomy, and it is
  * exhaustive by construction:
  *
