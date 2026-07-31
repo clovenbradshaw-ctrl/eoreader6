@@ -514,7 +514,36 @@ that only builds grounds from the material in front of it cannot skip
 anything. That is not a limitation of the engine; it is what reading without
 priors IS.
 
+### NARROWED BY ITS OWN ADVERSARIAL TEST
+
+`node scripts/chrome-needs-the-right-prior.mjs`. Same document, same declared
+numbers, three priors:
+
+| | prior WITH container | prior PROSE ONLY | shuffled prose |
+|---|---|---|---|
+| licence block | **0.28** | **9.49** | 10.42 |
+| prose | 9.29 | 9.32 | 10.04 |
+
+**A reader that has read an entire novel and never seen a licence finds the
+licence block MORE expensive than prose** — 9.49 against 9.32. The 33x gap was
+entirely the prior having met that exact container.
+
+So coverage is SPECIFIC, and the broad reading of the result above is refuted
+by its own measurement. "Read with priors" is not "any priors will do."
+
+Which lands the finding on II.2 rather than making it a technique. That a
+licence block is container is WITNESS KNOWLEDGE ABOUT THE MATERIAL'S FORMAT —
+received, naming its giver, and deriving it is a wall. Every hardcoded
+stripper in this lineage was therefore not a mistake about mechanism but a
+CONTAINER PRIOR WRITTEN IN THE WRONG TIER. `stripGutenbergBoilerplate` IS the
+container prior for PG; it lives in code, unnamed and ungiven.
+
+The consequence is not to delete the pattern-matching. It is that container
+knowledge belongs in `eoPriors` naming its giver, that the engine reports a
+TYPED GAP where no container prior covers the material rather than silently
+reading chrome as content, and that the physics stays the CHECK rather than
+the finder — a container prior that does not make its region nearly free is a
+prior that is wrong about this document.
+
 Proposed as a constitutional amendment in `specs/chrome-is-recognised.md`
-(a PROPOSAL — IV.2, agents propose and humans dispose). The pattern-matching
-`stripContainer` stays for now and is refused as the measurement by that
-draft: a shortcut, never the gate.
+(a PROPOSAL — IV.2, agents propose and humans dispose).
