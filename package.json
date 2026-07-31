@@ -8,6 +8,7 @@
     ".": "./nul/index.js"
   },
   "scripts": {
-    "test": "node --test \"conformance/*.test.js\""
+    "test": "node --test \"conformance/*.test.js\"",
+    "competency": "node scripts/predictive-competency.mjs"
   }
 }
