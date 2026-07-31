@@ -122,64 +122,53 @@ export const functionWordSet = (table, { threshold = DEFAULT_RELEVANCE_THRESHOLD
   return set;
 };
 
-// THE REACH OF THE PRESENT IN PROSE IS THE PARAGRAPH, AND THE WRITER DECLARED IT.
+// THE REACH OF THE PRESENT IN PROSE: A BASIS THAT WAS TRIED AND REFUTED.
 //
-// This is the one number in the engine that had been a pure guess: every caller
-// passed `window: 12` to prose chunks, raw bytes, and audio frames alike. A
-// paragraph break is not a typographic convention here — it is the author
-// saying, in the only channel they have for saying it, "this much is
-// contemporary with itself; what follows is next." Taking them at their word
-// costs nothing and is checkable.
+// This is the one number in the engine that was a pure guess — every caller
+// passed `window: 12` to prose chunks, raw bytes and audio frames alike. The
+// fix attempted here was to derive it from the median paragraph, on the
+// argument that a paragraph break is the author saying, in the only channel
+// they have for saying it, "this much is contemporary with itself."
 //
-// Derived from FORM, never from LENGTH — the distinction SEED.md #5 turns on.
-// A paragraph does not get longer because the book is long, and that is
-// measurable rather than assertable: Frankenstein's median paragraph is 80
-// words at 25%, 50%, 75% and 100% read (78, 81, 84, 80). A window that drifted
-// with extent would be the forbidden kind; this one does not move.
+// The argument is still appealing and the basis is measurably wrong. Both
+// failures are recorded rather than quietly dropped, because the next person
+// to have this idea should have to get past them:
 //
-// The median, not the mean: paragraph lengths are heavily right-skewed (q25 40,
-// median 80, q75 133, mean 95), and one page of unbroken description should not
-// widen the present for the whole book.
+//   1. IT DOES NOT WIN. Swept against arbitrary windows on Frankenstein at
+//      every grain it permits, the paragraph-derived present never scores best
+//      and is usually near the bottom (scripts/declared-present.mjs).
+//
+//   2. IT DEGENERATES ON DIALOGUE. Garoa's median paragraph is 8 words against
+//      Frankenstein's 80, because in a dialogue-heavy novel the median
+//      paragraph is one line of speech. Paragraph length there is bimodal —
+//      short turns and long narration — and the median of a bimodal
+//      distribution describes neither mode. The derived present would demand
+//      chunks of 4 words or finer, which is not a reach of the present, it is
+//      a stammer.
+//
+// So this no longer derives anything. The caller declares `present` and
+// `basis`, and the contract refuses without them, which is the discipline the
+// whole consumption module exists for: what is refused is a GUESS WEARING A
+// DERIVATION, not the requirement to justify. `paragraphWords` stays exported
+// as evidence anyone can look at, and the conversion from it to a present is
+// what has been withdrawn.
+//
+// What a working basis would need: it must not collapse on bimodal paragraph
+// distributions, and it must transfer across authors and languages, which is
+// exactly the pair of tests this one failed.
 export const paragraphWords = (text) =>
   String(text ?? "")
     .split(/\n\s*\n/)
     .map((p) => tokenize(p).length)
     .filter((n) => n > 0);
 
-export const consumption = (text, { chunkSize = 40 } = {}) => {
-  const lens = paragraphWords(text).sort((a, b) => a - b);
-  const median = lens.length ? lens[Math.floor((lens.length - 1) * 0.5)] : 0;
-  const present = Math.round(median / chunkSize);
-
-  // THE UNIT MUST BE FINER THAN THE PRESENT, or the present is not
-  // representable and clamping to the floor would fake one.
-  //
-  // A present of at least 2 units means the chunk can be at most half a
-  // paragraph. Chunk more coarsely than that and each unit already spans more
-  // than the present does — there is no "contemporary with itself" left to
-  // measure, because everything inside one unit has been averaged together
-  // before the reader sees it.
-  //
-  // This is not hypothetical housekeeping. Every Frankenstein number in
-  // scripts/RESULTS.md up to this point was computed at 100-word chunks
-  // against a median paragraph of 80 words, which is exactly this refusal —
-  // the whole reading happened at a grain where the reach of the present could
-  // not be expressed, and the 12 that was passed instead was a number about
-  // nothing.
-  if (median && present < 2)
+export const consumption = (text, { chunkSize = 40, present, basis } = {}) => {
+  if (present === undefined || basis === undefined)
     throw new TypeError(
-      `consumption: a ${chunkSize}-word chunk is coarser than half this text's median paragraph (${median} words), ` +
-        `so its present would be ${present} unit(s). Chunk at ${Math.max(1, Math.floor(median / 2))} words or finer.`
+      "consumption(text): `present` and `basis` are declared by the caller. The paragraph-median basis that " +
+        "used to supply them was measured and refuted — it loses to arbitrary windows on Frankenstein and " +
+        "degenerates on dialogue-heavy prose (Garoa's median paragraph is 8 words). See the header. " +
+        "paragraphWords(text) is still available as evidence; converting it to a present is what was withdrawn."
     );
-
-  return contract({
-    order: "sequential",
-    unit: `${chunkSize}-word chunk`,
-    // Where a text has no paragraphing at all there is nothing to derive from,
-    // and the floor stands with the basis saying so rather than inventing one.
-    present: median ? present : 2,
-    basis: median
-      ? `the median paragraph of this text is ${median} words, and a paragraph break is the writer's own declaration of what is contemporary with itself`
-      : "this text has no paragraph structure to declare a present with, so the floor stands and no claim is made",
-  });
+  return contract({ order: "sequential", unit: `${chunkSize}-word chunk`, present, basis });
 };
