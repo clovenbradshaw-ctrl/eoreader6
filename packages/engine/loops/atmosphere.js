@@ -100,3 +100,96 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
 
   return { regions, events, clearingCount: events.filter((e) => e.op === "DEF").length, rezeroCount: events.filter((e) => e.op === "REC").length };
 };
+
+/**
+ * The same three operators, driven one arrival at a time.
+ *
+ * `readAtmosphere` above segments material that has already fully arrived: at
+ * position i it compares a ground built on [regionStart, i) against a window
+ * [i, i+window) that lies AHEAD of the ground. That is fine for segmentation
+ * and fatal for prediction — a predictor that peeks at [i, i+window) to decide
+ * where its regime starts has already seen the value it is about to be scored
+ * on. So this is not a wrapper around the function above and must not become
+ * one: the ground precedes the observation in both, but here BOTH lie strictly
+ * in the past, ground on [regionStart, t−window) and observation on
+ * [t−window, t). The decision rule is identical; only the horizon moves.
+ *
+ * Feed it revealed values with `push`, in order. `regimeStart` is then the
+ * index at which the current ground was last conceded — the only thing a
+ * caller needs to know to answer "how much of my history is contemporary with
+ * itself right now."
+ *
+ * `tolerance` is declared for the same reason it is declared above: it is the
+ * resolution of refusal, and a default would decide in advance how eager this
+ * is to concede.
+ */
+export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
+  if (!Number.isInteger(tolerance) || tolerance < 1)
+    throw new TypeError("atmosphere: tolerance is the resolution of refusal and is never a default");
+  if (!Number.isInteger(window) || window < 2)
+    throw new TypeError("atmosphere: window is the reach of the present and is never derived from material length");
+  if (!Number.isInteger(draws) || draws < 2)
+    throw new TypeError("atmosphere: draws is the resolution of testimony and is never a default");
+
+  const seen = [];
+  let regimeStart = 0;
+  let g = null;
+  let clearings = 0;
+  let rezeroCount = 0;
+
+  const groundFrom = (start, end) => {
+    if (end - start < window + 2) return null;
+    const built = ground({ material: seen.slice(start, end), draws, window, seed: seed + start });
+    return isGap(built) ? null : built;
+  };
+
+  const push = (x) => {
+    if (typeof x !== "number" || !Number.isFinite(x))
+      throw new TypeError("atmosphere: a regime tracker consumes finite numbers only");
+    seen.push(x);
+    const t = seen.length;
+    // Both the ground and the observed window must end at or before t.
+    if (t < window) return { regimeStart, rezeroed: false, ananda: g ? volume(g) : null };
+
+    const built = groundFrom(regimeStart, t - window);
+    if (built) g = built;
+    if (!g) return { regimeStart, rezeroed: false, ananda: null };
+
+    // Commensurate with the ground's own statistic: burstiness is a
+    // max-over-windows, so only a real windowed mean is comparable to it.
+    let sum = 0;
+    for (let j = t - window; j < t; j++) sum += seen[j];
+    const d = difference(sum / window, g);
+
+    let rezeroed = false;
+    if (isGap(d) && d.gap === "exceeds_witness" && d.direction === "above") {
+      // DEF · Clearing. Only surfeit clears — censored BELOW is regularity,
+      // and counting it here re-zeros on nearly every step (SEED.md #8).
+      clearings++;
+      if (clearings >= tolerance) {
+        // REC · Cultivating — concede the ground, grow the next one here.
+        regimeStart = t - window;
+        g = null;
+        clearings = 0;
+        rezeroCount++;
+        rezeroed = true;
+      }
+    } else {
+      clearings = 0; // EVA · Tending
+    }
+    return { regimeStart, rezeroed, ananda: g ? volume(g) : null };
+  };
+
+  return {
+    push,
+    get regimeStart() {
+      return regimeStart;
+    },
+    get rezeroCount() {
+      return rezeroCount;
+    },
+    get ananda() {
+      return g ? volume(g) : null;
+    },
+  };
+};

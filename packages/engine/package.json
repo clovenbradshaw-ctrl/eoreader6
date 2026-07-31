@@ -13,6 +13,10 @@
     "./prediction/tasks": "./prediction/tasks.js",
     "./prediction/commitments": "./prediction/commitments.js",
     "./prediction/scoring": "./prediction/scoring.js",
-    "./competency/ledger": "./competency/ledger.js"
+    "./prediction/baselines": "./prediction/baselines.js",
+    "./prediction/candidates": "./prediction/candidates.js",
+    "./prediction/run": "./prediction/run.js",
+    "./competency/ledger": "./competency/ledger.js",
+    "./loops/atmosphere": "./loops/atmosphere.js"
   }
 }
