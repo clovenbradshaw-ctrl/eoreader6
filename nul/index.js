@@ -68,6 +68,107 @@ const rng = (seed) => {
   };
 };
 
+/** In-place radix-2 Cooley-Tukey. Length must be a power of two; see `dft`. */
+const fft2 = (re, im, inverse) => {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      [re[i], re[j]] = [re[j], re[i]];
+      [im[i], im[j]] = [im[j], im[i]];
+    }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const ang = ((2 * Math.PI) / len) * (inverse ? 1 : -1);
+    const wr = Math.cos(ang);
+    const wi = Math.sin(ang);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1;
+      let ci = 0;
+      for (let k = 0; k < len >> 1; k++) {
+        const ur = re[i + k];
+        const ui = im[i + k];
+        const xr = re[i + k + (len >> 1)];
+        const xi = im[i + k + (len >> 1)];
+        const vr = xr * cr - xi * ci;
+        const vi = xr * ci + xi * cr;
+        re[i + k] = ur + vr;
+        im[i + k] = ui + vi;
+        re[i + k + (len >> 1)] = ur - vr;
+        im[i + k + (len >> 1)] = ui - vi;
+        const ncr = cr * wr - ci * wi;
+        ci = cr * wi + ci * wr;
+        cr = ncr;
+      }
+    }
+  }
+  if (inverse) for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
+};
+
+/**
+ * Bluestein, so the transform is exact at ANY length.
+ *
+ * The obvious shortcuts are both refusals in disguise. Truncating to the
+ * largest power of two changes the EXTENT, and SEED.md #5 is about exactly
+ * that: a ground built over 4096 of a 5000-point material is not the null for
+ * that material, and `pattern` already refuses the mismatch by type
+ * (`incommensurate_extent`). Zero-padding is worse — it invents a stretch of
+ * material that is not there, and the perturbation would then be preserving
+ * the spectrum of something nobody handed in. The extent is the giver's
+ * declaration; an internal convenience does not get to revise it.
+ */
+const dft = (inRe, inIm, inverse = false) => {
+  const n = inRe.length;
+  const re = Float64Array.from(inRe);
+  const im = inIm ? Float64Array.from(inIm) : new Float64Array(n);
+  if ((n & (n - 1)) === 0) {
+    fft2(re, im, inverse);
+    return { re, im };
+  }
+  let m = 1;
+  while (m < 2 * n + 1) m <<= 1;
+  const sign = inverse ? 1 : -1;
+  const [cosT, sinT] = [new Float64Array(n), new Float64Array(n)];
+  for (let i = 0; i < n; i++) {
+    // (i*i) % (2n) before the divide: i*i overflows exact double precision at
+    // large n, and the chirp is periodic in 2n, so reducing first is not an
+    // optimisation but the only way the angle stays correct.
+    const a = (sign * Math.PI * ((i * i) % (2 * n))) / n;
+    cosT[i] = Math.cos(a);
+    sinT[i] = Math.sin(a);
+  }
+  const ar = new Float64Array(m);
+  const ai = new Float64Array(m);
+  for (let i = 0; i < n; i++) {
+    ar[i] = re[i] * cosT[i] - im[i] * sinT[i];
+    ai[i] = re[i] * sinT[i] + im[i] * cosT[i];
+  }
+  const br = new Float64Array(m);
+  const bi = new Float64Array(m);
+  br[0] = cosT[0];
+  bi[0] = -sinT[0];
+  for (let i = 1; i < n; i++) {
+    br[i] = br[m - i] = cosT[i];
+    bi[i] = bi[m - i] = -sinT[i];
+  }
+  fft2(ar, ai, false);
+  fft2(br, bi, false);
+  for (let i = 0; i < m; i++) {
+    const r = ar[i] * br[i] - ai[i] * bi[i];
+    ai[i] = ar[i] * bi[i] + ai[i] * br[i];
+    ar[i] = r;
+  }
+  fft2(ar, ai, true);
+  for (let i = 0; i < n; i++) {
+    re[i] = ar[i] * cosT[i] - ai[i] * sinT[i];
+    im[i] = ar[i] * sinT[i] + ai[i] * cosT[i];
+    if (inverse) { re[i] /= n; im[i] /= n; }
+  }
+  return { re, im };
+};
+
 /**
  * Perturbations of what is present. No parametric family, no global mean and sd:
  * an unconditional null is a units change and preserves everything it was meant
@@ -86,6 +187,76 @@ export const PERTURBATIONS = Object.freeze({
   resample: (material, seed) => {
     const next = rng(seed);
     return material.map(() => material[Math.floor(next() * material.length)]);
+  },
+  /**
+   * Randomise the Fourier phases; keep every magnitude exactly.
+   *
+   * The two above destroy the power spectrum along with everything else, which
+   * makes them the right null when the question is "does this index carry
+   * anything at all" and the WRONG one the moment the spectrum is itself
+   * received. Material can arrive with its second-order structure already
+   * declared by whoever handed it in — a turbulent cascade is handed over with
+   * Kolmogorov's exponent attached, and it was not this engine that earned it.
+   * Against a shuffle such material is censored below on every order statistic
+   * before anything interesting has been asked, because the shuffle is
+   * answering a question already settled at intake.
+   *
+   * This one holds the declared part fixed and destroys the rest. What survives
+   * it is, exactly, the structure the spectrum does not explain. That makes it a
+   * CONDITIONAL null in the sense `pattern` already had to relearn below: it
+   * varies along the axis the artefact exploits, where an unconditional null is
+   * only a change of units.
+   *
+   * Preserved to floating-point: every |X[k]|, hence the autocorrelation, hence
+   * mean and variance. Destroyed: phase coherence, and with it time asymmetry
+   * and intermittency. Two series can therefore be bit-identical in spectrum
+   * and land on opposite sides of this ground — which is the entire reason it
+   * is worth having, and is not reachable from `shuffle` at any draws.
+   *
+   * Hermitian symmetry is imposed rather than hoped for, so the output is real
+   * by construction and not by rounding. DC keeps its value (it is the mean,
+   * which is part of what is preserved) and, at even length, so does Nyquist —
+   * that bin has no free phase, only a sign, and spending randomness on it
+   * would be perturbing a magnitude while claiming not to.
+   *
+   * LICENSED FOR `irreversibility` ONLY. Amendment I: a perturbation admitted
+   * on the strength of one statistic carries no warrant for any other, and this
+   * one was measured, not assumed. Against 96 real DNS lines
+   * (scripts/turbulence-growth-rule.mjs) the growth rule's `level` test returns:
+   *
+   *   irreversibility     above 84/96, mean displacement +0.361   ← joins
+   *   burstiness          unstable 91/96
+   *   permutationEntropy  exceeds_witness 93/96
+   *
+   * The two failures are not noise and are worth keeping. `burstiness` is a max
+   * over windows and phase randomisation preserves the variance, so the two
+   * grounds sit almost on top of each other and the cross-measurement has no
+   * footing — `unstable` is the correct answer, not a near miss.
+   * `permutationEntropy` is censored because real turbulence is more ordered
+   * than a spectrum-matched surrogate at every line, which is a finding about
+   * the material rather than a placement of it. Only the arrow statistic
+   * actually needs this ground, and only it may use it.
+   */
+  phase: (material, seed) => {
+    const n = material.length;
+    if (n < 4) return material.slice();
+    const next = rng(seed);
+    const { re, im } = dft(material, null, false);
+    const half = n >> 1;
+    for (let k = 1; k < (n + 1) >> 1; k++) {
+      const mag = Math.hypot(re[k], im[k]);
+      const ph = next() * 2 * Math.PI;
+      re[k] = mag * Math.cos(ph);
+      im[k] = mag * Math.sin(ph);
+      re[n - k] = re[k];
+      im[n - k] = -im[k];
+    }
+    if ((n & 1) === 0) im[half] = 0;
+    const back = dft(re, im, true);
+    // The inverse of a Hermitian spectrum is real; the imaginary part is
+    // rounding, and dropping it silently is how a perturbation starts
+    // returning something that is not material. Kept as a real array.
+    return Array.from(back.re);
   },
 });
 
@@ -216,6 +387,58 @@ export const irreversibility = (series, { window }) => {
 };
 
 export const STATISTICS = Object.freeze({ burstiness, permutationEntropy, irreversibility });
+
+/**
+ * Which (statistic, perturbation) pairs have actually been established.
+ *
+ * Amendment I says sensitivity is a property of the pair, and that "a
+ * statistic admitted to STATISTICS on the strength of one perturbation
+ * carries no warrant for any other." That was recorded as prose, and prose is
+ * what SEED.md elsewhere calls a lint wearing an invariant's clothes. This is
+ * the same claim in a form an organ can be refused by.
+ *
+ * NOT enforced inside `ground`. The pairs below predate the map, and quietly
+ * gapping anything absent from it would be a change of behaviour smuggled in
+ * as bookkeeping. An organ that wants the guarantee asks for it — see
+ * `cascade`, which refuses to build on an unlicensed pair.
+ *
+ * `where` names the material each licence was earned on, because a licence
+ * established on one kind of material is evidence, not a general warrant.
+ */
+export const LICENSED = Object.freeze({
+  "burstiness/shuffle": Object.freeze({ where: "conformance/temporality.test.js — vacuity controls; goldens/surprise" }),
+  "permutationEntropy/shuffle": Object.freeze({ where: "conformance/temporality.test.js — the three rows" }),
+  "irreversibility/shuffle": Object.freeze({ where: "conformance/temporality.test.js — the three rows" }),
+  "irreversibility/phase": Object.freeze({
+    where: "scripts/turbulence-growth-rule.mjs — level() returns `above` on 84/96 real DNS lines, mean displacement +0.361",
+  }),
+});
+
+export const licensed = (statistic, perturbation) =>
+  Object.hasOwn(LICENSED, `${statistic}/${perturbation}`);
+
+/**
+ * What each perturbation HOLDS FIXED — which is a different question from what
+ * it is licensed for, and conflating the two is a mistake worth naming.
+ *
+ * A licence is about sensitivity: does this statistic move when this
+ * perturbation is applied. This is about containment: an organ that transforms
+ * its material before measuring needs a null that underwent the same
+ * transformation, and can only get one if the transformation's whole effect
+ * lies inside what the perturbation preserves. `cascade` box-filters, a box
+ * filter is a multiplication in frequency and nothing else, so only a
+ * spectrum-preserving null contains it.
+ *
+ * The two checks catch different failures and neither implies the other:
+ * `irreversibility/shuffle` is fully licensed and still unusable for cascade.
+ */
+export const PRESERVES = Object.freeze({
+  shuffle: Object.freeze(["multiset"]),
+  resample: Object.freeze(["support"]),
+  phase: Object.freeze(["spectrum", "autocorrelation", "mean", "variance"]),
+});
+
+export const preserves = (perturbation, what) => (PRESERVES[perturbation] ?? []).includes(what);
 
 /**
  * `window` is the reach of the present — how much of the material is contemporary
@@ -503,9 +726,45 @@ export const pattern = ({ before, after, material, reseeds }) => {
  * ranks higher (more extreme) against the core's ground than against its own —
  * the core's ground cannot anticipate what the organ perceives.
  *
- * Returns { relationship, displacement, rank, cross } or a gap.
+ * THE THRESHOLD IS A RESOLUTION FLOOR, NOT A NULL, AND FOR A LONG TIME IT WAS
+ * ASKED TO BE BOTH.
+ *
+ * `2/draws` is the finest rank difference two grounds can even express, so
+ * nothing below it is sayable. That makes it necessary and it never made it
+ * sufficient — and because it SHRINKS as draws grows, a caller who paid for
+ * more resolution got a threshold approaching zero, which SEED.md #3 names as
+ * the lineage's most expensive dead end: a null of zero width clears anything
+ * put in front of it.
+ *
+ * Measured, on white noise coarsened to six scales (12 realisations, six
+ * adjacent pairs each) — material with no scale structure whatsoever, where
+ * every relation should be `peer`:
+ *
+ *   draws  threshold   laddered/5   above / below
+ *      60     0.0333         3.08      21 / 16
+ *     120     0.0167         3.42      19 / 22
+ *     300     0.0067         4.33      27 / 25
+ *     600     0.0033         4.42      26 / 27
+ *
+ * The direction is a coin flip at every setting, and the rate of finding a
+ * level where none exists RISES with draws. This is the same defect, in the
+ * same shape, that `pattern`'s `opened` sign carried until it was given a
+ * reseeding null — recorded a few dozen lines above, at 77.8%.
+ *
+ * So the displacement gets the null the sign already got: how far does the
+ * rank move on a MERE RESEED of own's own ground, same spec, same material,
+ * fresh seed. Anything smaller is reseeding noise wearing a level's clothes.
+ * No fourth declared number — `reseeds` is already the resolution of pattern.
+ *
+ * The null is OPTIONAL because a ground stores a fingerprint and an extent,
+ * not its material, so `level` cannot reseed on its own. When it is not
+ * supplied the result says so (`nulled: false`) instead of quietly presenting
+ * a resolution floor as a null. Callers that can supply material should.
+ *
+ * Returns { relationship, displacement, threshold, floor, reseedNull, nulled,
+ * rank, cross } or a gap.
  */
-export const level = (observed, ownGround, targetGround) => {
+export const level = (observed, ownGround, targetGround, { material, reseeds } = {}) => {
   const own = admissible(ownGround);
   if (own && isGap(own)) return own;
   const tgt = admissible(targetGround);
@@ -520,14 +779,54 @@ export const level = (observed, ownGround, targetGround) => {
   if (isGap(cross)) return gap("unstable", { reason: "cross-measurement failed", detail: cross });
 
   const displacement = cross.rank - fig.rank;
-  const threshold = 2 / ownGround.samples.length;
+  const floor = 2 / ownGround.samples.length;
+
+  let reseedNull = null;
+  if (material !== undefined || reseeds !== undefined) {
+    if (!Number.isInteger(reseeds) || reseeds < 2)
+      return gap("undeclared", { what: "reseeds", why: "the resolution of pattern is never a default" });
+    if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
+    if (!ownGround.spec) return gap("unreceived_origin", { reason: "a received ground has no reseeding null" });
+    // Type error before null, SEED.md #7: a null over different material than
+    // the ground it is the null FOR is measuring something else entirely.
+    if (material.length !== ownGround.extent)
+      return gap("incommensurate_extent", {
+        reason: "the null must be built over OWN's own material",
+        given: material.length,
+        own: ownGround.extent,
+      });
+
+    reseedNull = 0;
+    for (let r = 1; r <= reseeds; r++) {
+      const g = reZero(ownGround, { material, seed: ownGround.spec.seed + r * ownGround.spec.draws });
+      if (isGap(g)) return g;
+      const d = difference(observed, g);
+      // A reseed that cannot place the observation is not a failure of the
+      // level question — it is the honest width of the noise showing up as
+      // censoring, and counting it as zero displacement would shrink the null
+      // exactly when it should widen it.
+      if (isGap(d)) return gap("unstable", { reason: "a reseed of own's ground could not place the observation", detail: d });
+      reseedNull = Math.max(reseedNull, Math.abs(d.rank - fig.rank));
+    }
+  }
+
+  const threshold = Math.max(floor, reseedNull ?? 0);
 
   let relationship;
-  if (Math.abs(displacement) < threshold) relationship = "peer";
+  if (Math.abs(displacement) <= threshold) relationship = "peer";
   else if (displacement > 0) relationship = "above";
   else relationship = "below";
 
-  return Object.freeze({ relationship, displacement, threshold, rank: fig.rank, cross: cross.rank });
+  return Object.freeze({
+    relationship,
+    displacement,
+    threshold,
+    floor,
+    reseedNull,
+    nulled: reseedNull !== null,
+    rank: fig.rank,
+    cross: cross.rank,
+  });
 };
 
 /**

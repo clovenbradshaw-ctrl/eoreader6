@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sources = ["nul/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js", "formation/index.js"];
+const sources = ["nul/index.js", "cascade/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js", "formation/index.js"];
 
 const codeOf = (file) =>
   readFileSync(join(root, file), "utf8")
@@ -23,7 +23,7 @@ test("the doctrine is present, and the instrument is held outside the code", () 
 // priors on their way to eoPriors and has no importable surface. The test
 // below enforces that — the moment `bin` contains code it has become an organ
 // and has to be earned like one.
-const ORGANS = ["conformance", "discourse", "event_log", "formation", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
+const ORGANS = ["cascade", "conformance", "discourse", "event_log", "formation", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
 const STAGED_DATA = ["bin"];
 
 test("only earned organs exist alongside the core", () => {
@@ -159,4 +159,13 @@ levelTest("temporality", "temporality/index.js", {
 levelTest("formation", "formation/index.js", {
   importsNul: true,
   enables: ["emanon", "collapse", "sustain", "PHASES"],
+});
+
+// cascade is the third use of the one operation — `level` — applied across
+// SCALES of one material instead of across two materials. It occupies no cell
+// of its own: it is a top-level measurement organ like temporality, and its
+// whole act is the level test (SEED.md, "not yet earned", no longer).
+levelTest("cascade", "cascade/index.js", {
+  importsNul: true,
+  enables: ["coarsen", "cascade", "licensed", "preserves"],
 });

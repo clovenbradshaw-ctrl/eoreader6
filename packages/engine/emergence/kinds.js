@@ -31,11 +31,42 @@
 // discipline, nulls shaped to the material. There is no universal clock: a
 // kind ticks on its own signal-from-noise, never on a shared epoch.
 //
+// KINDS ARE READ BY KEY *AND* VALUE (emergence/values.js). This organ began
+// key-only: a profile was a binary key vector and similarity was Jaccard over
+// key sets. That is exactly right when kind-identity coincides with
+// key-identity, which is what Emma's relation terms gave it — `anchor_shared`
+// and `subject_shared` are different KEYS. It is blind, totally rather than
+// partially, on material whose kinds share a key pool and differ only in
+// fillers: identical profiles, an all-1.0 similarity matrix, a cohesion null of
+// zero width, `degenerate_ground` at every cluster. That is the omnimodal case
+// and not an edge case — a leitmotif shares every key with every other motif,
+// and only values differ. `valuedJaccard` generalises the old statistic and
+// reduces to it exactly on valueless material, so nothing that was induced
+// before is induced differently now.
+//
+// The core field is chosen by DISCRIMINATION, not prevalence, whenever values
+// are being read. Under a shared key pool every field has prevalence 1 in every
+// kind, so prevalence cannot tell two kinds apart and would hand all of them the
+// same label. The discriminating field is the one whose within-kind agreement
+// most exceeds the population's — a difference against a ground, like
+// everything else here. Presence-only material keeps the prevalence rule and
+// keeps its old labels.
+//
 // Declared numbers are options, never defaults (SEED.md #7): population,
-// minPrevalence, minKindSize, permutations, quantile, seed.
+// minPrevalence, minKindSize, permutations, quantile, seed — and `reseeds`,
+// the resolution of pattern, which valued material additionally requires
+// because its search must be nulled against itself (`searchCohesions`).
 
 import { gap, isGap } from "../../../nul/index.js";
 import { CURRENT_OPERATOR_EPOCH, OPERATORS, validateChain } from "../operators.js";
+import {
+  fieldScales,
+  valuedSimilarity,
+  agreement,
+  readsValues,
+  scaleGaps,
+  permuteAllValues,
+} from "./values.js";
 
 // The cells this organ occupies on the operator grid (engine/operators.js):
 // the chain's vocabulary synthesis, SYN · Network · Composing, and its
@@ -287,29 +318,122 @@ export const eva = (profiles, sim, cluster, idxOf, { permutations, quantile, see
 
 // ── DEF · differentiate what survived into a definition ─────────────────────
 
-export const def = ({ cluster, cohesion, existence, sim, records, params, population, minPrevalence, permutations, quantile, seed }) => {
+/** Mean pairwise agreement on one field across a set of records. The ground for
+ *  a kind's agreement is the whole population's agreement on the same field. */
+const meanAgreement = (recs, fieldId, scale) => {
+  const vals = recs
+    .map((r) => (r.attributes ?? []).find((a) => a.field_id === fieldId))
+    .filter((a) => a !== undefined)
+    .map((a) => a.value);
+  if (vals.length < 2) return null;
+  let sum = 0;
+  let n = 0;
+  for (let i = 0; i < vals.length; i++) {
+    for (let j = i + 1; j < vals.length; j++) {
+      sum += agreement(vals[i], vals[j], scale);
+      n++;
+    }
+  }
+  return n === 0 ? null : sum / n;
+};
+
+/** What this kind's core field is CENTRED on — the thing that makes it this
+ *  kind and not its neighbour. Testimony, never identity: a kind's identity is
+ *  its member set (`id` below), so naming the regime here fabricates nothing. */
+const centralValue = (recs, fieldId, scale) => {
+  const vals = recs
+    .map((r) => (r.attributes ?? []).find((a) => a.field_id === fieldId))
+    .filter((a) => a !== undefined && a.value !== undefined)
+    .map((a) => a.value);
+  if (vals.length === 0) return null;
+  if (scale?.value_type === "numeric") {
+    const nums = vals.filter(Number.isFinite).sort((a, b) => a - b);
+    if (nums.length === 0) return null;
+    const mid = Math.floor(nums.length / 2);
+    return nums.length % 2 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+  }
+  if (scale?.value_type === "vector") return null; // no scalar name for a centroid
+  const counts = new Map();
+  for (const v of vals) counts.set(v, (counts.get(v) ?? 0) + 1);
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))[0][0];
+};
+
+export const def = ({ cluster, cohesion, existence, searched = null, warrant = null, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }) => {
   const members = cluster;
   const memberIds = new Set(members);
+  const memberRecords = records.filter((r) => memberIds.has(r.id));
   const kindParams = [];
   for (const p of params) {
     const prevalenceInKind = [...memberIds].filter((id) => p.ids.includes(id)).length / members.length;
     if (prevalenceInKind < minPrevalence) continue;
     kindParams.push({ field_id: p.field_id, value_type: p.value_type, prevalence: prevalenceInKind });
   }
-  const coreField = kindParams.length > 0
-    ? kindParams.reduce((a, b) => (b.prevalence > a.prevalence ? b : a), kindParams[0])
-    : null;
-  const label = coreField ? coreField.field_id : population;
 
+  // Prevalence picks the core only when there are no values to read. Under a
+  // shared key pool every admitted field sits at prevalence 1 in every kind, so
+  // prevalence is constant and would label every kind identically. What
+  // separates them is where their values agree with themselves more than the
+  // population agrees with itself.
+  let coreField = null;
+  if (kindParams.length > 0) {
+    if (!valued) {
+      coreField = kindParams.reduce((a, b) => (b.prevalence > a.prevalence ? b : a), kindParams[0]);
+    } else {
+      let best = null;
+      for (const p of kindParams) {
+        const scale = scales.get(p.field_id);
+        const within = meanAgreement(memberRecords, p.field_id, scale);
+        const ground = meanAgreement(records, p.field_id, scale);
+        if (within === null || ground === null) continue;
+        const lift = within - ground;
+        if (best === null || lift > best.lift || (lift === best.lift && p.prevalence > best.prevalence)) {
+          best = { ...p, within, ground, lift };
+        }
+      }
+      coreField = best ?? kindParams.reduce((a, b) => (b.prevalence > a.prevalence ? b : a), kindParams[0]);
+    }
+  }
+
+  const coreScale = coreField ? scales?.get(coreField.field_id) : null;
+  const coreCentre = coreField && valued ? centralValue(memberRecords, coreField.field_id, coreScale) : null;
+  const label = coreField
+    ? (coreCentre === null ? coreField.field_id : `${coreField.field_id}=${coreCentre}`)
+    : population;
+
+  // POSSIBILITY-CONSTRAINT — does the kind's core constrain membership more
+  // than a random partition of the population would?
+  //
+  // Asked of PRESENCE, this question is vacuous under a shared key pool: every
+  // record carries every admitted field, so the observed fraction is 1, every
+  // null sample is 1, and `partitionNull` correctly refuses a null of zero
+  // width — returning `unstable` for kinds that are in fact sharply
+  // constrained. The constraint was never about carrying the key. It is about
+  // the core's REGIME: members agree with each other on the core field, and a
+  // subset drawn across kinds does not.
+  //
+  // Presence-only material keeps the presence form exactly, because there is no
+  // regime to ask about and the fraction is then genuinely informative.
   const allIds = records.map((r) => r.id);
   const memberIndexes = members.map((id) => allIds.indexOf(id)).sort((a, b) => a - b);
-  const hasCore = (rec) => (coreField ? (rec.attributes ?? []).some((a) => a.field_id === coreField.field_id) : false);
-  const observedCore = memberIndexes.filter((i) => hasCore(records[i])).length / members.length;
-  const constraintSamples = [];
+  const coreIsValued = Boolean(coreField && valued && scales?.get(coreField.field_id)?.mode === "value");
   const rnd = prng(seed ^ 0xdeadbeef);
-  for (let p = 0; p < permutations; p++) {
-    const sub = randomSubset(records.length, members.length, rnd);
-    constraintSamples.push(sub.filter((i) => hasCore(records[i])).length / members.length);
+  const constraintSamples = [];
+  let observedCore;
+
+  if (coreIsValued) {
+    const scale = scales.get(coreField.field_id);
+    observedCore = meanAgreement(memberRecords, coreField.field_id, scale) ?? 0;
+    for (let p = 0; p < permutations; p++) {
+      const sub = randomSubset(records.length, members.length, rnd);
+      constraintSamples.push(meanAgreement(sub.map((i) => records[i]), coreField.field_id, scale) ?? 0);
+    }
+  } else {
+    const hasCore = (rec) => (coreField ? (rec.attributes ?? []).some((a) => a.field_id === coreField.field_id) : false);
+    observedCore = memberIndexes.filter((i) => hasCore(records[i])).length / members.length;
+    for (let p = 0; p < permutations; p++) {
+      const sub = randomSubset(records.length, members.length, rnd);
+      constraintSamples.push(sub.filter((i) => hasCore(records[i])).length / members.length);
+    }
   }
   const constraint = partitionNull({ samples: constraintSamples, observed: observedCore, quantile, seed: seed + 1 });
 
@@ -337,12 +461,62 @@ export const def = ({ cluster, cohesion, existence, sim, records, params, popula
     label,
     population,
     members: Object.freeze([...members].sort()),
-    core: coreField ? Object.freeze({ field_id: coreField.field_id, value_type: coreField.value_type, prevalence: coreField.prevalence }) : null,
+    core: coreField ? Object.freeze({
+      field_id: coreField.field_id,
+      value_type: coreField.value_type,
+      prevalence: coreField.prevalence,
+      // Present only when values were read: what the kind is centred on, and
+      // how much more it agrees with itself there than the population does.
+      ...(coreCentre === null ? {} : { centre: coreCentre }),
+      ...(coreField.lift === undefined ? {} : { agreement: coreField.within, ground_agreement: coreField.ground, lift: coreField.lift }),
+    }) : null,
     cohesion,
     height: relation,
-    heightGate: Object.freeze({ existence, constraint, relation }),
+    heightGate: Object.freeze({ existence, constraint, relation, ...(searched ? { searched } : {}), ...(warrant ? { warrant } : {}) }),
     operator_chain: Object.freeze({ ...chain, stages: Object.freeze(stages) }),
   });
+};
+
+// ── the search null · what the Born gates cannot see ────────────────────────
+//
+// MEASURED, AND THE REASON THIS EXISTS. On composed material with FOUR kinds
+// collapsed into ONE regime (`goldens/kinds`, valueDivergence 0 — there is
+// nothing to find), induction reported three kinds, every one of them `above`,
+// both Born gates passing, core lift up to 0.476. That is confabulation, and
+// the seed names it as one of the two deaths.
+//
+// The reason is a selection effect, not a bad statistic. `eva` and `def`
+// compare a cluster against RANDOM SUBSETS of the population — but the cluster
+// was not random, it was CHOSEN by agglomeration for being the most cohesive
+// subset available. "The best subset I could find" beats "a subset drawn at
+// random" whether or not there is any structure, so the gates pass on noise.
+//
+// The key-only organ was protected from this by accident: Jaccard over a
+// handful of keys takes only a few distinct values, so cohesion is quantised,
+// null samples come out all-equal, and `degenerate_ground` refused. Continuous
+// values remove that accident. Nothing was wrong before and nothing was right
+// before either — the null was never licensed for this material (Amendment I).
+//
+// So the perturbation has to destroy what the statistic actually exploits,
+// which is the search. This null RE-RUNS THE WHOLE SEARCH — same spec, same
+// material, fresh seed, values permuted within their keys so every key profile
+// survives exactly — and asks whether the real search found more cohesion than
+// the same search finds in material where the values are no longer bound to
+// the records that earned them. SEED.md's own words for the pattern null:
+// "same spec, same material, fresh seed."
+
+const searchCohesions = (records, params, keys, scales, { minKindSize, permutations, quantile, seed, reseeds }) => {
+  const samples = [];
+  for (let r = 0; r < reseeds; r++) {
+    const rnd = prng((seed ^ 0x5ea2c4) + r * 0x9e3779b1);
+    const permuted = permuteAllValues(records, keys, rnd);
+    const { profiles } = parameterProfiles(permuted, params);
+    if (profiles.size < minKindSize) continue;
+    const { sim, idxOf } = valuedSimilarity(profiles, permuted, keys, scales);
+    const { clusters } = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
+    for (const c of clusters) samples.push(meanPairwiseSim(c, sim, idxOf));
+  }
+  return samples;
 };
 
 // ── the organ entry point ────────────────────────────────────────────────────
@@ -355,6 +529,7 @@ export const induceKinds = (records, opts = {}) => {
     permutations,
     quantile,
     seed,
+    reseeds,
   } = opts;
   if (typeof population !== "string" || population.length === 0)
     throw new TypeError("induceKinds: population is declared, never defaulted");
@@ -368,17 +543,92 @@ export const induceKinds = (records, opts = {}) => {
   if (params.length === 0) return [];
   const { profiles, keys } = parameterProfiles(records, params);
   if (profiles.size < minKindSize) return [];
-  const { sim, idxOf } = conSimilarity(profiles);
+
+  // The value channel. `valuedSimilarity` is a strict generalisation of
+  // `conSimilarity` — on presence-only material the two agree exactly — so it
+  // is used unconditionally rather than switched on, and conformance pins the
+  // agreement rather than trusting it.
+  const scales = fieldScales(records);
+  const valued = readsValues(keys, scales);
+  const { sim, idxOf } = valuedSimilarity(profiles, records, keys, scales);
   const { clusters, threshold } = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed });
+
+  // Valued induction searches a continuous space and must be nulled against its
+  // own search (`searchCohesions` above). Presence-only induction does not
+  // declare `reseeds` and does not run it — its cohesion is quantised and the
+  // existing gates already refuse where this would.
+  let search = null;
+  if (valued) {
+    if (!Number.isInteger(reseeds) || reseeds < 2)
+      throw new TypeError("induceKinds: valued material requires a declared `reseeds` (the resolution of pattern) of at least 2 — the Born gates alone certify clusters found in noise");
+    search = searchCohesions(records, params, keys, scales, { minKindSize, permutations, quantile, seed, reseeds });
+  }
+
+  // PLURAL GROUNDS, AND EACH IS LICENSED FOR ONE PERTURBATION (SEED.md #6,
+  // Amendment I). A cluster can rest on key structure, on value structure, or
+  // on both, and the two claims have different nulls:
+  //
+  //   key channel    nulled by the label shuffle — which is what `eva` runs,
+  //                  over the key-only similarity.
+  //   value channel  nulled by the re-run search over within-key value
+  //                  permutation, which PRESERVES key structure exactly and so
+  //                  cannot speak to it at all.
+  //
+  // MEASURED, and the reason this is a branch rather than one gate: on material
+  // with DISJOINT key pools the permuted search finds the same clusters at the
+  // same cohesion — correctly, because the key structure survives the
+  // permutation untouched. Gating membership on that null discarded kinds that
+  // were entirely key-carried, which is the Emma case and the case this organ
+  // was built for. The null was not wrong; it was answering "do values add
+  // anything here?" and being read as "does this kind exist?"
+  //
+  // So a kind needs warrant from at least ONE channel. Where the key channel
+  // independently supports the cluster the kind stands and the search null is
+  // reportage; where it cannot — a shared key pool leaves key-similarity
+  // degenerate and it never can — the value channel is the only warrant on
+  // offer and the search null gates.
+  const keySim = conSimilarity(profiles);
 
   const kinds = [];
   for (const cluster of clusters) {
     const { cohesion, existence } = eva(profiles, sim, cluster, idxOf, { permutations, quantile, seed });
     if (isGap(existence)) continue;
     if (!existence.passed) continue;
-    kinds.push(def({ cluster, cohesion, existence, sim, records, params, population, minPrevalence, permutations, quantile, seed }));
+
+    let searched = null;
+    let warrant = "key";
+    if (search) {
+      searched = partitionNull({ samples: search, observed: cohesion, quantile, seed: seed + 2 });
+      const keyGate = eva(profiles, keySim.sim, cluster, keySim.idxOf, { permutations, quantile, seed });
+      const keySupported = !isGap(keyGate.existence) && keyGate.existence.passed;
+      const valueSupported = !isGap(searched) && searched.passed;
+      if (!keySupported && !valueSupported) continue;
+      warrant = keySupported && valueSupported ? "both" : keySupported ? "key" : "value";
+    }
+
+    kinds.push(def({ cluster, cohesion, existence, searched, warrant, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));
   }
   return kinds.sort((a, b) => b.cohesion - a.cohesion);
+};
+
+/** The induction's own account of how it read the material: which fields
+ *  contributed values, which fell back to presence, and why. A gap is a result
+ *  (SEED.md #8) — a field whose values could not be read is reportable, not
+ *  silently dropped. */
+export const inductionReading = (records, opts = {}) => {
+  const { minPrevalence, permutations, quantile, seed } = opts;
+  const params = sig(records, { minPrevalence, permutations, quantile, seed });
+  const { keys } = parameterProfiles(records, params);
+  const scales = fieldScales(records);
+  return Object.freeze({
+    keys: Object.freeze([...keys]),
+    valued: readsValues(keys, scales),
+    fields: Object.freeze(keys.map((k) => {
+      const s = scales.get(k);
+      return Object.freeze({ field_id: k, value_type: s?.value_type ?? null, mode: s?.mode ?? "presence", scale: s?.scale ?? null });
+    })),
+    gaps: Object.freeze(scaleGaps(scales)),
+  });
 };
 
 // ── SYN · synthesize the vocabulary the kinds require ────────────────────────

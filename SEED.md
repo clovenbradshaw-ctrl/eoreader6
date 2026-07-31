@@ -307,6 +307,91 @@ below refused once already — has not been ruled out. It is recorded unresolved
 rather than settled by fiat, on the same terms as the `DEF.admit` tension in
 `CUBE.md`.
 
+### V — Time is discovered from transformation, never assumed from the index
+
+*2026-07-31. Amends III and IV.*
+
+III put the meaning of the index beyond derivation: order is measured, that the
+order is *time* is received. Half of that is exactly right and is not weakened
+here. Shuffling destroys any arrangement — temporal, spatial, arbitrary — so no
+shuffle-sensitive statistic can name the arrangement it just found. A verdict of
+`arrowed` still says only that the index has a direction.
+
+What does not stand is the claim that **received is the only way the temporal
+claim can arrive.** III treats time as a label the giver attaches, so an
+ordering is temporal exactly when someone says so and otherwise never. That
+makes the engine blind to material whose temporality is doing visible work in
+the content — a narrative that reorders its own chronology, a still image
+carrying wear and growth stages, a table whose rows inherit state from the rows
+above them. Nobody hands those in labelled, and the engine currently cannot ask.
+
+The distinction III collapsed is between a **denotation** and a **function**:
+
+- **Denotation stays received** (#1, and the constitution's II.2). That this
+  index is wall-clock time, that these units are seconds, that this is the year
+  1818 — a gift, and it must name its giver. Deriving it is a wall.
+- **Function is measurable.** Whether the ordering carries state inheritance,
+  whether the direction is irreversible, whether an interval has a duration that
+  changes consequences, whether a later arrival remembers an earlier one — these
+  are established by perturbation, like everything else here. None of them is a
+  name.
+
+So the amended clause reads:
+
+> **Order is measured. Time may be received, discovered, or remain unresolved.
+> An ordering earns temporal interpretation when independent transformations
+> establish succession, duration, inheritance, recurrence, anticipation,
+> memory, or irreversibility as load-bearing. The engine must preserve the
+> distinction between presentation order, event order, causal order, and
+> measurement order.**
+
+Compactly: **do not assume time from the index; discover time from
+transformation.**
+
+**Three claims stay distinct, and the third is new.** `temporality` already
+earns the first two and stops:
+
+```text
+ordered        the index position is load-bearing        earned (permutationEntropy)
+directional    A→B is distinguishable from B→A           earned (irreversibility)
+temporal       the direction functions AS time here      not yet asked
+```
+
+The third is now askable, and `unresolved` is a first-class answer to it — the
+same standing `peer` has in the level test. A spatial scan may be directional
+without being temporal; a CSV's row order may be arbitrary; a narrative may run
+its events out of chronological order. All three must survive the answer.
+
+**Agreement across families is the evidence, and disagreement is still the
+finding** (#6). No single cue decides temporality. State inheritance, duration
+coherence, causal precedence, recurrence, and reversal sensitivity are separate
+families, and each must establish its own sensitivity against its own
+perturbation — Amendment I applies in full, so a family admitted on the strength
+of shuffle carries no warrant for displacement or duration-removal.
+
+**The orders are kept plural, never conflated.** Presentation, event, causal,
+measurement, narrator, remembered — projecting them onto one axis is an
+averaging of grounds, refused by #6 and by the constitution's II.8. The
+operational test is the flashback: a passage that discloses an earlier event
+must revise the event chronology **without** pretending the passage arrived
+earlier in the document. An engine that cannot hold both orders at once has
+conflated them.
+
+**No confidence floats.** A temporal verdict reports as a rank against `draws`
+with censoring, per #8 — "probably temporal" is a place in a support, not a
+0.91 from nowhere. Censored below is a measurement here too (Amendment II).
+
+**What this does not license.** Discovering time is not deriving a tense
+lexicon. Tense, aspect, and temporal expressions are text-perceiver evidence,
+and where they need a word list that list is a received prior with a named giver
+(II.2) — not a set mined from the material. Three independent derivation
+mechanisms already collapsed toward the material's own vocabulary at r ≈ 0.974,
+and nothing about this amendment reopens that.
+
+**No new declared number.** Duration, rate, and recurrence are all read at
+`window` — the reach of the present is what makes an interval an interval.
+Three declared numbers still.
+
 ### What did not move
 
 Recorded so the near-miss is not re-litigated. The block-perturbation design

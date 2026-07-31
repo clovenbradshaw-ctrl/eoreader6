@@ -262,7 +262,7 @@ export const admitFromArrivals = (state, at) => {
 
   // FIXED — this block previously re-zeroed `gEarly` PRIVATELY, inside one
   // candidate's own birth condition, when its figure exceeded witness. The
-  // constitution's oracle refuted that mechanism on record
+  // constitution's assay refuted that mechanism on record
   // (eo-constitution/claims/candidate-local-rezero.claim.json, II.7 — the
   // convergence test): it was added to rescue exactly one miss (Eero, the
   // seventh Jukola brother) and reported as a recall gain before it was ever

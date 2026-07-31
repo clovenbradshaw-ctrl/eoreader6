@@ -44,6 +44,20 @@ export const CELLS = Object.freeze([
 const DEF_GROUND = cellOf("DEF", "Ground"); // Atmosphere · Clearing
 const REC_GROUND = cellOf("REC", "Ground"); // Atmosphere · Cultivating
 
+/**
+ * A ground's relation to one arrival — one per Interpretation×Ground operator,
+ * so the vocabulary is the algebra's and not a second, parallel one. Three,
+ * never two: PLACED and OTHER are the easy poles, and STRAINED between them is
+ * the state `tolerance` exists to hold open. See createRegimeTracker's header.
+ * A fourth case — no ground to judge against — is a typed gap, not a member
+ * here, because it is a refusal rather than a relation.
+ */
+export const PLACEMENT = Object.freeze({
+  PLACED: "placed", // EVA · Tending
+  STRAINED: "strained", // DEF · Clearing
+  OTHER: "other", // REC · Cultivating
+});
+
 export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0 }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
   if (!Number.isInteger(tolerance) || tolerance < 1)
@@ -90,12 +104,12 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
     if (isGap(d) && d.gap === "exceeds_witness" && d.direction === "above") {
       // DEF · Clearing — this material does not belong to the ground so far
       clearings++;
-      events.push({ at: i, op: "DEF", terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, direction: d.direction });
+      events.push({ at: i, op: "DEF", domain: DEF_GROUND.domain, terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, direction: d.direction });
 
       if (clearings >= tolerance) {
         // REC · Cultivating — concede the ground and grow a new one here
         regions.push({ start: regionStart, end: i, ananda: volume(g), tended });
-        events.push({ at: i, op: "REC", terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, reason: "ground conceded after repeated clearing" });
+        events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, reason: "ground conceded after repeated clearing" });
         regionStart = i;
         g = null;
         clearings = 0;
@@ -138,13 +152,33 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
  * resolution of refusal, and a default would decide in advance how eager this
  * is to concede.
  *
- * `push` also returns `cleared`: the raw exceeds-witness-above test for THIS
- * step alone, undelayed by `tolerance` — `rezeroed` only fires once enough
- * clearings have accumulated to concede the ground, so it is silent about
- * every clearing that did not (yet) cross that bar. A caller that wants to
- * know "was this specific arrival still inside what the ground expected" —
- * self, in the efference sense — needs the undelayed signal, not the
- * boundary decision built on top of it.
+ * `push` also returns `placement`: this ground's relation to THIS arrival, as
+ * one of three, because the three Interpretation×Ground operators already are
+ * that distinction and collapsing them loses the middle one.
+ *
+ *   PLACED    EVA · Tending      the ground places the arrival. No news.
+ *   STRAINED  DEF · Clearing     the arrival exceeds this ground, but the
+ *                                ground still stands — a correction, not a
+ *                                different world. `tolerance` exists to hold
+ *                                exactly this state open.
+ *   OTHER     REC · Cultivating  enough strain has accumulated to concede;
+ *                                the ground is given up and regrown here.
+ *
+ * This is eoreader4.2's monitor triad (enactor/monitor.js: SELF /
+ * SELF_MISMATCH / WORLD) without the authorship it assumed. There, SELF meant
+ * "I emitted this and sensed it return." This engine emits nothing, so the
+ * claim available here is weaker and is named for what it actually is: the
+ * GROUND places the arrival, not "the arrival is mine." Self/world is the
+ * special case this collapses into once there is an author to close the loop
+ * — see SEED.md's relativity debt, which is why that author does not exist
+ * yet. A boolean here would fuse STRAINED and OTHER, which is the difference
+ * between a ground being corrected and a ground being abandoned.
+ *
+ * When there is no ground to judge against at all — too little material has
+ * arrived to span a window, or one could not be built over the region —
+ * `placement` is a TYPED GAP, never PLACED. Reporting "no ground yet" as "the
+ * ground held" is a silently wrong number of exactly the kind a typed gap
+ * exists to refuse.
  */
 export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
   if (!Number.isInteger(tolerance) || tolerance < 1)
@@ -171,12 +205,25 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
       throw new TypeError("atmosphere: a regime tracker consumes finite numbers only");
     seen.push(x);
     const t = seen.length;
-    // Both the ground and the observed window must end at or before t.
-    if (t < window) return { regimeStart, rezeroed: false, cleared: false, ananda: g ? volume(g) : null };
+    // Both the ground and the observed window must end at or before t. No
+    // ground yet is a typed gap, NOT "the ground held" — see the header.
+    if (t < window)
+      return {
+        regimeStart,
+        rezeroed: false,
+        placement: gap("no_ground", { why: "less material has arrived than one window of reach", arrived: t, window }),
+        ananda: g ? volume(g) : null,
+      };
 
     const built = groundFrom(regimeStart, t - window);
     if (built) g = built;
-    if (!g) return { regimeStart, rezeroed: false, cleared: false, ananda: null };
+    if (!g)
+      return {
+        regimeStart,
+        rezeroed: false,
+        placement: gap("no_ground", { why: "no ground could be built over the region so far", regimeStart, upTo: t - window }),
+        ananda: null,
+      };
 
     // Commensurate with the ground's own statistic: burstiness is a
     // max-over-windows, so only a real windowed mean is comparable to it.
@@ -184,9 +231,9 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     for (let j = t - window; j < t; j++) sum += seen[j];
     const d = difference(sum / window, g);
 
-    const cleared = isGap(d) && d.gap === "exceeds_witness" && d.direction === "above";
+    const strained = isGap(d) && d.gap === "exceeds_witness" && d.direction === "above";
     let rezeroed = false;
-    if (cleared) {
+    if (strained) {
       // DEF · Clearing. Only surfeit clears — censored BELOW is regularity,
       // and counting it here re-zeros on nearly every step (SEED.md #8).
       clearings++;
@@ -201,7 +248,12 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     } else {
       clearings = 0; // EVA · Tending
     }
-    return { regimeStart, rezeroed, cleared, ananda: g ? volume(g) : null };
+    return {
+      regimeStart,
+      rezeroed,
+      placement: rezeroed ? PLACEMENT.OTHER : strained ? PLACEMENT.STRAINED : PLACEMENT.PLACED,
+      ananda: g ? volume(g) : null,
+    };
   };
 
   return {

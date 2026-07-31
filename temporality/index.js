@@ -31,8 +31,25 @@
 //
 // What this CANNOT establish: that the index is time. Shuffling destroys any
 // index structure, spatial or temporal or arbitrary. That the ordering is
-// load-bearing is measured here; that the ordering is time is received from
-// whoever handed the material in, and stays received.
+// load-bearing is measured here; what the ordering DENOTES — wall-clock, a
+// calendar, the year 1818 — is received from whoever handed the material in,
+// and stays received.
+//
+// SEED.md Amendment V narrowed that refusal to the denotation only. Temporal
+// FUNCTION — state inheritance, duration, recurrence, memory, anticipation,
+// irreversibility — is measurable, by families of perturbation this organ does
+// not yet carry. So the ladder below is the first two rungs of three:
+//
+//   ordered      the index is load-bearing         earned here
+//   directional  A→B distinguishable from B→A      earned here
+//   temporal     the direction functions AS time   NOT ASKED HERE
+//
+// `arrowed` is therefore not a temporal verdict and must not be read as one. A
+// spatial scan can be arrowed. The third rung, when it is built, answers with
+// `unresolved` as a first-class outcome and must keep presentation, event,
+// causal, and measurement order apart rather than projecting them onto one
+// axis. Each new family establishes its own sensitivity (Amendment I); none
+// inherits the shuffle warrant these two hold.
 
 import { ground, difference, isGap, gap, STATISTICS } from "../nul/index.js";
 
