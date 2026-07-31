@@ -1,0 +1,213 @@
+// eoreader6 · generation/candidates — this engine's organs, as continuers.
+//
+// The same discipline as prediction/candidates.js, and for the same reason:
+// every candidate is a MINIMAL CONTRAST with a baseline it is meant to be read
+// against, so a gain can be attributed to exactly one thing.
+//
+//   candidate:decayed-belief   vs  baseline:markov-k
+//       Identical estimator, identical order, identical smoothing. The ONLY
+//       difference is gamma < 1. So the gain measures exactly one thing —
+//       whether a reader's FADING memory continues this text better than a
+//       corpus statistic over the same text does. This is `emergence/surprise`'s
+//       gamma, which that module declared and spent only on measuring how far
+//       belief had moved. Here it is spent on saying what comes next.
+//
+//   candidate:prior-augmented  vs  baseline:markov-k
+//       Identical estimator, identical order, identical gamma. The ONLY
+//       difference is that received layers are present. So the gain measures
+//       exactly one thing — whether having read OTHER books helps finish a
+//       sentence in this one. Every form it borrows is marked; see ./emit.js.
+//
+//   candidate:regime-belief    vs  baseline:markov-k
+//       Identical estimator. The ONLY difference is that the counts are
+//       cleared where `loops/atmosphere` concedes its ground. This is the
+//       exact claim `candidate:regime-mean` made in prediction/candidates.js,
+//       carried to a different target type: are the re-zero boundaries real?
+//       If they are, a belief that starts over at them should continue the
+//       text better than one that never starts over, because the material
+//       after a boundary is the material a reader is actually in.
+//
+//   candidate:boundary-null    — regime-belief's decisive control. Same number
+//       of resets, at positions it was handed instead of positions atmosphere
+//       found. Without it, regime-belief beating markov-k could just mean that
+//       forgetting periodically is good for a non-stationary text, which is a
+//       different and much less interesting claim.
+//
+// ON FEEDING ATMOSPHERE ITS OWN SURPRISAL. The regime tracker consumes finite
+// numbers, and the number it is handed here is the candidate's own causal
+// surprisal — −log p(token | context) computed from the belief BEFORE that
+// token is observed. This is the same series prediction/RESULTS.md ran its
+// whole battery on, which is what makes the two results commensurable. It is
+// causal by construction: no step can be scored, or can influence a boundary,
+// using a token the belief had already been shown.
+//
+// Pure: no clock, no randomness, no I/O. Read SEED.md first.
+
+import { createLayer, createBelief, UNSEEN } from "./belief.js";
+import { emitSequence } from "./emit.js";
+import { asEmitter, plainBelief } from "./baselines.js";
+import { createRegimeTracker } from "../loops/atmosphere.js";
+import { isGap } from "../../../nul/index.js";
+
+/**
+ * The reader's fading memory. gamma < 1 or this is just markov-k with extra
+ * steps, and that is checked rather than trusted, because a candidate that has
+ * silently become its own control reports a gain of zero as though it had been
+ * tested.
+ */
+export const decayedBelief = ({ order, alpha, gamma }) => {
+  if (!(gamma < 1))
+    throw new RangeError(
+      "candidates: decayed-belief needs gamma < 1 — at gamma = 1 it IS baseline:markov-k and the contrast is empty",
+    );
+  return asEmitter(`candidate:decayed-belief-g${gamma}`, plainBelief({ order, alpha, gamma }));
+};
+
+/**
+ * A reader who has read other books.
+ *
+ * `priors` is a list of { id, giver, tokens }. The giver is not optional and
+ * not decorative — `createLayer` refuses a received layer without one, so a
+ * prior whose provenance was lost cannot be loaded at all rather than being
+ * loaded and quietly untracked.
+ *
+ * Received layers are trained once and never observe again. They are gifts,
+ * not a second reading: letting them accumulate the material under test would
+ * make them a copy of the read layer with a different name, and every
+ * attribution number downstream would be a fiction.
+ */
+export const priorAugmented = ({ order, alpha, gamma = 1, priors }) => {
+  if (!Array.isArray(priors) || priors.length === 0)
+    throw new TypeError("candidates: prior-augmented needs at least one received prior — without one it IS the baseline");
+  const layers = [createLayer({ id: "read", tier: "read", order, gamma, alpha })];
+  for (const p of priors) {
+    const layer = createLayer({ id: p.id, tier: "received", giver: p.giver, order, gamma: 1, alpha });
+    layer.train(p.tokens);
+    layers.push(layer);
+  }
+  const belief = createBelief({ layers });
+  const id = `candidate:prior-augmented-${priors.length}`;
+  return asEmitter(id, belief);
+};
+
+/**
+ * A belief that starts over where the ground is conceded.
+ *
+ * Written out rather than built on `asEmitter` for one reason that matters:
+ * the surprisal fed to the tracker must be computed BEFORE the token is
+ * observed. `asEmitter`'s hook fires after, and using it here would hand
+ * atmosphere a number that had already seen the arrival it is supposed to be
+ * surprised by — leakage into the boundary placement, invisible to every seal
+ * downstream because it happens before any commitment exists.
+ */
+export const regimeBelief = ({ order, alpha, window, draws, tolerance, seed = 0 }) => {
+  const belief = plainBelief({ order, alpha });
+  const tracker = createRegimeTracker({ window, draws, tolerance, seed });
+  const seen = [];
+  let resets = 0;
+  const resetAt = [];
+
+  const consume = (tok) => {
+    // Causal surprisal: what this token cost the belief that had not yet met it.
+    const ctx = seen.slice(Math.max(0, seen.length - belief.maxOrder));
+    const d = belief.distribution(ctx);
+    let surprisal = 0;
+    if (!isGap(d)) {
+      const p = d.probs[tok] ?? d.probs[UNSEEN] ?? 0;
+      surprisal = p > 0 ? -Math.log(p) : -Math.log(Number.MIN_VALUE);
+    }
+
+    seen.push(tok);
+    belief.readLayer.observe(seen, seen.length - 1);
+
+    const step = tracker.push(surprisal);
+    if (step.rezeroed) {
+      // REC · Cultivating. A new ambient ground begins here, and for a belief
+      // that means the counts start again — the faithful translation of
+      // regime-mean's `history.slice(regimeStart)`, which also sees nothing
+      // before the boundary.
+      belief.readLayer.reset();
+      resets++;
+      resetAt.push(seen.length);
+    }
+  };
+
+  return {
+    id: "candidate:regime-belief",
+    belief,
+    prime(tokens) {
+      for (const t of tokens) consume(t);
+      return this;
+    },
+    emit({ horizon, conditioning, selection, seed, target }) {
+      return emitSequence({ belief, context: seen, horizon, conditioning, selection, seed, target });
+    },
+    observe(revealed) {
+      for (const t of revealed) consume(t);
+      return this;
+    },
+    state: () => ({ observations: seen.length, resets, resetAt: [...resetAt] }),
+  };
+};
+
+/**
+ * regime-belief's permutation null: the same estimator, forgetting the same
+ * NUMBER of times, at positions it was handed.
+ *
+ * SEED.md #4 in the generative register — what this perturbation destroys is
+ * boundary PLACEMENT while holding boundary COUNT fixed, so a gain that
+ * survives it is a gain attributable to where atmosphere put the boundaries
+ * and to nothing else.
+ */
+export const boundaryControl = ({ order, alpha, boundaries, id = "candidate:boundary-null" }) => {
+  const belief = plainBelief({ order, alpha });
+  const pending = [...boundaries].sort((a, b) => a - b);
+  const seen = [];
+  let cursor = 0;
+  let resets = 0;
+
+  const consume = (tok) => {
+    seen.push(tok);
+    belief.readLayer.observe(seen, seen.length - 1);
+    while (cursor < pending.length && pending[cursor] <= seen.length) {
+      if (pending[cursor] === seen.length) {
+        belief.readLayer.reset();
+        resets++;
+      }
+      cursor++;
+    }
+  };
+
+  return {
+    id,
+    belief,
+    prime(tokens) {
+      for (const t of tokens) consume(t);
+      return this;
+    },
+    emit({ horizon, conditioning, selection, seed, target }) {
+      return emitSequence({ belief, context: seen, horizon, conditioning, selection, seed, target });
+    },
+    observe(revealed) {
+      for (const t of revealed) consume(t);
+      return this;
+    },
+    state: () => ({ observations: seen.length, resets }),
+  };
+};
+
+/**
+ * Fading AND gifts at once. NOT a minimal contrast against anything, and
+ * included only so a combined result can be read against the two isolated
+ * ones: if it beats both, the organs carry independent information; if it
+ * beats neither, at least one of them was doing nothing the other was not.
+ */
+export const decayedPriorAugmented = ({ order, alpha, gamma, priors }) => {
+  const layers = [createLayer({ id: "read", tier: "read", order, gamma, alpha })];
+  for (const p of priors) {
+    const layer = createLayer({ id: p.id, tier: "received", giver: p.giver, order, gamma: 1, alpha });
+    layer.train(p.tokens);
+    layers.push(layer);
+  }
+  return asEmitter("candidate:decayed+priors", createBelief({ layers }));
+};
