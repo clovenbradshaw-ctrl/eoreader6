@@ -550,6 +550,28 @@ export const createBelief = ({ layers, rho, referents = null }) => {
    */
   const shares = () => {
     if (received.length === 0) return [];
+    // A LONE GIFT IS UNGATED, AND THAT IS A HOLE RATHER THAN A SIMPLIFICATION.
+    //
+    // There is no share to divide between one gift and nothing, so this
+    // returns 1 — and it means the gift receives the whole of `1 - lambda`
+    // without ever being asked whether it earned any of it. Every restriction
+    // Amendment IV places on relevance is silently skipped: no decay, no
+    // noise floor, no measured standing.
+    //
+    // MEASURED, and it was invisible for as long as every run had three gifts.
+    // A standpoint reader with one perished layer of 354 forms of Project
+    // Gutenberg boilerplate reached back 6 times in 20 and said the
+    // publisher's name, a copyright year and a page number, because at a rare
+    // context lambda collapses and an unweighted lone gift takes almost
+    // everything. A 192-form container ground received exactly the share a
+    // 46,000-form memory would.
+    //
+    // The hole is not closed here, because closing it means measuring
+    // relevance against a floor and a floor is something a caller SUPPLIES —
+    // see `shuffledGift` in ./candidates.js. What is fixed here is the
+    // silence: `relevanceReport` now declares `gated: false` so a lone gift's
+    // unearned share is visible in the record instead of being a number with
+    // nothing underneath it.
     if (received.length === 1) return [1];
     const z = discountedZ > 0 ? discountedZ : 1;
     const mean = received.map((l) => logW.get(l.id) / z);
@@ -826,6 +848,16 @@ export const createBelief = ({ layers, rho, referents = null }) => {
       observations: relevanceObservations.n,
       rho: received.length > 1 ? rho : null,
       effective_encounters: discountedZ,
+      // Whether any gift's share was EARNED. False for a lone gift: with
+      // nothing to divide against, `shares()` returns 1 unconditionally and
+      // every restriction Amendment IV places on relevance is skipped. Stated
+      // rather than left to be inferred from `rho: null`, because the failure
+      // it produces looks like a working reader — see `shares()`.
+      gated: received.length > 1,
+      ungated_reason:
+        received.length === 1
+          ? "a single received layer takes the whole of 1 - lambda without earning it: no decay, no noise floor, no measured standing. Supply a control (see shuffledGift) to make relevance measurable."
+          : null,
       referent_gate: referents ? "referents require unanimity" : "no referent inventory supplied — nothing is treated as a name",
       noise_floor: floor > 0 ? floor : null,
       layers: Object.freeze(

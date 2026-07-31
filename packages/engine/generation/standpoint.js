@@ -97,10 +97,34 @@ export const waveAt = (waves, here) => {
   if (!Array.isArray(waves)) return gap("unknown_spec", { reason: "waves must be a divided ride" });
   if (!Number.isInteger(here) || here < 0) return gap("undeclared", { what: "here" });
   for (const w of waves) if (here >= w.from && here <= w.to) return w;
+
+  // PAST EVERY WAVE'S END, AND THE LAST ONE NEVER PERISHED.
+  //
+  // surf's units stop short of the material's end — the ride advances by
+  // `hop` from `window`, so the final unit closes before the last datum. A
+  // standpoint in that tail sits past every `to` while genuinely being inside
+  // the ride.
+  //
+  // The answer is in `divide`'s own vocabulary rather than in a clamp. A wave
+  // marked `unfinished` "has not completed": it met nothing it could not hold
+  // and the material simply ran out, so it has NOT perished and is still
+  // becoming. An occasion that is still becoming is where the present is. So a
+  // standpoint past the end belongs to the final wave exactly when that wave
+  // is unfinished.
+  //
+  // If the last wave DID perish, the standpoint is genuinely in no present —
+  // the ride closed behind it and nothing has opened since. That stays a gap,
+  // because widening to the whole material would be the averaged ground this
+  // scoping exists to refuse.
+  const last = waves[waves.length - 1];
+  if (last && last.perished === "unfinished" && here >= last.from)
+    return Object.freeze({ ...last, contains_by: "unfinished — the ride had not closed when the standpoint was taken" });
+
   return gap("no_ground", {
     reason: "this standpoint falls in no wave — the present has no boundary here, and widening to the whole material would be the averaged ground this scoping exists to refuse",
     here,
     waves: waves.length,
+    last_perished: last?.perished ?? null,
   });
 };
 
@@ -115,7 +139,7 @@ export const waveAt = (waves, here) => {
  *
  * Returns { belief, scope } or a gap.
  */
-export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, pastGamma = 1 }) => {
+export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, pastGamma = 1, rho, seed = 0 }) => {
   if (!Array.isArray(tokens)) throw new TypeError("standpoint: tokens must be an array");
   if (!Number.isInteger(here) || here < 1) throw new TypeError("standpoint: here is declared, never inferred");
   if (!Number.isInteger(from) || from < 0) throw new TypeError("standpoint: the wave's start is declared by the caller");
@@ -145,10 +169,59 @@ export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, 
     });
     pastLayer.train(past);
     layers.push(pastLayer);
+
+    // THE PERISHED PAST GETS A NOISE FLOOR, for the same reason every other
+    // gift in this repo does, and because leaving it out was a measured
+    // defect rather than a theoretical one.
+    //
+    // With the past as the ONLY received layer, `shares()` returns 1 and the
+    // gift takes the whole of `1 - lambda` unearned — no decay, no floor, no
+    // measured standing. On Heidi that let 354 forms of Project Gutenberg
+    // boilerplate speak at every rare context, and the reader said the
+    // publisher's name in the middle of imagined prose.
+    //
+    // Shuffling the perished material destroys its ORDER and keeps its
+    // VOCABULARY exactly, so this layer knows precisely as much word-frequency
+    // as the reader's real past and nothing about how that past unfolded. If
+    // the real past cannot earn more standing than its own shuffle, what it
+    // was contributing was word frequency — and word frequency is something
+    // the live ground supplies for itself.
+    //
+    // Adding it makes `received.length === 2`, which is what puts `rho` in
+    // play: relevance now has a forgetting rate and is measured. That is the
+    // machinery working rather than a new mechanism.
+    const shuffled = [...past];
+    let a = (seed | 0) + 0x6d2b79f5;
+    const uniform = () => {
+      a = (a + 0x6d2b79f5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(uniform() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const floor = createLayer({
+      id: "shuffled:perished",
+      tier: "received",
+      world: "this",
+      giver: `this same reader's past, ORDER DESTROYED BY SHUFFLE, seed ${seed}. A noise floor, not a source.`,
+      order,
+      gamma: 1,
+      alpha,
+    });
+    floor.train(shuffled);
+    layers.push(floor);
   }
 
+  if (layers.length > 2 && !(Number.isFinite(rho) && rho > 0 && rho <= 1))
+    throw new TypeError(
+      "standpoint: rho is the forgetting rate of relevance and is declared, never defaulted — without it the past's standing is a verdict passed once at the boundary",
+    );
+
   return Object.freeze({
-    belief: createBelief({ layers }),
+    belief: createBelief({ layers, rho }),
     scope: Object.freeze({
       here,
       from,

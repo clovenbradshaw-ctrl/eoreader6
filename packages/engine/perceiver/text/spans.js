@@ -26,6 +26,46 @@
 const GUTENBERG_START = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
 const GUTENBERG_END = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
 
+// THE CONTAINER DOES NOT END AT THE START MARKER, and assuming it did put 354
+// forms of transcriber's note into the material on Heidi. Measured: the
+// perished ground of a standpoint reader turned out to be Project Gutenberg's
+// producer credits, so a reader imagining prose reached back and said the
+// publisher's name, a copyright year and a page number.
+//
+// After the marker PG typically continues with a producer credit block, an
+// ornamental rule, and a boxed transcriber's note, and only then the work.
+// Two of the three are recognised by FORM alone, which is what keeps this out
+// of linguistic-rule territory:
+//
+//   RULE   a line of nothing but asterisks and space
+//   BOX    a run of lines drawn out of + - | and space, or bounded by pipes
+//
+// Neither says anything about a language's vocabulary — they are typography,
+// and a Devanagari or CJK file draws its boxes the same way. The third needs a
+// format marker, and a PG URL is exactly the same kind of received knowledge
+// about the file format as the START marker itself already is (an mp3 has an
+// ID3 header; a PG file has a credit block).
+//
+// STRIPPING STOPS AT THE FIRST PARAGRAPH THAT IS NONE OF THESE. It never scans
+// the body, so a rule or a box drawn inside the work — a table, a scene break
+// — is content and survives. Bounding it that way is what makes this safe;
+// an unbounded version would eat an author's own ornament.
+const PG_CREDIT_URL = /\b(?:pgdp\.net|gutenberg\.org|www\.gutenberg)/i;
+const ORNAMENT_RULE = /^[\s*]+$/;
+const BOX_BLOCK = /^[\s+|=_-]*$/;
+const BOX_ROW = /^\s*\|.*\|\s*$/;
+
+const isContainerParagraph = (p) => {
+  const trimmed = p.trim();
+  if (!trimmed) return true;
+  if (ORNAMENT_RULE.test(trimmed)) return true;
+  if (PG_CREDIT_URL.test(trimmed)) return true;
+  // A boxed block: every line is either a border or a piped row.
+  const lines = trimmed.split("\n");
+  if (lines.every((l) => BOX_BLOCK.test(l) || BOX_ROW.test(l))) return true;
+  return false;
+};
+
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // SEG · Field · Clearing — sentence segmentation; abbreviations are injected
 // priors, never a list. Declared, checked by conformance.
@@ -38,6 +78,22 @@ export const stripContainer = (text) => {
   if (start) {
     offset = start.index + start[0].length;
     s = s.slice(offset);
+
+    // Walk the leading paragraphs and drop the ones that are still container.
+    // Offsets are accumulated as we go, because everything downstream anchors
+    // spans against this offset and a strip that forgot to move it would
+    // silently shift every citation in the reader.
+    for (;;) {
+      const m = s.match(/^(\s*)([\s\S]*?)(\n\s*\n|$)/);
+      if (!m) break;
+      const paragraph = m[2];
+      if (!paragraph.trim()) break;
+      if (!isContainerParagraph(paragraph)) break;
+      const consumed = m[0].length;
+      if (consumed === 0) break;
+      offset += consumed;
+      s = s.slice(consumed);
+    }
   }
   const end = s.match(GUTENBERG_END);
   if (end) s = s.slice(0, end.index);

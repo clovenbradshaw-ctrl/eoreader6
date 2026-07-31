@@ -381,3 +381,89 @@ test at all**, and that was invisible while every run had three gifts.
 `stripContainer` leaves the transcriber's note and PGDP credits in the
 material. The container is leaking into the text it is supposed to strip, and
 every form-position number in this file is shifted by it.
+
+## The window is a coordinate division, and both genetic detectors refuse to cut
+
+Three organs were asked for the window of what is relevant. The first two
+answered a different question correctly, and the third one's own header said
+so before the measurement did.
+
+| source | waves/boundaries over 2,952 sentences | present | reader speaks from |
+|---|---|---|---|
+| `atmosphere` re-zero | 2 (both in the first 156 forms) | 46,429 forms | **98.8%** |
+| `surf` genetic (`mode: "surfeit"`) | 4, the one containing `here` spanning [28..2944] | 46,429 forms | **98.8%** |
+| `surf` coordinate (`mode: "extent"`) | 25, present [2888..2944] | **1,041 forms** | **10.5%** |
+
+**Both genetic detectors are correct and neither cuts.** They fail for one
+cause, and SEED.md #5 already names it: the ground grows over the whole
+regime, becomes wide, and nothing exceeds it — "a statistic whose window
+follows material length means a different thing before and after material
+arrives."
+
+`surf`'s header states this as design rather than limitation: *"The subjective
+unity dominating the process forbids the division of that extensive
+quantum... surf has no code that splits it, AND THAT IS NOT AN OMISSION."*
+Genetic division is one uncut ground by construction. Cutting is the
+**coordinate** mode, which "ignores the subjective unity by construction,
+which Whitehead says in as many words is what dividing does." Asking the
+genetic division to produce a window was asking it to do the thing it exists
+not to do.
+
+The coordinate cut declares `every` and marks every standpoint `mightBe`.
+That is what separates it from the sliding window II.8 refuses: it does not
+claim the material changed here, it claims a reader may stand here, and it
+says so in the record instead of hardening into a found boundary.
+
+### And atmosphere's boundary was the CHROME boundary
+
+The previous entry reported "1 boundary in 46,725 forms" as a failed detector.
+That misread a correct detection. Form 354 was the seam between Project
+Gutenberg's container and the work. Atmosphere concedes ground where the
+AMBIENT changes, and in a novel that happens essentially once.
+
+Chrome is general — credits and transcriber's notes here, headers and
+signatures and quoted replies in a mailbox, running heads in a scan, an intro
+in a video — and "the region that does not participate in the ground the rest
+of the material builds" is exactly what a conceded ground names. That is the
+organ working, at the only scale where a novel has an ambient change.
+
+### Scoped, the reader is 7.6x faster and reaches back a third of the time
+
+| | |
+|---|---|
+| per continuation, scoped | **13ms** |
+| per continuation, unscoped | 99ms |
+| reached back | 4–7 of 20 forms |
+
+`reached_back` is the reading rather than the benchmark: it counts how often
+the present could not supply the next form. A stretch where it climbs is a
+stretch this standpoint does not cover.
+
+### Two defects fixed
+
+**The container leaked past its own marker.** `stripContainer` cut at
+`*** START OF ... ***` and stopped, leaving PG's producer credits and a boxed
+transcriber's note in the material — 117 forms, and they became the perished
+ground of the standpoint reader, which is why it said a publisher's name in
+the middle of imagined prose. Leading container paragraphs are now stripped by
+FORM (ornamental rules, box drawing) plus one format marker (a PG URL),
+bounded to the leading run so an author's own ornament inside the work
+survives. Offsets accumulate through the strip; a version that forgot would
+silently shift every citation.
+
+**A lone gift is ungated, and that is a hole rather than a simplification.**
+`shares()` returns `[1]` for a single received layer, so it takes the whole of
+`1 - lambda` without earning any of it — no decay, no floor, no measured
+standing. Every restriction Amendment IV places on relevance is skipped. It
+was invisible for as long as every run had three gifts.
+
+`relevanceReport` now declares `gated` and `ungated_reason` so the unearned
+share is visible in the record, and `standpointBelief` supplies a shuffled
+control of the perished material — order destroyed, vocabulary intact — which
+makes `received.length === 2`, puts `rho` in play, and turns relevance back
+into something measured. That is the existing machinery engaging, not a new
+mechanism.
+
+**Not yet done:** the standpoint belief has no consumption loop, so
+`witnessForm` is never called and both layers sit at their initial 50/50. The
+floor exists and is not yet exercised.

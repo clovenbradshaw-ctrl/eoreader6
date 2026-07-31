@@ -52,6 +52,8 @@ const DRAWS = 96; // atmosphere: the resolution of testimony
 const TOLERANCE = 2; // atmosphere: the resolution of refusal
 const SEED = 20260731;
 const SHOW = 5;
+const HOP = 4; // surf: how far the ride advances between standpoints
+const EVERY = 30; // surf: the extent of a coordinate standpoint, in ride units
 
 import { readFileSync, existsSync } from "node:fs";
 import { createLayer, createBelief } from "../packages/engine/generation/belief.js";
@@ -59,6 +61,8 @@ import { settleGround } from "../packages/engine/generation/settled.js";
 import { emitScoped, scopeReport } from "../packages/engine/generation/standpoint.js";
 import { emitSequence } from "../packages/engine/generation/emit.js";
 import { createRegimeTracker } from "../packages/engine/loops/atmosphere.js";
+import { surf, divide } from "../packages/engine/loops/surf.js";
+import { waveAt } from "../packages/engine/generation/standpoint.js";
 import { stripContainer, splitSentences } from "../packages/engine/perceiver/text/spans.js";
 import { isGap } from "../nul/index.js";
 
@@ -94,6 +98,7 @@ let sentenceSum = 0;
 // Sentence starts, in form positions, so a boundary at sentence s converts
 // back to the form where that sentence began.
 const sentenceStart = [0];
+const series = []; // one value per sentence — the ride surf takes
 for (let i = 0; i < HERE; i++) {
   const ctx = seen.slice(Math.max(0, seen.length - ORDER));
   const { p, reserve } = readBelief.probabilityOf(ctx, tokens[i]);
@@ -105,6 +110,7 @@ for (let i = 0; i < HERE; i++) {
 
   // One value per sentence: the grain at which this reader concedes ground.
   if (inSentence === sentences[sentenceIdx]?.length) {
+    series.push(sentenceSum / inSentence);
     if (tracker.push(sentenceSum / inSentence).rezeroed) boundaries.push(sentenceStart[sentenceIdx]);
     sentenceIdx++;
     sentenceStart.push(seen.length);
@@ -115,12 +121,72 @@ for (let i = 0; i < HERE; i++) {
 console.log(`atmosphere conceded its ground ${boundaries.length} times in ${((Date.now() - t) / 1000).toFixed(1)}s`);
 console.log(`  boundaries at forms: ${boundaries.slice(-8).map((b) => b.toLocaleString()).join(", ")}${boundaries.length > 8 ? " (last 8)" : ""}`);
 
-// ── 3. The present begins at the last detected boundary ───────────────────
-if (boundaries.length === 0) {
-  console.error("\nno boundary was detected before here — the present has no start, and inventing one would be the injected order II.8 refuses.");
+// ── 3. Surf sets the window of what is relevant ───────────────────────────
+//
+// TWO ORGANS, TWO DIFFERENT QUESTIONS, and asking the wrong one for the window
+// is the mistake the previous run recorded.
+//
+//   ATMOSPHERE answers "where does the AMBIENT change" — where the ground is
+//     conceded outright. In a novel that happens essentially once, at the seam
+//     between the container and the work. The single boundary it found on
+//     Heidi was the CHROME BOUNDARY, and reporting that as "no usable
+//     boundaries" misread a correct detection as a failure. Chrome is general
+//     — credits and transcriber's notes here, headers and signatures and
+//     quoted replies in a mailbox, running heads in a scan, an intro in a
+//     video — and the region that does not participate in the ground the rest
+//     of the material builds is exactly what a conceded ground names.
+//
+//   SURF answers "how far back is still THE PRESENT". Setting the window of
+//     what is relevant is its stated job, not a side effect of it. A wave is
+//     one concrescence: the many growing into one determinate unity, reaching
+//     satisfaction, perishing. The wave containing `here` IS the present, and
+//     everything behind it is datum.
+//
+// AND THIS IS NOT THE REFUTED USE. bba5b29 measured surf as a CANDIDATE
+// GENERATOR — wave-break positions ranked as "which scenes matter" — at
+// 0.66-0.71x chance against the spine at matched budget. That result stands
+// and is not being retried. Reading the wave that CONTAINS the standpoint is
+// a different question from ranking the waves behind it, and it earns nothing
+// from that result either way.
+const ride = surf({ material: series, window: WINDOW, draws: DRAWS, hop: HOP, seed: SEED });
+if (isGap(ride)) { console.error(`\nsurf refused: ${ride.gap}`); process.exit(1); }
+// COORDINATE DIVISION, DECLARED — and the genetic one is what sent us here.
+//
+// `divide(mode:"surfeit")` cuts where the ride BROKE, and on a novel it barely
+// breaks: 4 waves over 2,952 sentences, the one containing `here` spanning
+// [28..2944]. That left the reader speaking from 98.8% of its vocabulary,
+// which is not a present. Atmosphere did the same thing for the same reason —
+// the ground grows over the whole regime, becomes wide, and nothing exceeds
+// it. SEED.md #5 names the cause: a statistic whose window follows material
+// length means a different thing before and after material arrives.
+//
+// surf's own header says this is not a defect to tune. "The subjective unity
+// dominating the process forbids the division of that extensive quantum...
+// surf has no code that splits it, AND THAT IS NOT AN OMISSION." The genetic
+// division is one uncut ground by construction. Cutting is the COORDINATE
+// mode, it is legitimate, and it "ignores the subjective unity by
+// construction, which Whitehead says in as many words is what dividing does."
+//
+// So `every` is declared, and every standpoint it yields carries `mightBe`.
+// That is the difference between this and the sliding window II.8 refuses: a
+// coordinate cut does not claim the material changed here, it claims a reader
+// may stand here — and it says so in the record rather than hardening into a
+// found boundary.
+const waves = divide(ride, { mode: "extent", every: EVERY });
+if (isGap(waves)) { console.error(`\ndivide refused: ${waves.gap}`); process.exit(1); }
+
+// The number of complete sentences read before `here`, which is the
+// standpoint expressed in the units surf rode.
+const hereSentence = sentenceIdx;
+const wave = waveAt([...waves], hereSentence);
+console.log(`\nsurf rode ${waves.length} waves over ${series.length.toLocaleString()} sentences (hop=${HOP})`);
+if (isGap(wave)) {
+  console.error(`  the standpoint falls in no wave: ${wave.gap} — widening to the whole material would be the averaged ground the scoping exists to refuse.`);
   process.exit(1);
 }
-const FROM = boundaries[boundaries.length - 1];
+console.log(`  the present is wave [${wave.from}..${wave.to}] in sentences — ${wave.steps} steps, rode ${wave.rode}, perished "${wave.perished}"`);
+
+const FROM = sentenceStart[Math.max(0, Math.min(wave.from, sentenceStart.length - 1))];
 const scope = scopeReport({ tokens, here: HERE, from: FROM });
 console.log(`\nthe present begins at form ${FROM.toLocaleString()} — detected by loops/atmosphere, not scheduled`);
 console.log(`  live      ${scope.live_forms.toLocaleString()} forms, ${scope.live_vocabulary.toLocaleString()} distinct`);
