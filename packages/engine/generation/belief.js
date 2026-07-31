@@ -430,14 +430,37 @@ export const createBelief = ({ layers, rho }) => {
   // pretending otherwise would be a prior on the priors that nobody declared.
   const logW = new Map(received.map((l) => [l.id, 0]));
   const relevanceObservations = { n: 0 };
+  // The discounted count of encounters the weights are a sum over: Z <- rho*Z + 1.
+  // See `shares` — without it the weights are a SUM and the mixture saturates.
+  let discountedZ = 0;
 
-  /** softmax over the earned log-weights, in the order of `received`. */
+  /**
+   * softmax over each gift's MEAN log-likelihood per encounter.
+   *
+   * MEASURED. The first version took the softmax over the discounted SUM, and
+   * on a real book that is degenerate: the sum's scale grows with the
+   * effective window (1/(1 − rho)), so after a few thousand forms the gaps
+   * between gifts are hundreds of nats, `exp` underflows, and the mixture
+   * collapses to one-hot. Reading Frankenstein against three gifts it reported
+   * jane-eyre 100.00% and everything else exactly 0.00% at every checkpoint —
+   * relevance had become a hard SELECTION rather than a graded mixture, and
+   * restriction 2 was satisfied only on paper: a gift 300 nats ahead cannot be
+   * caught by any stretch of text a book actually contains.
+   *
+   * Dividing by the discounted encounter count makes the quantity a per-
+   * encounter mean, which is what SEED.md Amendment IV says relevance IS —
+   * "the surprise that did not happen", per thing encountered, not summed over
+   * everything ever read. So this is not a rescue of the arithmetic; it is the
+   * arithmetic finally saying what the clause says.
+   */
   const shares = () => {
     if (received.length === 0) return [];
     if (received.length === 1) return [1];
+    const z = discountedZ > 0 ? discountedZ : 1;
+    const mean = received.map((l) => logW.get(l.id) / z);
     let max = -Infinity;
-    for (const l of received) max = Math.max(max, logW.get(l.id));
-    const raw = received.map((l) => Math.exp(logW.get(l.id) - max));
+    for (const m of mean) max = Math.max(max, m);
+    const raw = mean.map((m) => Math.exp(m - max));
     const total = raw.reduce((a, b) => a + b, 0);
     return total > 0 ? raw.map((r) => r / total) : received.map(() => 1 / received.length);
   };
@@ -461,6 +484,7 @@ export const createBelief = ({ layers, rho }) => {
       const ll = p > 0 ? Math.log(p) : Math.log(Number.MIN_VALUE);
       logW.set(layer.id, (received.length > 1 ? rho : 1) * logW.get(layer.id) + ll);
     }
+    discountedZ = (received.length > 1 ? rho : 1) * discountedZ + 1;
     relevanceObservations.n++;
   };
 
@@ -678,6 +702,7 @@ export const createBelief = ({ layers, rho }) => {
     return Object.freeze({
       observations: relevanceObservations.n,
       rho: received.length > 1 ? rho : null,
+      effective_encounters: discountedZ,
       noise_floor: floor > 0 ? floor : null,
       layers: Object.freeze(
         received.map((l, k) =>

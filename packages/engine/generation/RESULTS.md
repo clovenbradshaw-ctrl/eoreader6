@@ -43,6 +43,61 @@ sampled exactly this distribution and then discarded the sample to keep the KL.
 book, and it needs no witness because it asserts nothing. The guarded moment
 is the crossing — see below.
 
+## EARNED: Amendment IV holds on real material
+
+`node scripts/relevance.mjs`. Frankenstein read once, in order, against three
+gifts and three noise floors. `order=4 alpha=0.7 gamma=0.99995 rho=0.9995
+seed=20260731`, 60,000 forms taken from each gift. Every gift's standing is
+updated against each arriving form using only the context that preceded it, so
+the whole measurement is causal.
+
+Each real gift is paired with a control built from **its own** vocabulary,
+shuffled — same word frequencies exactly, all order destroyed.
+
+Share of the borrowed mass, as the reading proceeds:
+
+| at form | dracula | jane-eyre | moby-dick | shuf:dracula | shuf:jane-eyre | shuf:moby-dick |
+|---|---|---|---|---|---|---|
+| 10,609 | 23.1 | 26.9 | 21.8 | 9.4 | 9.6 | 9.2 |
+| 31,827 | 24.3 | 28.1 | 20.4 | 9.9 | 9.1 | 8.2 |
+| 53,046 | 23.9 | 29.3 | 20.8 | 8.9 | 8.7 | 8.3 |
+| 84,874 | 24.0 | 25.5 | 22.6 | 9.8 | 9.3 | 8.9 |
+
+**Every real gift sits at roughly 2.5× its own noise floor, at every
+checkpoint, for the whole book.** Restriction 3 is satisfied: what the gifts
+contribute is not word frequency, because a control with identical word
+frequencies and no order earns less than half as much. The read text supplies
+its own unigram statistics, and the gifts are being heard for something else.
+
+**What is NOT established by this run.** The ordering among the real gifts —
+jane-eyre 25.5% > dracula 24.0% > moby-dick 22.6% — spans 2.9 points, against
+a 13-point gap to the floor. It is stable across all eight checkpoints and it
+is the ordering one would guess (Jane Eyre is the closest of the three to
+Frankenstein's register; Moby-Dick the furthest). Stability under one seed is
+not a null test, and this run does not license "Jane Eyre is more relevant to
+Frankenstein than Moby-Dick is" as a finding. The finding is real-vs-shuffled.
+
+### The first implementation of the clause was degenerate, and the fix is the clause
+
+Recorded because it is the second time in this work that a constitutional
+sentence turned out to have an arithmetic that did not say it.
+
+The first version took the softmax over the **discounted sum** of log
+likelihoods. On a real book that saturates: the sum's scale grows with the
+effective window (1/(1 − rho)), so within a few thousand forms the gaps
+between gifts are hundreds of nats, `exp` underflows, and the mixture goes
+one-hot. It reported **jane-eyre 100.00% and everything else exactly 0.00%, at
+every checkpoint**, and the noise floor underflowed to 0 as well, which made
+restriction 3 unfalsifiable at the same stroke. Relevance had become a hard
+selection. Restriction 2 was satisfied only on paper — a gift 300 nats ahead
+cannot be caught by any stretch of text a book actually contains.
+
+Dividing by the discounted count of encounters makes the weight a **per-
+encounter mean**, which is what Amendment IV says relevance is: "the surprise
+that did not happen", per thing encountered, not summed over everything ever
+read. So the correction is not a rescue of the arithmetic. It is the
+arithmetic finally saying what the clause says.
+
 ## REFUTED: lemma abstraction does not improve next-form prediction
 
 The headline result, and it is negative.
