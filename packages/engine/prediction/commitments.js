@@ -19,7 +19,14 @@
 import { canonicalHashSync } from "../../spec/canonical-json/index.js";
 import { score } from "./scoring.js";
 
-const SUPPORTED_KINDS = new Set(["point", "gaussian", "categorical", "quantiles", "samples"]);
+// "sequence" joined when `generation/` was built. Everything else in this file
+// was already modality-agnostic and needed no change to seal a continuation —
+// including `active_prior_hashes`, which was written for exactly the case that
+// has now arrived: a belief fed by priors from OTHER material. Which gifts
+// were live when a guess was made is part of what the seal covers, so a
+// competency claim can never be re-read later as though the reader had been
+// working from this text alone.
+const SUPPORTED_KINDS = new Set(["point", "gaussian", "categorical", "quantiles", "samples", "sequence"]);
 
 const assertStep = (value, label) => {
   if (!Number.isInteger(value) || value < 0)

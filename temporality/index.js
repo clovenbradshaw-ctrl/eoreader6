@@ -35,7 +35,7 @@
 // calendar, the year 1818 — is received from whoever handed the material in,
 // and stays received.
 //
-// SEED.md Amendment IV narrowed that refusal to the denotation only. Temporal
+// SEED.md Amendment V narrowed that refusal to the denotation only. Temporal
 // FUNCTION — state inheritance, duration, recurrence, memory, anticipation,
 // irreversibility — is measurable, by families of perturbation this organ does
 // not yet carry. So the ladder below is the first two rungs of three:

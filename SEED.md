@@ -2,7 +2,7 @@
 
 > **Governance:** this engine is the `engine` domain of the EO constitution —
 > `../eo-constitution/CONSTITUTION.md`. Nothing ships here unless the routing
-> assay sustains the placement. Organs re-earn or they do not come.
+> oracle sustains the placement. Organs re-earn or they do not come.
 
 > **Perceive only by difference from a ground you rebuild.
 > Testify only from a ground you kept.
@@ -149,11 +149,8 @@ Stated so it is not mistaken for done:
   lint wearing an invariant's clothes.
 - **Firstness** — `received` exists, but nothing enforces that a *first* ground
   is a received one, because nothing here holds a sequence.
-- **`level` across two materials** — the third use of the one operation was
-  earned by `cascade` only in its first form: across SCALES of one material,
-  where every rung is the same thing at a different width. The level test
-  between two genuinely different figures remains the first sheath, and the one
-  everything else reduces to.
+- **`level`** — the third use of the one operation. The first sheath, and the
+  one everything else reduces to.
 
 ## Amendments
 
@@ -223,9 +220,96 @@ a direction, and the direction is the giver's to name.
 The organ is called `temporality` because that is what it is nearly always
 asked for. The name is a convenience and confers nothing.
 
-### IV — Time is discovered from transformation, never assumed from the index
+### IV — A prior is relevant exactly insofar as it lowers the surprise of what is encountered
 
-*2026-07-31. Amends III.*
+*2026-07-31. Extends #1.*
+
+#1 settles where a prior comes from: received, never derived, and it must name
+its giver. It says nothing about **how much a prior should be heard**, and that
+gap is load-bearing the moment more than one gift is in the room.
+
+> **Relevance is not a property of a prior. It is a property of the meeting
+> between a prior and this material, and its measure is the surprise that did
+> not happen.**
+
+A prior earns standing by the same operation everything else here is built on.
+The ground exists to be surprised against; a gift that lowers the surprise of
+what actually arrives is participating in the rebuilding the entelechy names,
+and one that does not is noise wearing a giver's name. Nothing new is
+introduced to measure it — it is `difference` against a ground, read as credit
+instead of as a figure.
+
+Four consequences, all of them restrictive:
+
+1. **Relevance is never similarity.** Not same author, same genre, same
+   century, same register, same domain. Those are appearance, and #0's identity
+   rule already refuses appearance "never by appearance, not even in principle."
+   A gift that *looks* apt and lowers no surprise is irrelevant, and a gift that
+   looks absurd and lowers surprise is relevant. This is the whole content of
+   the amendment and the only part that costs anything.
+
+2. **Relevance is local and revisable, so it must be able to decay.** A prior
+   that carried one stretch may carry nothing in the next. Standing that cannot
+   be lost is a verdict passed once at the beginning, which is sclerosis at the
+   level of the priors — the ground closed against the possibility that a gift
+   stops helping.
+
+3. **Relevance needs a null like everything else.** A prior that lowers surprise
+   only as much as a prior with its order destroyed has told you that word
+   frequency was doing the work, and the material supplies its own word
+   frequency. Without that floor, "relevant" degrades to "fluent," which is #3
+   again: a null of zero width would clear anything put in front of it.
+
+4. **Lowering surprise earns audibility, never standing.** A relevant prior is
+   not thereby true and is not thereby evidence about this material. It is a
+   better guess, and the guess stays imagination. The crossing is untouched.
+
+5. **Cross-modal analogy costs nothing extra.** This is the gift of #1 rather
+   than a separate mechanism, and it is the reason #1 is worth its price. A
+   rule that admitted priors by similarity would exclude a prior from another
+   modality *by construction* — nothing about a cardiogram resembles a
+   sentence. A rule that admits them by surprise-reduction never asks what kind
+   of thing a prior is. It asks only whether the surprise dropped, and that
+   question is askable across any two things that can be placed in the same
+   ground.
+
+   **The boundary, stated so it is not overclaimed:** two priors meet only
+   where their alphabets meet. At the **numeric series** — where `nul`,
+   `atmosphere`, `temporality` and the whole prediction substrate already work
+   — every perceiver in this repo *already* meets: audio is RMS energy per
+   frame, image is mean luminance per scanline, video is motion energy per
+   transition, csv is a column. So a music prior lowering the surprise of a
+   cardiogram is legal here **today**, and needs no new organ. At the level of
+   **discrete forms**, where a belief places mass on named successors, it is
+   not: audio cannot put mass on the word "the". Cross-modal there requires a
+   shared abstraction over forms, and that abstraction is a thing to be built
+   and earned, not a thing this amendment provides.
+
+   So: free where the alphabets already meet, and owed a quantization
+   everywhere else. What the amendment removes is the *permission* question,
+   which was the one blocking it.
+
+Implemented in `packages/engine/generation/belief.js` as a discounted
+mixture-of-experts weight, with `shuffledGift` as the floor. Evidence:
+`conformance/generation.test.js`.
+
+### A fourth declared number, and an unresolved question about the physiology
+
+`rho` — the forgetting rate of relevance — is declared and never defaulted, and
+it is not `draws`, `reseeds` or `window`. Nor are `order`, `alpha` and `gamma`,
+which the same organ declares.
+
+The reading taken here is that the three numbers are the physiology of **ground
+construction**, and that belief is a different organ with its own. That is a
+claim, not a proof, and the alternative reading — that the physiology has
+quietly grown from three to seven, which is exactly what "What did not move"
+below refused once already — has not been ruled out. It is recorded unresolved
+rather than settled by fiat, on the same terms as the `DEF.admit` tension in
+`CUBE.md`.
+
+### V — Time is discovered from transformation, never assumed from the index
+
+*2026-07-31. Amends III and IV.*
 
 III put the meaning of the index beyond derivation: order is measured, that the
 order is *time* is received. Half of that is exactly right and is not weakened
