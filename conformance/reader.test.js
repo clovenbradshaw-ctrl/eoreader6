@@ -47,7 +47,16 @@ const SEQUENTIAL = contract({
 });
 
 const OPTS = { consumption: SEQUENTIAL, draws: 200, reseeds: 5, tolerance: 3, hop: 4, seed: 17 };
-const strip = (result) => ({ regions: result.regions, events: result.events, clearingsBy: result.clearingsBy, driftGaps: result.driftGaps });
+// stationarity is included deliberately: the FIRST attempt at that diagnostic
+// classified each censoring event against the material read so far, so it read
+// its own input schedule and would have passed a strip() that left it out.
+const strip = (result) => ({
+  regions: result.regions,
+  events: result.events,
+  clearingsBy: result.clearingsBy,
+  driftGaps: result.driftGaps,
+  stationarity: result.stationarity,
+});
 
 test("ADMISSION-ORDER INVARIANCE — one at a time, in ragged batches, or all at once", () => {
   const material = threeRegimes(3);
@@ -166,4 +175,45 @@ test("the reach of the present comes from the contract and cannot be passed in",
   assert.equal(declared.window, SEQUENTIAL.present);
   assert.equal(smuggled.window, SEQUENTIAL.present);
   assert.deepEqual(strip(smuggled), strip(declared));
+});
+
+// ── drift: is this reader a clock? ──────────────────────────────────────────
+
+const ramp = (seed, slope) => {
+  const next = rng(seed);
+  return Array.from({ length: 600 }, (_, i) => 10 + i * slope + gaussian(next));
+};
+
+test("DRIFT — a monotone channel is reported as one, because reading it makes this a clock", () => {
+  // The most expensive mistake in this project: material whose scale grows
+  // with how much has been read drags the ground along under it, so the reader
+  // re-zeros on a fixed period. Against evenly spaced chapters that scored
+  // 18/20 at 15/15 precision and meant nothing. It must be visible in the
+  // reading's own output, not discovered three retractions later.
+  for (const seed of [5, 6, 7]) {
+    const up = read(ramp(seed, 0.1), OPTS);
+    const down = read(ramp(seed, -0.1), OPTS);
+    assert.equal(up.stationarity.drift, 1, "a climbing channel must report drift +1");
+    assert.equal(down.stationarity.drift, -1, "a falling channel must report drift -1");
+  }
+});
+
+test("drift stays near zero for a genuine regime change, which is not a trend", () => {
+  // A step change is exactly what the clearing is FOR, and must not be
+  // confused with a ramp. Stationary either side of one boundary.
+  const next = rng(9);
+  const twoRegimes = Array.from({ length: 600 }, (_, i) => (i < 300 ? 10 : 30) + gaussian(next));
+  const r = read(twoRegimes, OPTS);
+  assert.ok(Math.abs(r.stationarity.drift) < 0.9, `a single step change reported drift ${r.stationarity.drift}`);
+});
+
+test("drift is reported with the count it was computed from, and gates nothing", () => {
+  // A vital sign, like ananda — never a gate, and the moment it gates anything
+  // it becomes a number to tune. It is noisy at small counts (a stationary run
+  // with three regions can read high by chance), so the n travels with it
+  // rather than being left for the reader to guess.
+  const r = read(ramp(5, 0.1), OPTS);
+  assert.equal(typeof r.stationarity.steps, "number");
+  assert.ok(Array.isArray(r.stationarity.centres));
+  assert.ok(r.stationarity.steps >= 1, "drift without a count behind it is not reportable");
 });
