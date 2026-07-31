@@ -14,7 +14,13 @@ import {
   finalizeCompetency,
 } from "../packages/engine/competency/ledger.js";
 import { createRegimeTracker } from "../packages/engine/loops/atmosphere.js";
-import { boundaryControl, regimeMean } from "../packages/engine/prediction/candidates.js";
+import {
+  boundaryControl,
+  regimeMean,
+  efferenceGated,
+  efferenceNull,
+  clearedSequenceOf,
+} from "../packages/engine/prediction/candidates.js";
 import { runPrequential } from "../packages/engine/prediction/run.js";
 
 // ── the seal ────────────────────────────────────────────────────────────────
@@ -289,6 +295,90 @@ test("a candidate never sees a value it was not entitled to", () => {
   });
   // The history handed over at step t is exactly t long: series[t] is withheld.
   assert.deepEqual(seen, Array.from({ length: series.length - 5 }, (_, i) => i + 5));
+});
+
+// ── efference ────────────────────────────────────────────────────────────────
+
+test("push exposes cleared undelayed by tolerance — a rezero always implies a preceding cleared, but not the reverse", () => {
+  const t = createRegimeTracker({ window: 6, draws: 96, tolerance: 2, seed: 0 });
+  let sawClearedWithoutRezero = false;
+  for (const x of staircase([0, 2, 4, 6, 8, 10, 12, 14], 11)) {
+    const step = t.push(x);
+    if (step.rezeroed) assert.equal(step.cleared, true, "a rezero step is itself a clearing");
+    if (step.cleared && !step.rezeroed) sawClearedWithoutRezero = true;
+  }
+  assert.ok(sawClearedWithoutRezero, "tolerance=2 means at least one clearing must precede its rezero, unreported by rezeroed alone");
+});
+
+test("candidate:efference shares regime-mean's centre — the only declared difference is spread", () => {
+  const series = staircase([0, 2, 4, 6, 8, 10, 12, 14], 11);
+  const rm = regimeMean({ window: 6, draws: 96, tolerance: 2, seed: 0 });
+  const ef = efferenceGated({ window: 6, draws: 96, tolerance: 2, seed: 0 });
+  const warmup = series.slice(0, 40);
+  rm.prime(warmup);
+  ef.prime(warmup);
+  for (let i = 40; i < series.length; i++) {
+    const history = series.slice(0, i);
+    const a = rm.predict(history);
+    const b = ef.predict(history);
+    const centreOf = (d) => (d.kind === "point" ? d.value : d.mean);
+    assert.equal(centreOf(a), centreOf(b), `centres diverged at step ${i}`);
+    rm.observe(series[i], history);
+    ef.observe(series[i], history);
+  }
+});
+
+test("clearedSequenceOf replays the same test push() uses, in order", () => {
+  const series = staircase([0, 2, 4, 6, 8, 10, 12, 14], 11);
+  const params = { window: 6, draws: 96, tolerance: 2, seed: 0 };
+  const t = createRegimeTracker(params);
+  const live = series.map((x) => t.push(x).cleared);
+  assert.deepEqual(clearedSequenceOf(series, params), live);
+});
+
+test("candidate:efference-null with an all-clear or all-clean sequence degrades to the unmodulated base spread", () => {
+  const series = staircase([0, 2, 4, 6, 8, 10, 12, 14], 11);
+  const params = { window: 6, draws: 96, tolerance: 2, seed: 0 };
+  // No information in a constant sequence: the worldRate history is either
+  // always 0 (never clears) or every regime looks equally noisy — either way
+  // the ratio has nothing to distinguish, so this must not throw or emit a
+  // non-finite spread.
+  const allClean = efferenceNull({ clearedSequence: series.map(() => false), ...params });
+  const warmup = series.slice(0, 40);
+  allClean.prime(warmup);
+  for (let i = 40; i < series.length; i++) {
+    const out = allClean.predict(series.slice(0, i));
+    if (out.kind === "gaussian") assert.ok(Number.isFinite(out.sd) && out.sd > 0);
+    allClean.observe(series[i], series.slice(0, i));
+  }
+});
+
+test("the efference candidates are deterministic — same input, same sealed record", () => {
+  const series = Array.from({ length: 80 }, (_, i) => Math.sin(i / 5) * 3 + (i % 7) * 0.1);
+  const go = (candidate) => {
+    const baselines = defaultNumericBaselines({ window: 3 });
+    const task = createPredictionTask({
+      target_type: "number",
+      horizon: { kind: "walk-forward", h: 1 },
+      scoring_rule: "crps",
+      baseline_ids: baselines.map((b) => b.id),
+      population: "determinism-efference",
+    });
+    return runPrequential({
+      series,
+      candidates: [candidate()],
+      baselines,
+      task,
+      warmup: 20,
+      population: "determinism-efference",
+      source_versions: ["determinism-efference"],
+    });
+  };
+  const params = { window: 6, draws: 32, tolerance: 2, seed: 0 };
+  assert.equal(
+    go(() => efferenceGated(params)).records[0].content_hash,
+    go(() => efferenceGated(params)).records[0].content_hash,
+  );
 });
 
 test("the prequential run is deterministic — same input, same sealed record", () => {

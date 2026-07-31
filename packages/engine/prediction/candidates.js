@@ -34,6 +34,24 @@
 //       question: is it INFORMATIVE. A thing can be informative and still
 //       never be a gate.
 //
+//   candidate:efference     vs  candidate:regime-mean
+//       Identical centre AND identical base spread (both are regime-mean's).
+//       The ONLY difference is a second multiplier on the spread, derived from
+//       how much of the CURRENT regime has been self (the ground held, an
+//       ordinary EVA-Tending step) versus world (a clearing — the observation
+//       exceeded the ground's own witness). So the gain measures exactly one
+//       thing — whether "how much has my own forecast been confirmed lately"
+//       carries information about how uncertain the NEXT step is, beyond what
+//       the regime boundary already supplies. This is the re-earned kernel of
+//       eoreader4.2's efference copy (enactor/efference.js, enactor/monitor.js):
+//       not "I spoke and later heard myself" — this engine authors no output
+//       to hear back — but the part of that mechanism that survives without a
+//       speaker: one held forecast, a match/no-match test against what
+//       returns, and a self-run of matches damping how surprised the next
+//       prediction is entitled to be. Read against candidate:efference-null
+//       (below), whose self/world tag is the same COUNT, shuffled — isolating
+//       whether the tag's placement carries information, not just its rate.
+//
 // On not smuggling in a constant. The ananda candidate needs ground volume
 // (on the scale of windowed means) to modulate a one-step spread (on the scale
 // of first differences), and any hand-picked bridge between those two scales
@@ -178,6 +196,89 @@ export const regimeAnanda = ({ window, draws, tolerance, seed = 0 }) => {
 };
 
 /**
+ * Shared plumbing for candidate:efference and its null control below — the
+ * two must compute centre and spread with IDENTICAL logic, or a difference
+ * between them stops being attributable to the one thing in dispute (the
+ * cleared bit's SOURCE). `clearedOf(i, step)` is the only place they differ:
+ * the live version reads atmosphere's own undelayed clearing test off `step`;
+ * the null reads a caller-supplied sequence instead, `i` steps in.
+ */
+const efferenceCandidate = ({ window, draws, tolerance, seed = 0, id, clearedOf }) => {
+  const tracker = createRegimeTracker({ window, draws, tolerance, seed });
+  let clearingsInRegime = 0;
+  let pushesInRegime = 0;
+  let i = 0;
+  const history_worldRate = [];
+  const fold = (step) => {
+    if (step.rezeroed) {
+      clearingsInRegime = 0;
+      pushesInRegime = 0;
+    } else {
+      pushesInRegime++;
+      if (clearedOf(i, step)) clearingsInRegime++;
+    }
+    i++;
+    if (pushesInRegime > 0) history_worldRate.push(clearingsInRegime / pushesInRegime);
+  };
+  return {
+    id,
+    prime: (warmupHistory) => {
+      for (const x of warmupHistory) fold(tracker.push(x));
+    },
+    predict: (history) => {
+      const slice = history.slice(tracker.regimeStart);
+      const centre = slice.length < 2 ? history[history.length - 1] : mean(slice);
+      const base = slice.length < 2 ? stdev(diffs(history)) : stdev(slice);
+      const worldRate = pushesInRegime > 0 ? clearingsInRegime / pushesInRegime : null;
+      if (worldRate == null || history_worldRate.length === 0) return gaussianOrPoint(centre, base);
+      const ratio = worldRate / mean(history_worldRate);
+      if (!Number.isFinite(ratio) || ratio <= 0) return gaussianOrPoint(centre, base);
+      return gaussianOrPoint(centre, base * ratio);
+    },
+    observe: (x) => fold(tracker.push(x)),
+    state: () => ({ regimeStart: tracker.regimeStart, rezeroCount: tracker.rezeroCount, clearingsInRegime, pushesInRegime }),
+  };
+};
+
+/**
+ * The re-earned kernel of eoreader4.2's efference copy — not a self-authored
+ * output being sensed back (this engine authors no output to hear), but the
+ * part of that mechanism that survives without one: a held forecast, a
+ * match/no-match test against what returns, and a self-run of matches damping
+ * how much uncertainty the next forecast is entitled to carry. Centre and
+ * base spread are candidate:regime-mean's, unmodified; the ONLY difference is
+ * a second multiplier on the spread — the CURRENT regime's clearing rate
+ * (world) entered as a ratio to its own running mean, the same
+ * dimensionless-bridge discipline as candidate:ananda-scaled, and for the
+ * same reason: a hand-picked multiplier would be exactly the smuggled
+ * constant baselines.js and nul both refuse.
+ */
+export const efferenceGated = ({ window, draws, tolerance, seed = 0 }) =>
+  efferenceCandidate({ window, draws, tolerance, seed, id: "candidate:efference", clearedOf: (_i, step) => step.cleared });
+
+/**
+ * The null for candidate:efference: the same estimator, driven by a cleared
+ * SEQUENCE handed in rather than atmosphere's own live test — same count of
+ * self/world tags, different placement. If the real candidate does not beat
+ * this, whatever gain it has was the RATE of clearings, not where they
+ * actually landed — bookkeeping, not information.
+ */
+export const efferenceNull = ({ clearedSequence, window, draws, tolerance, seed = 0, id = "candidate:efference-null" }) =>
+  efferenceCandidate({ window, draws, tolerance, seed, id, clearedOf: (i) => Boolean(clearedSequence[i]) });
+
+/**
+ * The cleared bit atmosphere would raise at each step of `series`, in order —
+ * the sequence candidate:efference reads live and candidate:efference-null
+ * reads shuffled. A plain replay, not a candidate: nothing here is scored, so
+ * it may look at the whole series at once without leaking anything a
+ * predictor could act on.
+ */
+export const clearedSequenceOf = (series, { window, draws, tolerance, seed = 0 }) => {
+  const tracker = createRegimeTracker({ window, draws, tolerance, seed });
+  return series.map((x) => tracker.push(x).cleared);
+};
+
+/**
  * The permutation null for regime-mean: the same estimator, re-zeroing the same
  * NUMBER of times, at positions it was handed instead of positions atmosphere
  * found.
@@ -220,4 +321,5 @@ export const defaultCandidates = ({ window, draws, tolerance, seed = 0 }) => [
   regimeMean({ window, draws, tolerance, seed }),
   anandaScaled({ window, draws, seed }),
   regimeAnanda({ window, draws, tolerance, seed }),
+  efferenceGated({ window, draws, tolerance, seed }),
 ];

@@ -34,7 +34,7 @@
 import fs from "node:fs";
 import { createPredictionTask } from "../packages/engine/prediction/tasks.js";
 import { defaultNumericBaselines } from "../packages/engine/prediction/baselines.js";
-import { defaultCandidates, boundaryControl } from "../packages/engine/prediction/candidates.js";
+import { defaultCandidates, boundaryControl, efferenceNull, clearedSequenceOf } from "../packages/engine/prediction/candidates.js";
 import { runPrequential } from "../packages/engine/prediction/run.js";
 import { tokenize, chunkWords, causalSurprisalSeries } from "../packages/engine/perceiver/text/material.js";
 
@@ -224,6 +224,83 @@ for (let i = 0; i < battery.length; i++) {
   nullVerdicts.set(name, clears);
   console.log(
     `    ${name.padEnd(16)} re-zeros=${String(count).padStart(3)}  observed=${fmt(observed, 14)}  null-max=${fmt(nul.max, 14)}  ->  ${clears ? "CLEARS" : "does not clear"}`,
+  );
+}
+
+// ── the efference permutation null ──────────────────────────────────────────
+//
+// Beating regime-mean does not, on its own, mean the self/world TAG carries
+// information. The same rate of spread modulation, applied at arbitrary steps
+// instead of the ones atmosphere actually cleared on, could win by luck if
+// regime-relative uncertainty just runs generically higher near the end of a
+// regime for reasons that have nothing to do with self/world. This holds the
+// tag COUNT fixed at whatever atmosphere actually raised and destroys only
+// their PLACEMENT — same discipline as the boundary null above, aimed at the
+// tag instead of the boundary.
+const shuffled = (xs, seed) => {
+  const next = prng(seed);
+  const out = [...xs];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+};
+
+const efferenceNullFor = (name, series, observedCleared) => {
+  const count = observedCleared.filter(Boolean).length;
+  if (count < 1) return null;
+  const baselines = defaultNumericBaselines({ window: WINDOW });
+  const task = createPredictionTask({
+    target_type: "number",
+    horizon: { kind: "walk-forward", h: 1 },
+    scoring_rule: SCORING_RULE,
+    baseline_ids: baselines.map((b) => b.id),
+    population: `${name}:efference-null`,
+  });
+
+  const gains = [];
+  for (let r = 0; r < REPLICATES; r++) {
+    const candidate = efferenceNull({
+      clearedSequence: shuffled(observedCleared, 2000 + r),
+      window: WINDOW,
+      draws: DRAWS,
+      tolerance: TOLERANCE,
+      seed: 0,
+      id: `candidate:efference-null-${r}`,
+    });
+    const result = runPrequential({
+      series,
+      candidates: [candidate],
+      baselines,
+      task,
+      warmup: WARMUP,
+      scoring_rule: SCORING_RULE,
+      population: `${name}:efference-null`,
+      source_versions: [`${name}:n=${series.length}:replicate=${r}`],
+    });
+    gains.push(result.records[0].competency_gain[`baseline:moving-mean-${WINDOW}`]);
+  }
+  gains.sort((a, b) => a - b);
+  return { gains, max: gains[gains.length - 1], median: gains[Math.floor(gains.length / 2)] };
+};
+
+console.log("\n=== efference permutation null (self/world tag placement destroyed, count held fixed)");
+console.log(`    ${REPLICATES} replicates, gain measured against baseline:moving-mean-${WINDOW}`);
+
+for (let i = 0; i < battery.length; i++) {
+  const [name, series] = battery[i];
+  const rec = results[i].records.find((r) => r.candidate_id === "candidate:efference");
+  const observed = rec.competency_gain[`baseline:moving-mean-${WINDOW}`];
+  const observedCleared = clearedSequenceOf(series, { window: WINDOW, draws: DRAWS, tolerance: TOLERANCE, seed: 0 });
+  const nul = efferenceNullFor(name, series, observedCleared);
+  if (!nul) {
+    console.log(`    ${name.padEnd(16)} clearings=0 — no tag to shuffle, null not applicable`);
+    continue;
+  }
+  const clears = observed > nul.max;
+  console.log(
+    `    ${name.padEnd(16)} clearings=${String(observedCleared.filter(Boolean).length).padStart(3)}  observed=${fmt(observed, 14)}  null-max=${fmt(nul.max, 14)}  ->  ${clears ? "CLEARS" : "does not clear"}`,
   );
 }
 

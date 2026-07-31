@@ -137,6 +137,14 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
  * `tolerance` is declared for the same reason it is declared above: it is the
  * resolution of refusal, and a default would decide in advance how eager this
  * is to concede.
+ *
+ * `push` also returns `cleared`: the raw exceeds-witness-above test for THIS
+ * step alone, undelayed by `tolerance` — `rezeroed` only fires once enough
+ * clearings have accumulated to concede the ground, so it is silent about
+ * every clearing that did not (yet) cross that bar. A caller that wants to
+ * know "was this specific arrival still inside what the ground expected" —
+ * self, in the efference sense — needs the undelayed signal, not the
+ * boundary decision built on top of it.
  */
 export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
   if (!Number.isInteger(tolerance) || tolerance < 1)
@@ -164,11 +172,11 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     seen.push(x);
     const t = seen.length;
     // Both the ground and the observed window must end at or before t.
-    if (t < window) return { regimeStart, rezeroed: false, ananda: g ? volume(g) : null };
+    if (t < window) return { regimeStart, rezeroed: false, cleared: false, ananda: g ? volume(g) : null };
 
     const built = groundFrom(regimeStart, t - window);
     if (built) g = built;
-    if (!g) return { regimeStart, rezeroed: false, ananda: null };
+    if (!g) return { regimeStart, rezeroed: false, cleared: false, ananda: null };
 
     // Commensurate with the ground's own statistic: burstiness is a
     // max-over-windows, so only a real windowed mean is comparable to it.
@@ -176,8 +184,9 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     for (let j = t - window; j < t; j++) sum += seen[j];
     const d = difference(sum / window, g);
 
+    const cleared = isGap(d) && d.gap === "exceeds_witness" && d.direction === "above";
     let rezeroed = false;
-    if (isGap(d) && d.gap === "exceeds_witness" && d.direction === "above") {
+    if (cleared) {
       // DEF · Clearing. Only surfeit clears — censored BELOW is regularity,
       // and counting it here re-zeros on nearly every step (SEED.md #8).
       clearings++;
@@ -192,7 +201,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     } else {
       clearings = 0; // EVA · Tending
     }
-    return { regimeStart, rezeroed, ananda: g ? volume(g) : null };
+    return { regimeStart, rezeroed, cleared, ananda: g ? volume(g) : null };
   };
 
   return {
