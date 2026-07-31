@@ -77,6 +77,7 @@
 // Pure: no clock, no I/O, no randomness of its own.
 
 import { createLayer, createBelief } from "./belief.js";
+import { scopedDistribution } from "./settled.js";
 import { gap, isGap } from "../../../nul/index.js";
 
 export const CELL = Object.freeze({ op: "SYN", terrain: "Link", stance: "Making" });
@@ -158,6 +159,114 @@ export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, 
       live_vocabulary: liveLayer.vocabularySize,
       layers: Object.freeze(layers.map((l) => l.id)),
     }),
+  });
+};
+
+/**
+ * Speak from the standpoint: a continuation drawn from the live ground, which
+ * reaches back only where the live ground falls silent.
+ *
+ * THE MODE IS TAKEN OVER THE LIVE SUPPORT AND THIS IS A DECISION, NOT AN
+ * OPTIMISATION. Finding the true argmax over live-plus-settled would require
+ * enumerating the settled ground at every step, which is exactly the cost
+ * `settled.js` exists to remove. But the reason it is defensible is not that
+ * it is cheap: a speaker chooses among what is in play, and reaching past
+ * everything in play to retrieve a marginally likelier form from memory is not
+ * what saying the next word is. Declared on every emission as
+ * `selection_scope`, so nobody reads this as the unscoped mode.
+ *
+ * REACHING BACK IS COUNTED, and it is the interesting number here. When a
+ * sampled draw falls past the live ground's mass, the reader has to consult
+ * what it settled — and only then is the settled ground enumerated, for that
+ * one step. `reached_back` is how often the present could not supply the next
+ * form, which is a reading of the material rather than a statistic about the
+ * apparatus: a stretch where the reader keeps reaching back is a stretch its
+ * present does not cover.
+ */
+export const emitScoped = ({ live, settled, context, horizon, selection, seed = 0, order }) => {
+  if (!Number.isInteger(horizon) || horizon < 1) throw new TypeError("standpoint: horizon must be an integer >= 1");
+  if (selection !== "mode" && selection !== "sampled")
+    throw new TypeError("standpoint: selection must be mode or sampled, and is never defaulted");
+
+  let a = (seed | 0) + 0x6d2b79f5;
+  const uniform = () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const reach = Math.max(0, order ?? 0);
+  let ctx = reach === 0 ? [] : context.slice(Math.max(0, context.length - reach));
+  const emitted = [];
+  const steps = [];
+  let reachedBack = 0;
+
+  for (let h = 0; h < horizon; h++) {
+    const d = scopedDistribution({ live, settled, context: ctx });
+    if (isGap(d)) return d;
+    steps.push(d);
+
+    let form = null;
+    if (selection === "mode") {
+      let best = -1;
+      for (const f in d.live)
+        if (d.live[f] > best || (d.live[f] === best && best >= 0 && f < form)) {
+          best = d.live[f];
+          form = f;
+        }
+      // The present placed nothing at all here. Only then is memory consulted,
+      // and only then is it enumerated.
+      if (form === null && settled !== null) {
+        reachedBack++;
+        const s = settled.enumerate(ctx);
+        let best2 = -1;
+        for (const [f, p] of s.successors) if (p > best2 || (p === best2 && f < form)) { best2 = p; form = f; }
+      }
+    } else {
+      const u = uniform();
+      const total = d.live_mass + d.settled_mass;
+      if (!(total > 0)) return gap("no_ground", { reason: "every share this standpoint held was unplaced", at: h });
+      const threshold = u * total;
+      let acc = 0;
+      for (const f in d.live) {
+        acc += d.live[f];
+        if (acc >= threshold) { form = f; break; }
+      }
+      if (form === null && settled !== null) {
+        // The draw fell past everything in play. Reach back — and pay the
+        // enumeration for this one step only.
+        reachedBack++;
+        const s = settled.enumerate(ctx);
+        let sTotal = 0;
+        for (const [, p] of s.successors) sTotal += p;
+        if (sTotal > 0) {
+          const t2 = ((threshold - d.live_mass) / d.settled_mass) * sTotal;
+          let acc2 = 0;
+          for (const [f, p] of s.successors) {
+            acc2 += p;
+            if (acc2 >= t2) { form = f; break; }
+          }
+        }
+      }
+    }
+
+    if (form === null) return gap("no_ground", { reason: "neither the present nor what it settled would say anything", at: h });
+    emitted.push(form);
+    ctx = [...ctx, form].slice(-Math.max(1, reach));
+  }
+
+  return Object.freeze({
+    kind: "sequence",
+    register: "imagined",
+    selection,
+    selection_scope: "live-support — the mode is over what is in play, never over everything remembered",
+    conditioning: "free-running",
+    emitted: Object.freeze(emitted),
+    steps: Object.freeze(steps),
+    settled: settled === null ? null : Object.freeze({ hash: settled.hash, at: settled.at }),
+    reached_back: reachedBack,
+    horizon,
   });
 };
 

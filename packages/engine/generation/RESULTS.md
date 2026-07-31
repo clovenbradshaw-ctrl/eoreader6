@@ -318,3 +318,66 @@ unwired and therefore refuted; it is the next thing to earn.
   With too few forms there is no null of nonzero width, every pair returns
   `exceeds_witness`, and `induceSlots` refuses rather than inventing a
   grouping — SEED.md #3 holding at the fixture boundary.
+
+## The scoped reader runs, and has no boundary to run in
+
+`node scripts/speak-from-here.mjs scripts/corpus/pg20781.txt 0.75`. Heidi,
+62,300 forms, standpoint at form 46,725. The machinery of `settled.js` +
+`standpoint.js` end to end, with the fold boundary taken from
+`loops/atmosphere` rather than declared.
+
+### What worked
+
+The settled ground is exact and cheap. Conformance sweeps every form in every
+context against the unscoped belief at 1e-12, on both the O(order) fast path
+and `expand()`. Measured earlier at a hand-passed boundary: 70,480 → 7,820
+entries per continuation, seal 235ms → 25ms.
+
+### What did not: ONE boundary in 46,725 forms
+
+| | |
+|---|---|
+| boundaries atmosphere found | **1**, at form 354 |
+| the resulting "present" | 46,371 forms |
+| vocabulary the reader speaks from | **97.4%** |
+
+There is no scoping. The live wave is the whole novel, and the scoped emitter
+is 1.5× faster only because it is barely scoping anything.
+
+**And the one boundary is CORRECT, which is the interesting part.** Form 354
+is where Project Gutenberg's front matter ends and the prose begins — the
+transcriber's note, the PGDP credits, the publisher's preface. Atmosphere
+found the single genuine change of ambient ground in the document. It is not
+malfunctioning; it is reporting that *a novel does not concede its ground
+again*, at this grain, on this statistic.
+
+So the architecture has no within-book boundary detector. `surf`'s waves are
+the obvious next source and carry a caution rather than a warrant: surf as a
+CANDIDATE GENERATOR is refuted (bba5b29, 0.66–0.71× chance at matched budget).
+Surf as a boundary is a different question and has earned nothing yet.
+
+### THE SMALL GROUND IS THE LOUD ONE — a real defect, not a scale artefact
+
+With `perished` = 354 forms of boilerplate and `live` = the whole book, the
+reader still reached back **6 times in 20** and imported the publisher's name,
+a copyright year and a page number into imagined prose.
+
+The cause is in the mixture and it generalises past this run. λ apportions
+`1 − λ` to the settled ground on the strength of the LIVE ground's evidence
+alone — nothing asks whether the settled ground has anything worth saying. A
+192-form boilerplate ground receives exactly the share a 46,000-form memory
+would. Where the context is rare λ collapses and the boilerplate gets almost
+everything.
+
+This is the same shape as a defect `belief.js` already logged for foreign
+gifts — "it makes a book audible for KNOWING THIS CONTEXT rather than for
+BEING RELEVANT TO THIS TEXT" — and the relevance machinery built to fix it does
+not engage here: `shares()` returns `[1]` for a single received layer, so the
+self-past is weighted unconditionally. **A one-gift mixture has no relevance
+test at all**, and that was invisible while every run had three gifts.
+
+### A third defect, found on the way
+
+`stripContainer` leaves the transcriber's note and PGDP credits in the
+material. The container is leaking into the text it is supposed to strip, and
+every form-position number in this file is shifted by it.
