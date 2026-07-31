@@ -1,0 +1,183 @@
+// eoreader6 · generation/standpoint — speak from what is in play, not from
+// everything ever read.
+//
+//   SYN · Link · Making   (Generate · Structure · Figure)
+//
+// ── THE PROBLEM THIS IS THE ANSWER TO ─────────────────────────────────────
+//
+// `emitSequence` asks `belief.distribution(ctx)` for every form the reader has
+// ever met, at every step. On Heidi at the 75% mark that is a 3,523-form
+// distribution built twenty times for one sentence — 70,480 probability
+// entries per continuation. A reader consulting its entire memory before each
+// word it says.
+//
+// That is wrong twice over, and the two wrongs have one fix:
+//
+//   FIDELITY.  Nobody thinks about everything when they talk. Speech comes out
+//     of what is currently in play, and reaches back only when the local
+//     ground falls silent.
+//   CONSTITUTION.  II.8, no averaging of grounds. A distribution over every
+//     form ever met IS an average across every standpoint the reader has
+//     occupied. It is the same error as inducing one global slot inventory and
+//     applying it everywhere — `slots.js` made it on the source axis and this
+//     module is the correction on the time axis.
+//
+// And the convergence test (II.7) is what says the fix is an organ rather than
+// an optimisation: the mechanism that makes the reading faithful is the one
+// that makes it finish. If those had pointed different ways, one of them would
+// be wrong.
+//
+// ── IT NEEDS NO NEW MECHANISM, WHICH IS THE POINT ─────────────────────────
+//
+// `loops/surf` already states the doctrine in its own header — "the many
+// become one, and are increased by one", and in perishing an occasion becomes
+// DATUM FOR THE OCCASION AFTER IT. So the reader's settled past is genuinely
+// *received by* its present. Which makes this `belief.js`'s existing layering,
+// turned from the SOURCE axis onto the TIME axis, with nothing invented:
+//
+//   the live wave           tier `read`      this material, here
+//   everything behind it    tier `received`  giver: this reader, earlier
+//                                            world: `this`
+//
+// λ is derived from the live ground's own evidence exactly as it always was.
+// Where the wave has met this context often the past is inaudible; where it
+// has never met it the past is all there is. Nobody chose that and no constant
+// governs it.
+//
+// The past declares `world: "this"`, which exempts it from the existence gate.
+// That gate stops a foreign book's `peleg` populating this one; a form this
+// same reader met earlier in this same material is of this universe by
+// construction and needs no visa. Without the exemption a single self-past
+// layer could never satisfy `n >= 2` and the reader could not reach its own
+// memory at all.
+//
+// ── WHAT THIS IS NOT, AND THE MEASUREMENT THAT SAYS SO ────────────────────
+//
+// SURF AS A CANDIDATE GENERATOR IS REFUTED AND IS NOT BEING RETRIED. Commit
+// bba5b29 measured wave-break positions as a selector for which scenes matter,
+// at a matched budget, against the spine:
+//
+//   spine (surprise x presence)   12 candidates   4.01x chance
+//   surf w=8                      55 candidates   0.71x chance
+//   surf w=12                    110 candidates   0.66x chance
+//   surf w=20                    185 candidates   0.69x chance
+//
+// Every configuration is below chance. That result is about surf used to
+// SELECT SIGNIFICANT PAST POSITIONS, and it stands.
+//
+// This module uses surf for a different question: not "which positions matter"
+// but "where does the present end". The boundary of the live wave, not a
+// ranking of past waves. The nearest precedent is atmosphere's re-zero, whose
+// PLACEMENT cleared a boundary-permutation null on real prose
+// (prediction/RESULTS.md: +3,700,838 against a null max of -438,711), so a
+// regime-local ground is not a guess on this material. That is a related
+// mechanism and not the same one, and it confers no warrant here — the scoped
+// reader has to earn its own number.
+//
+// Pure: no clock, no I/O, no randomness of its own.
+
+import { createLayer, createBelief } from "./belief.js";
+import { gap, isGap } from "../../../nul/index.js";
+
+export const CELL = Object.freeze({ op: "SYN", terrain: "Link", stance: "Making" });
+
+/**
+ * Which wave is `here` inside?
+ *
+ * Waves come from `divide(surf(...))` and carry `from`/`to` positions in the
+ * material. Returns the wave containing `here`, or a typed gap.
+ *
+ * A STANDPOINT OUTSIDE EVERY WAVE IS A GAP, NEVER A FALLBACK TO THE WHOLE
+ * MATERIAL. Silently widening the scope to everything is precisely the
+ * averaged ground this module exists to stop, and it would be invisible in the
+ * output — the reader would look scoped and would not be.
+ */
+export const waveAt = (waves, here) => {
+  if (!Array.isArray(waves)) return gap("unknown_spec", { reason: "waves must be a divided ride" });
+  if (!Number.isInteger(here) || here < 0) return gap("undeclared", { what: "here" });
+  for (const w of waves) if (here >= w.from && here <= w.to) return w;
+  return gap("no_ground", {
+    reason: "this standpoint falls in no wave — the present has no boundary here, and widening to the whole material would be the averaged ground this scoping exists to refuse",
+    here,
+    waves: waves.length,
+  });
+};
+
+/**
+ * A belief that speaks from the live wave and remembers the rest.
+ *
+ * `tokens`   the whole material read so far (never beyond `here` — causality
+ *            is the caller's to keep and is checked).
+ * `here`     the standpoint, in token positions. Declared, never inferred.
+ * `from`     where the live wave began. Declared by the caller from a divided
+ *            ride, so this module holds no opinion about where presents begin.
+ *
+ * Returns { belief, scope } or a gap.
+ */
+export const standpointBelief = ({ tokens, here, from, order, alpha, gamma = 1, pastGamma = 1 }) => {
+  if (!Array.isArray(tokens)) throw new TypeError("standpoint: tokens must be an array");
+  if (!Number.isInteger(here) || here < 1) throw new TypeError("standpoint: here is declared, never inferred");
+  if (!Number.isInteger(from) || from < 0) throw new TypeError("standpoint: the wave's start is declared by the caller");
+  if (from >= here)
+    return gap("no_ground", { reason: "a live wave with nothing in it cannot be spoken from", from, here });
+  if (here > tokens.length)
+    throw new RangeError("standpoint: here is past the end of what has been read — a standpoint cannot stand in unread material");
+
+  const live = tokens.slice(from, here);
+  const past = tokens.slice(0, from);
+
+  const liveLayer = createLayer({ id: "live", tier: "read", order, gamma, alpha });
+  liveLayer.train(live);
+
+  const layers = [liveLayer];
+  if (past.length > 0) {
+    // The perished occasion, as datum for the one after it. It names its giver
+    // like any gift, and the giver is this reader at an earlier standpoint.
+    const pastLayer = createLayer({
+      id: "perished",
+      tier: "received",
+      world: "this",
+      giver: `this same reader, at the standpoint ending at form ${from} — the perished occasion, datum for the one after it (loops/surf; Whitehead, Process and Reality)`,
+      order,
+      gamma: pastGamma,
+      alpha,
+    });
+    pastLayer.train(past);
+    layers.push(pastLayer);
+  }
+
+  return Object.freeze({
+    belief: createBelief({ layers }),
+    scope: Object.freeze({
+      here,
+      from,
+      live: live.length,
+      past: past.length,
+      // Reported so a caller can see how much narrower the reader actually got,
+      // rather than trusting that it did.
+      live_vocabulary: liveLayer.vocabularySize,
+      layers: Object.freeze(layers.map((l) => l.id)),
+    }),
+  });
+};
+
+/**
+ * How much did scoping actually narrow the reader?
+ *
+ * Reported rather than assumed, because "speak from what is in play" is a
+ * claim about a number and the number is cheap to check. If the live
+ * vocabulary is nearly the whole vocabulary, the wave is not a present, it is
+ * the material with extra steps — and every downstream result would be the
+ * unscoped one wearing a scoped name.
+ */
+export const scopeReport = ({ tokens, here, from }) => {
+  const whole = new Set(tokens.slice(0, here));
+  const live = new Set(tokens.slice(from, here));
+  return Object.freeze({
+    whole_vocabulary: whole.size,
+    live_vocabulary: live.size,
+    narrowed_to: whole.size > 0 ? live.size / whole.size : 1,
+    live_forms: here - from,
+    past_forms: from,
+  });
+};
