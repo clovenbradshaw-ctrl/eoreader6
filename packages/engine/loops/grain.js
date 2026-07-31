@@ -15,13 +15,18 @@ import { difference, pattern, witness, keep, isGap } from "../../../nul/index.js
 // result names which grain it reached (figure / pattern / witness) and
 // whether that grain's own claim succeeded or gapped — never silently
 // promoted past a level that didn't hold.
-export const grainWalk = ({ observed, ownGround, priorGround, material, reseeds }) => {
+// `priorMaterial` is the material the PRIOR ground was built over, and the
+// name is now explicit because the old one ("material") let call sites hand in
+// the later material instead — which silently made pattern()'s null a sibling
+// of the very ground it was the null for. nul refuses that now, but a
+// parameter whose correct value you have to infer is a trap either way.
+export const grainWalk = ({ observed, ownGround, priorGround, priorMaterial, reseeds }) => {
   const figure = difference(observed, ownGround);
   if (isGap(figure)) return { grain: "figure", result: figure };
 
   if (!priorGround) return { grain: "figure", result: figure };
 
-  const pat = pattern({ before: priorGround, after: ownGround, material, reseeds });
+  const pat = pattern({ before: priorGround, after: ownGround, material: priorMaterial, reseeds });
   if (isGap(pat)) return { grain: "pattern", figure, result: pat };
 
   const w = witness({ ground: keep(ownGround), figure, pattern: pat });

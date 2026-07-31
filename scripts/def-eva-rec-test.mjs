@@ -36,7 +36,9 @@ const traceMaterial = (label, text) => {
     if (isGap(g)) { prevReadChunks = readChunks; continue; }
 
     if (prevGround) {
-      const pr = pattern({ before: prevGround, after: g, material, reseeds: RESEEDS });
+      // pattern()'s null is BEFORE's material, never the grown one — see
+      // nul/index.js::pattern. This line used to pass `material`.
+      const pr = pattern({ before: prevGround, after: g, material: causal.slice(0, prevReadChunks), reseeds: RESEEDS });
       if (!isGap(pr)) {
         const label_ = !pr.moved ? "DEF" : (pr.opened ? "REC" : "EVA");
         const newMaterial = causal.slice(prevReadChunks, readChunks);
