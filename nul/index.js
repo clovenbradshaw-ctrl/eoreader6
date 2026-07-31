@@ -39,6 +39,7 @@ export const GAP_TYPES = Object.freeze([
   "exceeds_witness", // the rank is censored — the ground cannot place it
   "made_no_difference", // perceived, and therefore not testimony
   "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
+  "incommensurate_extent", // a null built over a different amount of material than the thing it is the null FOR
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -98,7 +99,115 @@ export const burstiness = (series, { window }) => {
   return best;
 };
 
-export const STATISTICS = Object.freeze({ burstiness });
+/**
+ * Ordinal patterns (Bandt-Pompe). A window of `window` values is reduced to the
+ * permutation that sorts it — magnitudes discarded, order kept. Ties break by
+ * index, which is the standard choice and matters only on quantised material.
+ */
+const ordinalKey = (series, t, d) => {
+  const idx = Array.from({ length: d }, (_, i) => i);
+  idx.sort((a, b) => series[t + a] - series[t + b] || a - b);
+  return idx.join(",");
+};
+
+/**
+ * Reversing the series reverses each window, so the sorting permutation is read
+ * backwards: position p becomes d-1-p. An involution on the pattern space, which
+ * is what makes the reversed distribution a relabelling of the forward one
+ * rather than a separate measurement.
+ */
+const reversedKey = (key, d) =>
+  key.split(",").map((p) => d - 1 - Number(p)).join(",");
+
+const patternCounts = (series, d) => {
+  const counts = new Map();
+  const slots = series.length - d + 1;
+  for (let t = 0; t < slots; t++) {
+    const k = ordinalKey(series, t, d);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return { counts, slots };
+};
+
+const factorial = (n) => {
+  let f = 1;
+  for (let i = 2; i <= n; i++) f *= i;
+  return f;
+};
+
+/**
+ * The pattern space must be populable or the estimate is noise: fewer windows
+ * than possible patterns means most bins are empty by arithmetic, not by
+ * structure. Refused (NaN) rather than reported, so `ground` gaps instead of
+ * building a null out of a counting artefact.
+ */
+const patternSpaceAdmissible = (series, d) =>
+  Number.isInteger(d) && d >= 2 && d <= 8 && series.length - d + 1 >= factorial(d);
+
+/**
+ * ORDER. Normalised permutation entropy, in [0,1].
+ *
+ * Shuffle-sensitive by construction, and one-sided by theorem: shuffling a
+ * series destroys dependence, and for a stationary source subadditivity gives
+ * block entropy of the shuffled series >= that of the real one, with equality
+ * iff independent. So a real series can only sit at or BELOW its own shuffle
+ * null. Sitting below is `exceeds_witness` with direction "below" — regularity,
+ * which SEED.md #8 warns must not be mistaken for surfeit. Here regularity is
+ * the finding: the index is load-bearing.
+ *
+ * Note what this does NOT see: the pattern space is closed under reversal, so
+ * reversing a series permutes the bins without changing the distribution's
+ * entropy. This statistic is exactly blind to time's arrow. See `irreversibility`.
+ */
+export const permutationEntropy = (series, { window }) => {
+  if (!patternSpaceAdmissible(series, window)) return NaN;
+  const { counts, slots } = patternCounts(series, window);
+  let h = 0;
+  for (const c of counts.values()) {
+    const p = c / slots;
+    h -= p * Math.log(p);
+  }
+  return h / Math.log(factorial(window));
+};
+
+/**
+ * ARROW. Divergence between the ordinal-pattern distribution and its own
+ * reversal image, in [0,1].
+ *
+ * Zero exactly when the distribution is reversal-symmetric — which is what a
+ * time-reversible process has, however much memory it carries. A stationary
+ * Gaussian AR process and a sine wave are both strongly ordered and both read
+ * zero here; a ratchet does not.
+ *
+ * The quantity that literally is entropy production is the KL divergence
+ * between forward and reverse path distributions (Crooks). This uses the
+ * Jensen-Shannon form instead: same zero set, bounded, and finite when a
+ * pattern occurs forward but never in reverse — which on finite material is
+ * common and would send KL to infinity. A bounded surrogate for a real
+ * thermodynamic quantity, named as such rather than passed off as the thing.
+ *
+ * On shuffled material the pattern distribution is uniform, uniform is its own
+ * reversal image, so the null sits near zero and a real arrow is censored ABOVE
+ * it: surfeit, in the sense the seed already uses.
+ */
+export const irreversibility = (series, { window }) => {
+  if (!patternSpaceAdmissible(series, window)) return NaN;
+  const { counts, slots } = patternCounts(series, window);
+  const keys = new Set(counts.keys());
+  for (const k of [...keys]) keys.add(reversedKey(k, window));
+
+  let js = 0;
+  for (const k of keys) {
+    const p = (counts.get(k) ?? 0) / slots;
+    const q = (counts.get(reversedKey(k, window)) ?? 0) / slots;
+    const m = (p + q) / 2;
+    if (p > 0) js += 0.5 * p * Math.log(p / m);
+    if (q > 0) js += 0.5 * q * Math.log(q / m);
+  }
+  return js / Math.log(2);
+};
+
+export const STATISTICS = Object.freeze({ burstiness, permutationEntropy, irreversibility });
 
 /**
  * `window` is the reach of the present — how much of the material is contemporary
@@ -137,7 +246,8 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
 
   const samples = [];
   for (let d = 0; d < draws; d++) samples.push(stat(perturb(material, seed + d), { window }));
-  if (samples.some((v) => !Number.isFinite(v))) return gap("unknown_spec", { reason: "window exceeds material", window });
+  if (samples.some((v) => !Number.isFinite(v)))
+    return gap("unknown_spec", { reason: "the statistic could not be formed at this window", statistic, window });
   const sorted = [...samples].sort((a, b) => a - b);
   if (sorted[0] === sorted[sorted.length - 1])
     return gap("degenerate_ground", { reason: "zero width: this null would clear anything", statistic, perturbation });
@@ -145,6 +255,12 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
   return Object.freeze({
     spec: Object.freeze({ perturbation, statistic, seed, draws, window }),
     from: fingerprint(material),
+    // How much material this nothing was built by perturbing. Recorded because
+    // SEED.md #5 turns out to bite harder than it reads: `window` is declared
+    // so the statistic means one thing throughout, but the EXTENT still grows,
+    // and a max-over-windows statistic grows with it. Two grounds over
+    // different extents are not comparable unless the null grows the same way.
+    extent: material.length,
     samples: Object.freeze(sorted),
     kept: false,
   });
@@ -223,12 +339,69 @@ export const difference = (observed, g) => {
 };
 
 /**
+ * Continue a material by drawing from what is already in it. Not a third
+ * perturbation: it is `resample` asked for a length instead of the length it
+ * happened to have. What it produces is the same regime, carried on — which is
+ * exactly the counterfactual a growing ground needs its null to be.
+ */
+const continueBy = (material, k, seed) => {
+  const next = rng(seed);
+  const out = material.slice();
+  for (let i = 0; i < k; i++) out.push(material[Math.floor(next() * material.length)]);
+  return out;
+};
+
+/**
  * A difference that makes a difference.
  *
- * Did the figure move the next ground further than merely re-zeroing would? The
- * null is the ground's own reseeding variation — same spec, same material, fresh
- * seed. `opened` carries the sign: a difference that narrows the ground is still
- * a pattern, and it is extraction. Only widening is encounter.
+ * Did the figure move the next ground further than it would have moved anyway?
+ * `opened` carries the sign: a difference that narrows the ground is still a
+ * pattern, and it is extraction. Only widening is encounter.
+ *
+ * TWO CORRECTIONS LIVE HERE, found independently and both load-bearing. The
+ * first is about the MAGNITUDE's null and extent; the second about the SIGN's.
+ *
+ * THE NULL MUST GROW THE WAY `after` GREW. This is the correction that cost the
+ * most to find, so it is written down at length.
+ *
+ * SEED.md's statement of the null is "same spec, same material, fresh seed,"
+ * and that is right for the case it was written for: two grounds over the SAME
+ * material, where the only thing that moved them apart is the figure. But the
+ * commonest real use is a reader accumulating material, where `after` is built
+ * over MORE material than `before` — and burstiness is a max over windows, so
+ * its expectation rises with extent for no reason but extent. Held at before's
+ * n, the null then measures seed noise while `moved_by` measures seed noise
+ * PLUS growth, and growth wins.
+ *
+ * What that looks like when you go and check: wired into atmosphere clearing,
+ * this fired on homogeneous noise at almost exactly even spacing — boundaries
+ * 28 apart, a clock, not a perception — and recovered 23 of Frankenstein's 24
+ * chapter boundaries while ALSO recovering 21–23 of them from the same series
+ * SHUFFLED. A statistic that scores the same on material whose order has been
+ * destroyed is reading its own arithmetic. (scripts/two-clearings.mjs)
+ *
+ * So the null is grown to `after`'s extent by drawing from `before`'s own
+ * material: the same regime, continued. Any displacement it shows is what
+ * growth alone contributes, and `moved` is what survives subtracting it. This
+ * is a CONDITIONAL null in the sense the lineage keeps having to relearn — it
+ * varies along the exact axis the artefact exploits, where an unconditional one
+ * is only a change of units. When the extents are equal it reduces to the
+ * reseeding null with nothing added.
+ *
+ * `material` is BEFORE's own material, and that is checked rather than trusted:
+ * handing in AFTER's material instead makes every null draw a sibling of
+ * `after` — same material, different seed — so `moved` becomes a coin that
+ * lands true about 1/(reseeds+1) of the time no matter what the material does.
+ * That is a real bug this check was written to catch, and it caught one.
+ *
+ * AND THE SIGN IS OWED A NULL TOO. `opened` was a bare inequality,
+ * volume(after) > volume(before) — measured, on real arrivals, to fall inside
+ * this null 77.8% of the time, to flip on a mere reseed 41.1% of the time, and
+ * to call an exact tie "extraction" 15.0% of the time. That is SEED.md #3 ("a
+ * null of zero width is refused, everywhere, at every level") and #4 in the one
+ * place the seed calls the whole physiology. So the sign is three-valued: a
+ * gap is a result (#8), and "no sign sayable" is a real finding about this
+ * arrival rather than a quiet vote for extraction.
  */
 export const pattern = ({ before, after, material, reseeds }) => {
   for (const g of [before, after]) {
@@ -240,6 +413,22 @@ export const pattern = ({ before, after, material, reseeds }) => {
   if (!before.spec || !after.spec) return gap("unreceived_origin", { reason: "a received ground has no reseeding null" });
   if (!sameSpec(before.spec, after.spec))
     return gap("unknown_spec", { reason: "two grounds built to different specs were never comparable" });
+  if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
+
+  // Type error before null, both ways round (SEED.md #7).
+  if (material.length !== before.extent)
+    return gap("incommensurate_extent", {
+      reason: "the null must be built over BEFORE's own material — anything else measures the wrong thing",
+      given: material.length,
+      before: before.extent,
+      after: after.extent,
+    });
+  if (after.extent < before.extent)
+    return gap("incommensurate_extent", {
+      reason: "the later ground was built over LESS material: there is no growth for the null to match",
+      before: before.extent,
+      after: after.extent,
+    });
 
   // A median is too robust to see reseeding at all: on a quantised statistic it
   // returns the same value for every seed, so the null comes out zero-width and
@@ -249,12 +438,18 @@ export const pattern = ({ before, after, material, reseeds }) => {
     return grid.reduce((s, q) => s + Math.abs(quantile(a.samples, q) - quantile(b.samples, q)), 0) / grid.length;
   };
 
+  const grewBy = after.extent - before.extent;
   const moved_by = displacement(after, before);
+  const volumeBefore = volume(before);
   let nullMax = 0;
+  let volumeNull = 0;
   for (let r = 1; r <= reseeds; r++) {
-    const g = reZero(before, { material, seed: before.spec.seed + r * before.spec.draws });
+    const seed = before.spec.seed + r * before.spec.draws;
+    const nullMaterial = grewBy === 0 ? material : continueBy(material, grewBy, seed);
+    const g = reZero(before, { material: nullMaterial, seed });
     if (isGap(g)) return g;
     nullMax = Math.max(nullMax, displacement(g, before));
+    volumeNull = Math.max(volumeNull, Math.abs(volume(g) - volumeBefore));
   }
   if (nullMax === 0)
     return gap("degenerate_ground", {
@@ -262,13 +457,26 @@ export const pattern = ({ before, after, material, reseeds }) => {
       reseeds,
     });
 
-  const moved = moved_by > nullMax;
+  // The SIGN gets the same null the magnitude gets. `opened` used to be the bare
+  // inequality volume(after) > volume(before) — measured, on real arrivals, to
+  // fall inside this null 77.8% of the time, to flip on a mere reseed 41.1% of
+  // the time, and to call an exact tie "extraction" 15.0% of the time. That is
+  // SEED.md #3 ("a null of zero width is refused, everywhere, at every level")
+  // and #4 in the one place the seed calls the whole physiology. Three-valued,
+  // because SEED.md #8: a gap is a result, and "no sign sayable" is a real
+  // finding about this arrival — not a quiet vote for extraction.
+  const volumeDelta = volume(after) - volumeBefore;
+  const opened = volumeNull === 0 || Math.abs(volumeDelta) <= volumeNull ? null : volumeDelta > 0;
+
   return Object.freeze({
-    moved,
+    moved: moved_by > nullMax,
     displacement: moved_by,
     reseedNull: nullMax,
+    grewBy,
     censoredAt: 1 / reseeds,
-    opened: volume(after) > volume(before),
+    opened,
+    volumeDelta,
+    volumeNull,
   });
 };
 
@@ -330,6 +538,71 @@ export const disagreement = (differences) => {
     censored,
     split: censored > 0 && ranks.length > 0,
     spread: ranks.length > 1 ? Math.max(...ranks) - Math.min(...ranks) : null,
+  });
+};
+
+/**
+ * Objective immortality: what a satisfaction adds to what comes after it.
+ *
+ * `keep()` is half of Whitehead's clause — "it closes up the entity." This is
+ * the other half — "and yet is the superject adding its character to the
+ * creativity whereby there is a becoming of entities superseding the one in
+ * question." Without it the engine has subjects and no superjects: every
+ * witnessed record is frozen, returned, and prehended by nothing.
+ *
+ * The character it adds is displacement in units of the reseeding null: how far
+ * this figure moved the ground beyond what the material moves it by itself.
+ * That ratio is the engine's name for "an origination not wholly traceable to
+ * the mere data" — the null IS the mere data.
+ *
+ * Returns a value, never a ground. A superject prehended as a prior would close
+ * the successor's ground and this would be sclerosis with extra steps; prehended
+ * as datum it can still be differed from. The depositor cannot read its own
+ * deposit, and needs no machinery to be stopped: its ground is kept, and a kept
+ * ground cannot be perceived through. Keeping makes a satisfaction unusable
+ * here; objectifying makes it usable there.
+ */
+export const objectify = (record) => {
+  if (isGap(record)) return record;
+  if (!record || !record.ground || !record.figure || !record.pattern) return gap("no_ground", { reason: "not a witnessed record" });
+  if (record.ground.kept !== true)
+    return gap("no_ground", { reason: "a satisfaction that never closed its entity is not a superject" });
+  if (record.pattern.moved !== true) return gap("made_no_difference", { reason: "nothing to pass on" });
+  if (!(record.pattern.reseedNull > 0)) return gap("degenerate_ground", { reason: "no null to express the excess in" });
+
+  const giver = record.ground.provenance ?? record.ground.from;
+  if (giver == null) return gap("unreceived_origin", { reason: "a satisfaction passed on must still name its giver" });
+
+  return Object.freeze({
+    value: record.pattern.displacement / record.pattern.reseedNull,
+    rank: record.figure.rank ?? null,
+    opened: record.pattern.opened,
+    provenance: giver,
+  });
+};
+
+/**
+ * A nexus: antecedent members objectified in the formal constitution of what
+ * follows. The material a successor's nothing is built by perturbing.
+ *
+ * Whitehead (ii) puts the objectification in the *formal constitution* — the
+ * process, not the outcome — so a nexus is material and nothing else. Its order
+ * is the order of the succession, which is real, and which perturbing destroys:
+ * that is what makes a statistic over it non-vacuous (SEED.md #4).
+ *
+ * One grain up from the material a figure was measured in, and unit-consistent
+ * with itself: every member is an excess-over-its-own-null, so satisfactions
+ * built over different domains are comparable here and nowhere else.
+ */
+export const nexus = (records) => {
+  if (!Array.isArray(records) || records.length === 0) return gap("empty_material", { reason: "a nexus of nothing" });
+  const members = records.map(objectify);
+  const bad = members.find(isGap);
+  if (bad) return bad;
+  return Object.freeze({
+    material: Object.freeze(members.map((m) => m.value)),
+    givers: Object.freeze(members.map((m) => m.provenance)),
+    n: members.length,
   });
 };
 
