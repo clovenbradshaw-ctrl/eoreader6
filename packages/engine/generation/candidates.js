@@ -137,6 +137,25 @@ export const shuffledGift = ({ order, alpha, from, seed = 0 }) => {
 };
 
 /**
+ * A reader who knows that two forms can be the same act.
+ *
+ * The minimal contrast against baseline:markov-k is exact: same order, same
+ * alpha, same gamma, same material, read-only. The ONLY difference is that an
+ * abstraction is present, so a gain measures exactly one thing — whether
+ * backing off through a shared alphabet beats backing off through a shorter
+ * surface context.
+ *
+ * The id carries the abstraction's id, because "candidate:abstracted" would
+ * make two runs with different inventories look like one candidate measured
+ * twice.
+ */
+export const abstracted = ({ order, alpha, gamma = 1, abstraction }) => {
+  if (!abstraction) throw new TypeError("candidates: abstracted needs an abstraction — without one it IS the baseline");
+  const layer = createLayer({ id: "read", tier: "read", order, gamma, alpha, abstraction });
+  return asEmitter(`candidate:abstracted-${abstraction.id}`, createBelief({ layers: [layer] }));
+};
+
+/**
  * A belief that starts over where the ground is conceded.
  *
  * Written out rather than built on `asEmitter` for one reason that matters:

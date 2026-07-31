@@ -140,7 +140,7 @@ const ctxKey = (tokens, from, order) => (order === 0 ? "" : tokens.slice(from - 
  * a default makes two runs incomparable while looking like it made them
  * comparable. gamma = 1 is a corpus statistic; gamma < 1 is a reader.
  */
-export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => {
+export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstraction = null }) => {
   if (typeof id !== "string" || !id) throw new TypeError("belief: a layer must have an id");
   if (!TIERS.includes(tier)) throw new TypeError(`belief: unknown tier ${tier}`);
   if (tier === "received" && (typeof giver !== "string" || !giver))
@@ -151,11 +151,52 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
     throw new TypeError("belief: gamma is the reader's fading, declared in (0,1], never defaulted");
   if (!Number.isFinite(alpha) || alpha <= 0)
     throw new TypeError("belief: alpha is the smoothing reserve, declared and positive, never defaulted");
+  if (abstraction !== null) {
+    // An abstraction is itself a received prior — UniMorph is an external fact
+    // about English, a word-class inventory is an external claim about what
+    // groups with what — so it names its giver on exactly the same terms a
+    // gift does (SEED.md #1). An abstraction derived FROM the read material
+    // would be a different thing and is not this.
+    if (typeof abstraction.of !== "function")
+      throw new TypeError("belief: an abstraction must supply of(form)");
+    if (typeof abstraction.id !== "string" || !abstraction.id)
+      throw new TypeError("belief: an abstraction must have an id");
+    if (typeof abstraction.giver !== "string" || !abstraction.giver)
+      throw new TypeError("belief: an abstraction must name its giver — it is a prior like any other (SEED.md #1)");
+  }
 
   // tables[j] : contextKey -> { succ: Map<form, cell>, total: cell }
+  //
+  // `abstractTables[j]` is the same structure keyed by the ABSTRACTED context
+  // — lemmas, word classes, quantised contours, whatever the abstraction
+  // supplies — while the successors it stores stay SURFACE forms. That
+  // asymmetry is the point: it lets "he had gone" inform "she has gone"
+  // without ever claiming the two are the same string, and it is what a
+  // cross-modal prior would need in order to meet a text at all (SEED.md
+  // Amendment IV, consequence 5 — the shared alphabet that amendment says is
+  // owed and not provided by it).
+  //
+  // There is no abstractTables[0]: at order 0 the context is empty, so its
+  // abstraction is also empty and the table would be a second copy of the
+  // unigram table under a different name.
   const tables = Array.from({ length: order + 1 }, () => new Map());
+  const abstractTables = abstraction ? Array.from({ length: order + 1 }, () => new Map()) : null;
   const vocabulary = new Set();
   let t = 0;
+
+  // Abstraction is called once per distinct form, not once per occurrence: a
+  // lemmatiser lookup is cheap but a book has 85,000 tokens and 8,000 types.
+  const abstractCache = abstraction ? new Map() : null;
+  const abstractOf = (form) => {
+    if (!abstraction) return null;
+    let a = abstractCache.get(form);
+    if (a === undefined) {
+      a = abstraction.of(form) ?? form; // a form its abstraction cannot place stands for itself
+      abstractCache.set(form, a);
+    }
+    return a;
+  };
+  const abstractKey = (forms) => forms.map(abstractOf).join(CTX_SEP);
 
   const cellValue = (cell) => (cell ? cell.v * Math.pow(gamma, t - cell.t) : 0);
 
@@ -166,21 +207,98 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
     return cell;
   };
 
+  const record = (table, key, form, pooledFrom = null) => {
+    let entry = table.get(key);
+    if (!entry) {
+      entry = { succ: new Map(), total: null, sources: pooledFrom === null ? null : new Set() };
+      table.set(key, entry);
+    }
+    // How many distinct SURFACE contexts collapse into this abstract one. See
+    // `confidenceOf` — a pooled count is not a confident count.
+    if (entry.sources) entry.sources.add(pooledFrom);
+    entry.succ.set(form, bump(entry.succ.get(form)));
+    entry.total = bump(entry.total);
+  };
+
+  /**
+   * The count Witten-Bell is allowed to read as confidence.
+   *
+   * MEASURED, and the whole reason the abstract levels are usable at all.
+   * Witten-Bell's share is n/(n+alpha), which is calibrated for "how many
+   * times have I seen THIS context". An abstract context's n is inflated
+   * purely by coarseness: "AUX VERB" is seen thousands of times because it
+   * stands for thousands of different word pairs, not because anyone is
+   * confident about what follows it. Read raw, lambda goes to 0.9999, the
+   * abstract level swallows essentially all remaining mass, and the unigram
+   * level below it — which is what actually covers the rare forms — is left
+   * with 1e-4 of the mass it needs. That cost 1.6 nats/form and is what made
+   * the first two attempts at this look like "abstraction does not work".
+   *
+   * Dividing by the number of distinct surface contexts pooled in recovers the
+   * quantity the heuristic expects: evidence PER context rather than evidence
+   * summed across contexts that were never the same context. Derived from the
+   * table's own structure, so there is no constant to pick.
+   */
+  const confidenceOf = (entry, total) => (entry.sources && entry.sources.size > 0 ? total / entry.sources.size : total);
+
   const observeAt = (tokens, i) => {
     const form = tokens[i];
     vocabulary.add(form);
     for (let j = 0; j <= order; j++) {
       if (i - j < 0) break;
-      const key = ctxKey(tokens, i, j);
-      let entry = tables[j].get(key);
-      if (!entry) {
-        entry = { succ: new Map(), total: null };
-        tables[j].set(key, entry);
-      }
-      entry.succ.set(form, bump(entry.succ.get(form)));
-      entry.total = bump(entry.total);
+      record(tables[j], ctxKey(tokens, i, j), form);
+      // The abstracted context predicts the SAME surface form.
+      if (abstractTables && j >= 1)
+        record(abstractTables[j], abstractKey(tokens.slice(i - j, i)), form, ctxKey(tokens, i, j));
     }
     t++;
+  };
+
+  /**
+   * The backoff chain, in one place.
+   *
+   * Every consumer — `successors`, `massOf`, `evidence` — walks the same
+   * sequence of tables, so there is exactly one definition of what backing off
+   * MEANS. The previous shape had the walk written out three times, and they
+   * drifted: two spelled the context separator one way and the third spelled
+   * it another, which silently broke every multi-form lookup. One walk, three
+   * readers.
+   *
+   * Order: at each context length, the EXACT context first, then its
+   * abstraction. A specific match always outranks a general one of the same
+   * reach, and both outrank anything shorter.
+   */
+  const chain = function* (context) {
+    const reach = Math.min(order, context.length);
+    for (let j = reach; j >= 1; j--) {
+      const entry = tables[j].get(context.slice(context.length - j).join(CTX_SEP));
+      if (entry) yield entry;
+    }
+    // MEASURED: the abstract levels come after the ENTIRE surface chain, not
+    // interleaved with it at matching reach.
+    //
+    // Interleaving was the first design and it is worse at every training size
+    // tested — 0.61 nats/form worse at 1k forms of training, 2.16 worse at 40k,
+    // getting steadily worse as the reader accumulates. The cause is not the
+    // abstraction, it is Witten-Bell meeting a pooled table: `share` rises with
+    // a level's own count, and an abstract context is seen far more often than
+    // any of its members SOLELY BECAUSE IT IS COARSER. So the pooled level read
+    // as highly confident, took a large share immediately after the exact match
+    // at the same reach, and starved the more informative surface levels below
+    // it. High count meant "this is general", and the heuristic read it as
+    // "this is reliable".
+    //
+    // Ranked last, the abstraction can only ever spend what the surface chain
+    // did not — which is the same principle that governs a received layer
+    // against the read one, and for the same reason.
+    if (abstractTables) {
+      for (let j = reach; j >= 1; j--) {
+        const entry = abstractTables[j].get(abstractKey(context.slice(context.length - j)));
+        if (entry) yield entry;
+      }
+    }
+    const unigram = tables[0].get("");
+    if (unigram) yield unigram;
   };
 
   /**
@@ -192,16 +310,13 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
   const successors = (context) => {
     const out = new Map();
     let remaining = 1;
-    for (let j = Math.min(order, context.length); j >= 0; j--) {
-      const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
-      const entry = tables[j].get(key);
-      if (!entry) continue;
+    for (const entry of chain(context)) {
       const total = cellValue(entry.total);
       if (!(total > 0)) continue;
-      // Witten-Bell: how much of this order's mass it has earned the right to
+      // Witten-Bell: how much of this level's mass it has earned the right to
       // keep, derived from its own evidence rather than assigned.
-      const lambda = total / (total + alpha);
-      const share = remaining * lambda;
+      const conf = confidenceOf(entry, total);
+      const share = remaining * (conf / (conf + alpha));
       for (const [form, cell] of entry.succ) {
         const p = cellValue(cell) / total;
         if (p > 0) out.set(form, (out.get(form) ?? 0) + share * p);
@@ -252,14 +367,11 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
     massOf(context, form) {
       let mass = 0;
       let remaining = 1;
-      for (let j = Math.min(order, context.length); j >= 0; j--) {
-        const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
-        const entry = tables[j].get(key);
-        if (!entry) continue;
+      for (const entry of chain(context)) {
         const total = cellValue(entry.total);
         if (!(total > 0)) continue;
-        const lambda = total / (total + alpha);
-        const share = remaining * lambda;
+        const conf = confidenceOf(entry, total);
+        const share = remaining * (conf / (conf + alpha));
         const cell = entry.succ.get(form);
         if (cell) mass += (share * cellValue(cell)) / total;
         remaining -= share;
@@ -267,21 +379,18 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha }) => 
       }
       // The leftover is this layer's unseen reserve, returned alongside so a
       // caller scoring a form the layer never met can price it the same way
-      // `distribution` would, instead of taking the zero-probability floor.
+      // `successors` would, instead of taking the zero-probability floor.
       return { mass, reserve: Math.max(0, remaining) };
     },
     /** Evidence this layer holds for `context` at its deepest matching order. */
     evidence(context) {
-      for (let j = Math.min(order, context.length); j >= 0; j--) {
-        const key = j === 0 ? "" : context.slice(context.length - j).join(CTX_SEP);
-        const entry = tables[j].get(key);
-        if (entry) {
-          const total = cellValue(entry.total);
-          if (total > 0) return total;
-        }
+      for (const entry of chain(context)) {
+        const total = cellValue(entry.total);
+        if (total > 0) return total;
       }
       return 0;
     },
+    abstraction: abstraction ? Object.freeze({ id: abstraction.id, giver: abstraction.giver }) : null,
     get vocabularySize() {
       return vocabulary.size;
     },

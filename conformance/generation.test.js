@@ -22,7 +22,8 @@ import { createLayer, createBelief, UNSEEN } from "../packages/engine/generation
 import { emitSequence, admissibleAsTestimony } from "../packages/engine/generation/emit.js";
 import { createGenerationTask, walkForwardSequence, walkSentenceCompletions } from "../packages/engine/generation/tasks.js";
 import { defaultGenerationBaselines, markov, copyPrevious } from "../packages/engine/generation/baselines.js";
-import { decayedBelief, priorAugmented, regimeBelief } from "../packages/engine/generation/candidates.js";
+import { decayedBelief, priorAugmented, regimeBelief, abstracted } from "../packages/engine/generation/candidates.js";
+import { lemmaAbstraction, classAbstraction, composeAbstractions } from "../packages/engine/generation/abstractions.js";
 import { runGeneration } from "../packages/engine/generation/run.js";
 import { commitPrediction, revealAndScore } from "../packages/engine/prediction/commitments.js";
 import { sequenceLogLoss, score } from "../packages/engine/prediction/scoring.js";
@@ -353,6 +354,104 @@ test("the fast path and the full distribution are the same belief", () => {
         );
         assert.ok(Math.abs(reserve - (d.probs[UNSEEN] ?? 0)) < 1e-12, "and the reserves agree");
       }
+    }
+  }
+});
+
+// ── The shared alphabet (SEED.md Amendment IV, consequence 5) ──────────────
+
+test("an abstraction is a prior and must name its giver", () => {
+  assert.throws(
+    () => createLayer({ id: "r", tier: "read", order: 2, gamma: 1, alpha: 1, abstraction: { id: "x", of: (w) => w } }),
+    /must name its giver/,
+  );
+  assert.throws(
+    () => classAbstraction({ id: "c", classes: { a: "A" } }),
+    /must name its giver/,
+  );
+  assert.throws(() => classAbstraction({ giver: "someone", classes: {} }), /abstracts nothing/);
+});
+
+test("an abstracted context generalises across forms the surface context cannot", () => {
+  // The read material only ever says "he had gone". A surface belief asked
+  // about "she has gone" has met neither trigram nor bigram and falls to
+  // unigram. An abstracted one has met the CLASS context and can still place
+  // the successor.
+  const classes = { he: "PRON", she: "PRON", had: "AUX", has: "AUX" };
+  const abstraction = classAbstraction({ id: "toy", giver: "a hand-written inventory, for test", classes });
+  const material = "he had gone away he had gone away he had gone away".split(" ");
+
+  const surface = createBelief({ layers: [createLayer({ id: "read", tier: "read", order: 3, gamma: 1, alpha: 1 }).train(material)] });
+  const abstract = createBelief({
+    layers: [createLayer({ id: "read", tier: "read", order: 3, gamma: 1, alpha: 1, abstraction }).train(material)],
+  });
+
+  const unseen = ["she", "has", "gone"];
+  const pSurface = surface.probabilityOf(unseen, "away").p;
+  const pAbstract = abstract.probabilityOf(unseen, "away").p;
+  assert.ok(
+    pAbstract > pSurface,
+    `the abstraction should carry an unseen context: surface ${pSurface}, abstract ${pAbstract}`,
+  );
+
+  // And it must not disturb a context the surface layer HAS met: the exact
+  // match outranks its abstraction at the same reach.
+  const seen = ["he", "had", "gone"];
+  assert.ok(abstract.probabilityOf(seen, "away").p > 0.5, "an exact context still dominates");
+});
+
+test("a form its abstraction cannot place stands for itself, never in a shared unknown bucket", () => {
+  // A shared UNKNOWN bucket would make every rare word predict every other
+  // rare word — the one grouping guaranteed to be wrong, and the one that
+  // would look like it was working, since rare words are where backoff mass
+  // lands.
+  const abstraction = classAbstraction({ id: "tiny", giver: "test", classes: { he: "PRON" } });
+  const layer = createLayer({ id: "read", tier: "read", order: 2, gamma: 1, alpha: 1, abstraction });
+  layer.train("zebra qualm frobnicate zebra qualm frobnicate".split(" "));
+  const belief = createBelief({ layers: [layer] });
+  // "qualm" and "frobnicate" are both unplaced by the inventory. If they
+  // shared a bucket, the context ["zebra","qualm"] would predict whatever
+  // followed ["zebra","frobnicate"].
+  const d = belief.distribution(["zebra", "qualm"]);
+  assert.ok(d.probs["frobnicate"] > 0, "the real successor is placed");
+  assert.equal(d.covers_vocabulary, true);
+});
+
+test("the abstracted candidate is a minimal contrast and refuses to be empty", () => {
+  assert.throws(() => abstracted({ order: 2, alpha: 1 }), /it IS the baseline/);
+  const abstraction = classAbstraction({ id: "toy", giver: "test", classes: { the: "DET" } });
+  const e = abstracted({ order: 2, alpha: 1, abstraction });
+  assert.equal(e.id, "candidate:abstracted-toy");
+  assert.equal(e.belief.readLayer.abstraction.giver, "test");
+});
+
+test("composed abstractions are ordered, never merged by vote", () => {
+  const a = classAbstraction({ id: "a", giver: "first", classes: { x: "A" } });
+  const b = classAbstraction({ id: "b", giver: "second", classes: { x: "B", y: "C" } });
+  const composed = composeAbstractions(a, b);
+  assert.equal(composed.of("x"), "A", "the first inventory that places a form wins");
+  assert.equal(composed.of("y"), "C", "and the second still gets forms the first left alone");
+  assert.equal(composed.of("z"), "z");
+  assert.match(composed.giver, /first/);
+  assert.match(composed.giver, /second/);
+});
+
+test("the fast path still agrees with the full distribution under an abstraction", () => {
+  // The chain got a second kind of table; the identity that caught the
+  // separator bug has to keep holding across it.
+  const abstraction = classAbstraction({
+    id: "toy",
+    giver: "test",
+    classes: { the: "DET", a: "DET", cat: "N", dog: "N", mat: "N", floor: "N" },
+  });
+  const layer = createLayer({ id: "read", tier: "read", order: 2, gamma: 1, alpha: 1, abstraction }).train(TOKENS);
+  const belief = createBelief({ layers: [layer] });
+  for (const ctx of [[], ["the"], ["the", "cat"], ["a", "dog"], ["never", "seen"]]) {
+    const d = belief.distribution(ctx);
+    for (const form of [...new Set(TOKENS), "aardvark"]) {
+      const { p, reserve } = belief.probabilityOf(ctx, form);
+      assert.ok(Math.abs(p - (d.probs[form] ?? 0)) < 1e-12, `p(${form}|${ctx.join(" ")}) disagreed`);
+      assert.ok(Math.abs(reserve - (d.probs[UNSEEN] ?? 0)) < 1e-12);
     }
   }
 });
