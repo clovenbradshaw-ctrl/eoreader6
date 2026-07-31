@@ -17,11 +17,20 @@
 //   { kind: "categorical", probs: { label: p, ... } } — a finite event mass
 //   { kind: "quantiles",   levels: [{ tau, value }] } — predictive quantiles
 //   { kind: "samples",     values: [n, ...] }         — an empirical ensemble
+//   { kind: "sequence",    steps: [categorical, ...] } — a committed continuation
 //
 // "samples" matters more here than it did in v5: a nul ground IS an empirical
 // ensemble — `ground().samples` is already a sorted draw from a constructed
 // nothing — so this is the kind by which this engine's own organs enter a
 // scored comparison at all. See ./candidates.js.
+//
+// "sequence" is the generation kind, added when `generation/` was built. It is
+// deliberately NOT a new scoring mechanism: a sequence is a list of committed
+// categoricals, and its loss is the sum of their log-losses, which is the
+// joint log-loss of the continuation under the chain rule. Nothing here knows
+// or cares whether those categoricals were produced free-running or
+// teacher-forced — that distinction is real and load-bearing, and it is
+// enforced where it belongs, on the task record, not smuggled into a score.
 //
 // Pure: no clock, no randomness, no I/O, no ambient state.
 
@@ -122,6 +131,14 @@ export const brierScore = (dist, observed) => {
  */
 export const crps = (dist, observed) => {
   assertDistribution(dist);
+  // The kind is checked BEFORE the observation. This module's contract is that
+  // a well-formed distribution whose kind has no proper rule returns improper
+  // rather than throwing; checking `observed` first inverted that for every
+  // non-numeric kind, so scoring a well-formed `sequence` emission by crps
+  // threw "observed must be a finite number" instead of reporting, correctly,
+  // that crps does not apply to it. Found by conformance/generation.test.js.
+  if (dist.kind !== "gaussian" && dist.kind !== "samples")
+    return improper("crps", dist.kind, "crps requires a gaussian or samples output");
   assertFinite(observed, "observed");
   if (dist.kind === "gaussian") {
     assertFinite(dist.mean, "gaussian.mean");
@@ -150,15 +167,15 @@ export const crps = (dist, observed) => {
     term2 /= 2 * xs.length * xs.length;
     return Object.freeze({ rule: "crps", loss: term1 - term2, proper: true, kind: dist.kind });
   }
-  return improper("crps", dist.kind, "crps requires a gaussian or samples output");
 };
 
 /** Pinball loss over the declared quantile levels. Lower is better; proper. */
 export const pinballLoss = (dist, observed) => {
   assertDistribution(dist);
-  assertFinite(observed, "observed");
+  // Kind before observation, for the same reason as crps above.
   if (dist.kind !== "quantiles" || !Array.isArray(dist.levels) || dist.levels.length === 0)
     return improper("pinball", dist.kind, "pinball requires a quantiles output");
+  assertFinite(observed, "observed");
   let loss = 0;
   for (const { tau, value } of dist.levels) {
     assertFinite(tau, "quantile tau");
@@ -168,6 +185,128 @@ export const pinballLoss = (dist, observed) => {
     loss += diff >= 0 ? tau * diff : (tau - 1) * diff;
   }
   return Object.freeze({ rule: "pinball", loss: loss / dist.levels.length, proper: true, kind: dist.kind });
+};
+
+/**
+ * Joint log-loss of a committed continuation: Σ_t −log p(observed_t).
+ *
+ * Proper, by the chain rule, provided every step's categorical was committed
+ * before that step's target was revealed — which the commitment seal and the
+ * leakage guard in ./commitments.js are what enforce. This function assumes it
+ * and cannot check it; that is the division of labour, not an oversight.
+ *
+ * THE UNSEEN RESERVE, AND THE LOOPHOLE IT OPENS IF LEFT ALONE. A belief built
+ * causally from material read so far will regularly be asked to score a form
+ * it has never met. Renormalising over the forms it happens to know would make
+ * it claim it could place anything, which is a zero-width null wearing a
+ * probability's coat (SEED.md #3). So an emission may declare `unseen_label`:
+ * the key under which it parked the mass for "a form I have not met."
+ *
+ * That alone is exploitable, and was exploited by an emitter in this repo's
+ * own baseline suite before it was caught. `baseline:copy-previous` put a
+ * sliver of mass on the form it was copying and ALL the rest on the reserve;
+ * every target it failed to copy then collected nearly the whole reserve and
+ * cost it almost nothing, and it beat every real belief on the first run. The
+ * reserve had quietly become a bucket for "any word other than my guess,"
+ * which is the opposite of what it is for.
+ *
+ * So the fallback is conditional on `covers_vocabulary`: an emission may route
+ * an absent target to its reserve ONLY if it asserts that every form it has
+ * met appears in every step's support. Under that assertion a missing key
+ * really does mean unmet. An emission that does not assert it takes the finite
+ * floor for a missing target, which is the correct price for having declined
+ * to place mass on a form it knew about.
+ *
+ * Length is checked, not truncated. Scoring a 5-token continuation against a
+ * 3-token target by quietly stopping at 3 would make a short guess cheaper
+ * than a long one, which rewards exactly the wrong thing.
+ */
+export const sequenceLogLoss = (dist, observed) => {
+  assertDistribution(dist);
+  if (dist.kind !== "sequence") return improper("sequence-log-loss", dist.kind, "requires a sequence output");
+  if (!Array.isArray(dist.steps) || dist.steps.length === 0)
+    throw new TypeError("scoring: sequence.steps must be a non-empty array");
+  if (!Array.isArray(observed))
+    throw new TypeError("scoring: a sequence output must be scored against an array of observed forms");
+  if (observed.length !== dist.steps.length)
+    throw new RangeError(
+      `scoring: horizon mismatch — committed ${dist.steps.length} steps, revealed ${observed.length} targets`,
+    );
+
+  const FLOOR = -Math.log(Number.MIN_VALUE);
+  let loss = 0;
+  let unplaced = 0;
+  for (let i = 0; i < dist.steps.length; i++) {
+    const step = dist.steps[i];
+    if (!step || step.kind !== "categorical" || !step.probs)
+      throw new TypeError(`scoring: sequence.steps[${i}] must be a categorical output`);
+    let p = step.probs[observed[i]];
+    if (typeof p !== "number" && dist.unseen_label != null && dist.covers_vocabulary === true) {
+      p = step.probs[dist.unseen_label];
+      unplaced++;
+    }
+    if (typeof p !== "number") {
+      loss += FLOOR;
+      unplaced++;
+      continue;
+    }
+    if (p < 0) throw new RangeError(`scoring: sequence.steps[${i}] has a negative probability`);
+    loss += p > 0 ? -Math.log(p) : FLOOR;
+  }
+  return Object.freeze({
+    rule: "sequence-log-loss",
+    loss,
+    proper: true,
+    kind: dist.kind,
+    steps: dist.steps.length,
+    unplaced,
+    ...(unplaced > 0 ? { note: `${unplaced} of ${dist.steps.length} targets fell outside the committed support` } : {}),
+  });
+};
+
+/** The mode of each committed step — what the emitter would actually say. */
+const emittedForms = (dist) =>
+  dist.steps.map((step) => {
+    let best = null;
+    let bestP = -1;
+    for (const form in step.probs) {
+      if (dist.unseen_label != null && form === dist.unseen_label) continue;
+      if (step.probs[form] > bestP) {
+        bestP = step.probs[form];
+        best = form;
+      }
+    }
+    return best;
+  });
+
+/**
+ * How many leading forms the emission got right before its first mistake.
+ * Reported as a LOSS (horizon − agreement) so lower stays better everywhere,
+ * and improper, because nothing stops a degenerate emitter from gaming it.
+ */
+export const prefixAgreement = (dist, observed) => {
+  assertDistribution(dist);
+  if (dist.kind !== "sequence") return improper("prefix-agreement", dist.kind, "requires a sequence output");
+  const forms = emittedForms(dist);
+  let agreed = 0;
+  while (agreed < forms.length && agreed < observed.length && forms[agreed] === observed[agreed]) agreed++;
+  return Object.freeze({
+    rule: "prefix-agreement",
+    loss: forms.length - agreed,
+    proper: false,
+    kind: dist.kind,
+    agreed,
+    emitted: forms,
+  });
+};
+
+/** 0 if the whole continuation matched, 1 otherwise. Improper; for reading, not for ranking. */
+export const exactMatch = (dist, observed) => {
+  assertDistribution(dist);
+  if (dist.kind !== "sequence") return improper("exact-match", dist.kind, "requires a sequence output");
+  const forms = emittedForms(dist);
+  const same = forms.length === observed.length && forms.every((f, i) => f === observed[i]);
+  return Object.freeze({ rule: "exact-match", loss: same ? 0 : 1, proper: false, kind: dist.kind });
 };
 
 /** Collapse any distribution to its central value. */
@@ -220,6 +359,9 @@ export const SCORING_RULES = Object.freeze({
   pinball: pinballLoss,
   "squared-error": squaredError,
   "absolute-error": absoluteError,
+  "sequence-log-loss": sequenceLogLoss,
+  "prefix-agreement": prefixAgreement,
+  "exact-match": exactMatch,
 });
 
 /**
