@@ -148,6 +148,82 @@ Stated so it is not mistaken for done:
 - **`level`** — the third use of the one operation. The first sheath, and the
   one everything else reduces to.
 
+## Amendments
+
+Numbered, dated, and revisable on the same terms as everything else. An
+amendment records that a consequence above turned out to be wrong or
+under-specified — it does not rewrite the clause as though it had always said
+this. What the clause said is part of the record.
+
+### I — Sensitivity is a property of the pair, not of the statistic
+
+*2026-07-30. Amends #4.*
+
+#4 reads "a statistic must be sensitive to what its perturbation destroys," as
+though sensitivity were a property a statistic has or lacks. It is a property
+of the **(statistic, perturbation) pair**, and a statistic can be sharply
+sensitive to one destruction and exactly blind to another.
+
+Two counterexamples, both exact rather than approximate:
+
+- `permutationEntropy` moves by >0.1 under shuffling and is invariant under
+  reversal to within 1e-12 — the ordinal pattern space is closed under
+  reversal, so reversing relabels the bins without touching the distribution's
+  entropy.
+- `burstiness` — nul's only original statistic — is reversal-invariant to
+  **exact floating-point equality**. Reversal is a bijection on windows that
+  preserves each window's sum, so a max-over-windows statistic is preserved
+  bit-for-bit.
+
+The consequence is operational: #4 cannot be discharged once per statistic.
+An organ that perturbs two ways must establish sensitivity twice, and a
+statistic admitted to `STATISTICS` on the strength of one perturbation carries
+no warrant for any other. `burstiness` was never wrong; it was only ever
+licensed for shuffle, and nothing said so.
+
+Evidence: `conformance/temporality.test.js`, "vacuity control 1" and "the
+growth rule".
+
+### II — Censored below is a measurement, not only a hazard
+
+*2026-07-30. Amends #8.*
+
+#8 says "censored above is surfeit and is the trigger to re-zero. Censored
+below is regularity and must not be mistaken for it." That stands. What does
+not stand is the ranking it implies — that above is the informative direction
+and below is a trap to be guarded against.
+
+Both directions name findings. In `temporality`, censored **below** is the
+primary result: a series more regular than its own shuffles is one whose index
+is load-bearing. Censored **above** is the arrow. Neither is an error, and an
+organ may be built on either.
+
+### III — Order is measured; that the order is time is received
+
+*2026-07-30. Extends #1.*
+
+#1 puts the first ground beyond derivation. This extends the same refusal to
+the **meaning of the index**.
+
+Perturbing by shuffle destroys any arrangement — temporal, spatial, or
+arbitrary. So `temporality` establishes that the ordering is load-bearing and,
+separately, that it is directional. It cannot establish that the ordering is
+*time*. That claim arrives with the material, from whoever handed it in, and
+stays received. A verdict of `arrowed` on a series indexed by something other
+than time is not a malfunction and not a temporal claim — it says the index has
+a direction, and the direction is the giver's to name.
+
+The organ is called `temporality` because that is what it is nearly always
+asked for. The name is a convenience and confers nothing.
+
+### What did not move
+
+Recorded so the near-miss is not re-litigated. The block-perturbation design
+this work started from needed a fourth declared number (block size), which
+would have been a change to the physiology. It collapsed into `window`:
+block-preserving perturbation at block = the reach of the present is the same
+claim `window` already makes. **Three declared numbers still.**
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place

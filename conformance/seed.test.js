@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sources = ["nul/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js"];
+const sources = ["nul/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js"];
 
 const codeOf = (file) =>
   readFileSync(join(root, file), "utf8")
@@ -23,7 +23,7 @@ test("only earned organs exist alongside the core", () => {
     .filter((e) => e.isDirectory() && !e.name.startsWith(".") && e.name !== "node_modules")
     .map((e) => e.name)
     .sort();
-  assert.deepEqual(dirs, ["conformance", "discourse", "event_log", "holon_level", "nul", "packages", "provenance", "scripts", "verdict"], `unearned organ planted: ${dirs.join(", ")}`);
+  assert.deepEqual(dirs, ["conformance", "discourse", "event_log", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"], `unearned organ planted: ${dirs.join(", ")}`);
 });
 
 test("nothing is ported — no organ vocabulary has crept in", () => {
@@ -104,4 +104,13 @@ levelTest("holon_level", "holon_level/index.js", {
 levelTest("discourse", "discourse/index.js", {
   importsNul: true,
   enables: ["createSession", "activateMotif", "pushTopic", "addSubTask", "commit"],
+});
+
+// Admitted only after the level test was run as a measurement, not asserted:
+// nul's own statistic is reversal-invariant to exact equality, so the core's
+// ground returns an identical verdict on a series and its reverse. The organ
+// separates them. See conformance/temporality.test.js, "the growth rule".
+levelTest("temporality", "temporality/index.js", {
+  importsNul: true,
+  enables: ["orderTest", "arrowTest", "temporality", "TEMPORALITIES"],
 });
