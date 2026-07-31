@@ -79,16 +79,18 @@ test("a task declares its priors and every one of them names a giver", () => {
 // ── Borrowed content is fuel for a guess, never evidence about the material ──
 
 test("imagining is unguarded: a borrowed continuation is emitted freely and penalised nowhere", () => {
+  // The gift's forms all exist in this book; what the gift supplies is the
+  // ORDER, which is the only thing it has standing to supply.
   const gift = createLayer({ id: "dracula", tier: "received", giver: "Bram Stoker", order: 2, gamma: 1, alpha: 1 });
-  gift.train("the cat vanished into the night the cat vanished into the fog".split(" "));
-  const belief = createBelief({ layers: [readLayer(["the", "cat"]), gift] });
+  gift.train("the cat sat the dog sat the cat sat the dog sat".split(" "));
+  const belief = createBelief({ layers: [readLayer(["the", "cat", "sat", "dog", "mat"]), gift] });
 
   const borrowed = emitSequence({ belief, context: ["the", "cat"], horizon: 2, conditioning: "free-running", selection: "mode" });
-  assert.ok(!isGap(borrowed), "a guess sourced from another book is still a guess, and is emitted");
+  assert.ok(!isGap(borrowed), "a guess shaped by another book is still a guess, and is emitted");
   assert.equal(borrowed.register, "imagined");
-  assert.deepEqual([...borrowed.emitted], ["vanished", "into"], "it says the borrowed thing, out loud");
+  assert.ok(borrowed.received_fraction > 0, "and the gift is audible in it");
   // And it is scored by the same rule as anything else, with no surcharge.
-  const scored = sequenceLogLoss(borrowed, ["vanished", "into"]);
+  const scored = sequenceLogLoss(borrowed, ["sat", "the"]);
   assert.equal(scored.proper, true);
   assert.ok(Number.isFinite(scored.loss));
 });
@@ -100,29 +102,100 @@ test("a belief with no ground at all still refuses — imagining is not confabul
   const empty = createBelief({ layers: [createLayer({ id: "read", tier: "read", order: 2, gamma: 1, alpha: 1 })] });
   assert.ok(isGap(emitSequence({ belief: empty, context: [], horizon: 2, conditioning: "free-running", selection: "mode" })));
 
+  // THE EXISTENCE GATE makes this stronger than it was. A reader that has met
+  // nothing cannot be rescued by any number of gifts, because a gift may only
+  // place mass on forms THIS book has met and there are none. Existence is
+  // local; the gifts supply structure over what is already here.
   const gift = createLayer({ id: "g", tier: "received", giver: "somebody", order: 2, gamma: 1, alpha: 1 });
   gift.train(["a", "b", "c"]);
   const borrowedOnly = createBelief({ layers: [createLayer({ id: "read", tier: "read", order: 2, gamma: 1, alpha: 1 }), gift] });
-  assert.ok(!isGap(emitSequence({ belief: borrowedOnly, context: [], horizon: 2, conditioning: "free-running", selection: "mode" })));
+  assert.ok(
+    isGap(emitSequence({ belief: borrowedOnly, context: [], horizon: 2, conditioning: "free-running", selection: "mode" })),
+    "gifts alone cannot speak — they have no standing to introduce a thing into this world",
+  );
+
+  // Once the reader has met the forms, the same gift becomes audible.
+  const readSome = createLayer({ id: "read", tier: "read", order: 2, gamma: 1, alpha: 1 }).train(["a", "b", "c", "a"]);
+  const together = createBelief({ layers: [readSome, gift] });
+  assert.ok(!isGap(emitSequence({ belief: together, context: ["a"], horizon: 2, conditioning: "free-running", selection: "mode" })));
 });
 
 test("the crossing is guarded: an imagining asserted about the material is a category error", () => {
+  // Under the existence gate the crossing means something sharper than it did.
+  // A gift can no longer introduce a WORD; it can only propose a form this book
+  // has met, in a place the read layer would not have proposed it. That is
+  // still not testimony — the book never said this HERE.
   const gift = createLayer({ id: "dracula", tier: "received", giver: "Bram Stoker", order: 2, gamma: 1, alpha: 1 });
-  gift.train("the cat vanished into the night the cat vanished into the fog".split(" "));
-  // A read layer that has met almost nothing, so the gift is audible.
-  const belief = createBelief({ layers: [readLayer(["the", "cat"]), gift] });
+  gift.train("the cat floor the cat floor the cat floor".split(" "));
+  const belief = createBelief({ layers: [readLayer(["the", "cat", "sat", "floor"]), gift] });
 
-  const borrowed = emitSequence({ belief, context: ["the", "cat"], horizon: 2, conditioning: "free-running", selection: "mode" });
-  assert.equal(borrowed.grounded, false, "a form the read layer never supplied is not grounded");
+  const borrowed = emitSequence({ belief, context: ["the", "cat"], horizon: 1, conditioning: "free-running", selection: "mode" });
+  assert.equal(borrowed.grounded, false, "a gift was audible, so this is not the book speaking");
   assert.ok(borrowed.received_fraction > 0, "and the borrowed mass is reported");
   const refusal = admissibleAsTestimony(borrowed);
   assert.ok(isGap(refusal));
   assert.equal(refusal.gap, "unreceived_origin");
 
   // The same apparatus, read-only, testifies fine.
-  const own = emitSequence({ belief: beliefOver(), context: ["the", "cat"], horizon: 2, conditioning: "free-running", selection: "mode" });
+  const own = emitSequence({ belief: beliefOver(), context: ["the", "cat"], horizon: 1, conditioning: "free-running", selection: "mode" });
   assert.equal(own.grounded, true);
   assert.equal(admissibleAsTestimony(own), null);
+});
+
+test("THE EXISTENCE GATE: a gift supplies structure, never a new thing in the world", () => {
+  // The failure this exists to stop, observed on real material: reading
+  // Frankenstein against Moby-Dick produced the word "peleg" — a character who
+  // exists in no other book. A gift has no standing to introduce a referent
+  // into this world. It has standing only about how what is here hangs
+  // together. CUBE.md's Existence and Structure domains, made operational.
+  const gift = createLayer({ id: "moby", tier: "received", giver: "Melville", order: 2, gamma: 1, alpha: 1 });
+  gift.train("the cat peleg the cat peleg the cat peleg".split(" "));
+  const belief = createBelief({ layers: [readLayer(), gift] });
+
+  const d = belief.distribution(["the", "cat"]);
+  assert.equal(d.probs["peleg"], undefined, "a form this book has never met takes no mass from any gift");
+  for (const form in d.probs)
+    assert.ok(form === UNSEEN || TOKENS.includes(form), `${form} is not a form this book has met`);
+
+  // The gift is not silenced — its structure over the shared forms still lands.
+  assert.ok(d.received_mass > 0, "what the gift can say about this book's own forms, it still says");
+});
+
+test("a gift with nothing sayable here falls to the reserve rather than being renormalised away", () => {
+  const gift = createLayer({ id: "alien", tier: "received", giver: "elsewhere", order: 2, gamma: 1, alpha: 1 });
+  gift.train("xylophone quokka xylophone quokka".split(" "));
+  const belief = createBelief({ layers: [readLayer(["the", "cat"]), gift] });
+  const d = belief.distribution(["the", "cat"]);
+  assert.equal(d.received_mass, 0, "it placed nothing");
+  assert.ok(d.probs[UNSEEN] > 0, "and its share became honest uncertainty, not silent renormalisation");
+});
+
+test("THE EXISTENCE GATE: a gift supplies structure, never a new thing in the world", () => {
+  // The failure this exists to stop, observed on real material: reading
+  // Frankenstein against Moby-Dick produced the word "peleg" — a character who
+  // exists in no other book. A gift has no standing to introduce a referent
+  // into this world. It has standing only about how what is here hangs
+  // together. CUBE.md's Existence and Structure domains, made operational.
+  const gift = createLayer({ id: "moby", tier: "received", giver: "Melville", order: 2, gamma: 1, alpha: 1 });
+  gift.train("the cat peleg the cat peleg the cat peleg".split(" "));
+  const belief = createBelief({ layers: [readLayer(), gift] });
+
+  const d = belief.distribution(["the", "cat"]);
+  assert.equal(d.probs["peleg"], undefined, "a form this book has never met takes no mass from any gift");
+  for (const form in d.probs)
+    assert.ok(form === UNSEEN || TOKENS.includes(form), `${form} is not a form this book has met`);
+
+  // The gift is not silenced — its structure over the shared forms still lands.
+  assert.ok(d.received_mass > 0, "what the gift can say about this book's own forms, it still says");
+});
+
+test("a gift with nothing sayable here falls to the reserve rather than being renormalised away", () => {
+  const gift = createLayer({ id: "alien", tier: "received", giver: "elsewhere", order: 2, gamma: 1, alpha: 1 });
+  gift.train("xylophone quokka xylophone quokka".split(" "));
+  const belief = createBelief({ layers: [readLayer(["the", "cat"]), gift] });
+  const d = belief.distribution(["the", "cat"]);
+  assert.equal(d.received_mass, 0, "it placed nothing");
+  assert.ok(d.probs[UNSEEN] > 0, "and its share became honest uncertainty, not silent renormalisation");
 });
 
 test("the gift fills the silence and does not overwrite the ground", () => {
@@ -267,11 +340,11 @@ test("AMENDMENT IV: lowering surprise earns audibility, never standing", () => {
   // Restriction 4. A gift can become the loudest voice in the mixture and
   // still cannot make the continuation testimony — the crossing does not
   // consult relevance at all.
-  const gift = { id: "loud", giver: "a very relevant book", tokens: "the cat vanished into the night".split(" ") };
+  const gift = { id: "loud", giver: "a very relevant book", tokens: "the cat floor the cat floor".split(" ") };
   const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors: [gift], noiseFloor: false });
-  emitter.prime(["the", "cat"]);
+  emitter.prime(["the", "cat", "sat", "floor", "the", "cat"]);
 
-  const emission = emitter.emit({ horizon: 2, conditioning: "free-running", selection: "mode", seed: 0 });
+  const emission = emitter.emit({ horizon: 1, conditioning: "free-running", selection: "mode", seed: 0 });
   assert.ok(emission.received_fraction > 0, "the gift is audible");
   assert.equal(emission.grounded, false);
   assert.equal(admissibleAsTestimony(emission).gap, "unreceived_origin", "and still cannot testify");

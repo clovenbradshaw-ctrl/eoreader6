@@ -130,7 +130,21 @@ export const emitSequence = ({ belief, context, horizon, conditioning, selection
     const chosen = selection === "mode" ? belief.mode(ctx) : belief.draw(ctx, uniform());
     const form = isGap(chosen) ? null : chosen.form;
     emitted.push(form);
-    if (form === null || !d.grounded.includes(form)) allGrounded = false;
+    // GROUNDED MEANS NO GIFT WAS AUDIBLE, not "the read layer knows this word".
+    //
+    // The earlier definition — every emitted form appears in the read layer's
+    // own successors — went vacuous the moment the existence gate landed. The
+    // read layer backs off to unigram, so it places mass on every form it has
+    // ever met; the gate restricts gifts to exactly those forms; so every
+    // emitted form was trivially "grounded" and the crossing could never fire.
+    // A gate that cannot refuse is a null of zero width (SEED.md #3).
+    //
+    // Under the gate a gift can no longer introduce a WORD. What it can still
+    // do is change which word gets said, and a continuation whose shape came
+    // from Dracula is not testimony about Frankenstein even when every form in
+    // it is one Shelley wrote. So the question is provenance of the MASS, and
+    // it stays structural — zero versus nonzero, no threshold to tune.
+    if (form === null || d.received_mass > 0) allGrounded = false;
 
     for (const layerId in d.attribution) attribution[layerId] = (attribution[layerId] ?? 0) + d.attribution[layerId];
     readMass += d.read_mass;
