@@ -82,6 +82,21 @@ test("both clearings are the same operator and are reported apart", () => {
   );
 });
 
+test("events carry domain, not just terrain — a reaction is filterable without knowing the cube's vocabulary", () => {
+  // DEF/EVA/REC are the only operators this turn pushes into events, and all
+  // three sit at Interpretation×Ground (Atmosphere). Before this, a consumer
+  // had to know "terrain === Atmosphere" means Interpretation; now domain is
+  // the field, plain, so existence/structure/reaction split without a lookup
+  // table private to the cube's own vocabulary.
+  const turn = runTurn({ material: threeRegimes(3), ...SPEC });
+  assert.ok(!isGap(turn));
+  assert.ok(turn.events.length > 0);
+  for (const e of turn.events) {
+    assert.equal(e.domain, "Interpretation", `op ${e.op} at ${e.at} is not tagged as a reaction`);
+    assert.ok(["DEF", "EVA", "REC"].includes(e.op), `unexpected op in the reaction channel: ${e.op}`);
+  }
+});
+
 test("A GROWING GROUND IS NOT A MOVING ONE — the null must not be readable as a clock", () => {
   // Homogeneous noise has no regime change anywhere in it. A correct null puts
   // the false-clearing rate at roughly the null's own censoring resolution,

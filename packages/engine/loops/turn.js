@@ -243,7 +243,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
 
     if (failure) {
       clearings++;
-      events.push({ at: i, op: "DEF", terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, ...failure });
+      events.push({ at: i, op: "DEF", domain: DEF_GROUND.domain, terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, ...failure });
 
       // A failing ground is not maintained. The standing ground is held
       // fixed while consecutive failures accumulate, for both modes alike —
@@ -256,7 +256,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
           opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
           clearedBy: failure.mode,
         });
-        events.push({ at: i, op: "REC", terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy: failure.mode });
+        events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy: failure.mode });
         regionStart = i;
         g = null;
         gEnd = null;
@@ -266,7 +266,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     } else {
       clearings = 0;
       tended++;
-      events.push({ at: i, op: "EVA", terrain: EVA_GROUND.terrain, stance: EVA_GROUND.stance });
+      events.push({ at: i, op: "EVA", domain: EVA_GROUND.domain, terrain: EVA_GROUND.terrain, stance: EVA_GROUND.stance });
       if (maintained) {
         g = maintained;
         gEnd = i;
