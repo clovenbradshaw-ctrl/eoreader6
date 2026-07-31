@@ -2,6 +2,38 @@
 // RIGHT. What brings a prior passage to the surface when a new one arrives,
 // computed with nothing from the future.
 //
+// ┌───────────────────────────────────────────────────────────────────────────┐
+// │ STATUS: HAS NOT JOINED. Read this before building on anything below.      │
+// │                                                                           │
+// │ SEED.md's growth rule: "An organ joins only when the level test returns   │
+// │ `above` against the core. `peer` or `unstable` means it waits."           │
+// │                                                                           │
+// │ Run against causal surprisal as the core, over Frankenstein, Garoa and    │
+// │ Heart of Darkness, four channels each, sampled across the whole extent    │
+// │ and asked again by a second perturbation family: `above` reaches 10-22%   │
+// │ of moments, `below` 16-34%, `peer` 9-24%, censored 22-55%. No channel     │
+// │ reaches a majority `above` in any book. Nothing joins.                    │
+// │ (scripts/growth-rule.mjs, and scripts/RESULTS.md for the whole story.)    │
+// │                                                                           │
+// │ This module was wired anyway, on the strength of a chapter-boundary       │
+// │ result that has since been RETRACTED — it was one cell of an uncounted    │
+// │ parameter sweep and did not survive a pre-registered test on a second     │
+// │ book. Both facts are stated here rather than in a commit message because  │
+// │ a module that reads as shipped is a module people build on.               │
+// │                                                                           │
+// │ It is kept, not deleted, for two reasons that are about evidence and not  │
+// │ about sunk cost. The causal-reading work in it is independently correct   │
+// │ and conformance-tested (prefix stability, the two-gate encode/cue split,  │
+// │ the third-occurrence property) and would have to be rebuilt identically   │
+// │ by anything that replaces it. And a refuted organ that is visible is      │
+// │ worth more than one that was quietly removed: the next candidate for this │
+// │ slot should have to explain why it is not this again.                     │
+// │                                                                           │
+// │ What would change this: a channel that reaches a majority `above` against │
+// │ the core, in more than one book, under both perturbation families. Not a  │
+// │ better score against chapter markers — that reference is burned.          │
+// └───────────────────────────────────────────────────────────────────────────┘
+//
 // The mechanisms are eoreader5's `emergence/store`, which earned them against
 // a memory golden, and they are re-derived here rather than copied because
 // SEED.md's growth rule says nothing is ported: "every organ is re-earned here
