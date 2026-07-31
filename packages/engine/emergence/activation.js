@@ -363,6 +363,39 @@ export const readForward = (frames, { idfFloor = 2.0, minLen = 4, completion = 0
       strongest: best,
       recalled: activation.size,
       novelty: trace.size ? fresh / trace.size : null,
+
+      // ── THE SAME FOUR, RELATIVE TO WHAT WAS AVAILABLE ─────────────────────
+      //
+      // The raw counts above are NON-STATIONARY BY CONSTRUCTION. They grow
+      // because the past grows: at frame 700 there are 700 frames that could
+      // answer and at frame 20 there are 20. Measured on Frankenstein,
+      // `recalled` correlates with position at r = 0.995 and rises from 21.5
+      // to 645.8 between the first and last deciles; `activation` at r = 0.964
+      // over a 40x rise. Those are ramps, not readings.
+      //
+      // A ramp handed to a shuffle null is a category error, and it is the
+      // third time this exact class of bug has turned up here: the null
+      // destroys order, so it centres on the whole-series mean while the real
+      // windowed means sit permanently below it early and above it late. They
+      // censor at BOTH ends and never stop — placement climbs 45% → 59% as
+      // draws go 100 → 25600 and is still climbing, where a stationary channel
+      // saturates at 97% by 1600. No amount of resolution fixes a trend.
+      //
+      // It also explains the mechanism of a retracted result rather than just
+      // recording that it failed: `recalled` was the channel that scored 22/24
+      // and then 18/20 at 15/15 precision, and a monotone ramp fed to the
+      // `moved` clearing re-zeros on a fixed period because the ground keeps
+      // drifting under it. Evenly spaced marks against evenly spaced chapters.
+      // The same clock as nul::pattern's growth artefact, arriving by a
+      // different road.
+      //
+      // These are rates, not detrended counts. Detrending after the fact fits
+      // a model to the material; asking "of the past that COULD have answered,
+      // how much did" is the question the count was always a proxy for, and it
+      // is bounded and stationary by construction.
+      recalledRate: order > 0 ? activation.size / order : null,
+      activationRate: activation.size > 0 ? total / activation.size : null, // mean weight per answering frame
+      reachRate: best && order > 0 ? (order - best.order) / order : null, // how far back, against how far back was possible
       // The model tier, kept apart from the engine tier and never summed into
       // it. A gap here is a result; a zero here would be a lie.
       resonance: embed

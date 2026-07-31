@@ -374,3 +374,78 @@ So: the conclusion stands, and the reasoning that first produced it did not. A
 verdict reached with an instrument broken in three places was worth exactly
 nothing until the instrument was checked, and it was only checked because the
 one anomaly in it was chased instead of shipped.
+
+---
+
+## Stationarity: the third instance of the same bug, and it explains the retraction
+
+Chasing the unexplained censoring rate (22–55% of moments) found the cause, and
+it is not resolution. Raising `draws` from 100 to 25600 takes a stationary
+channel from 81% placed to 97% and saturates by 1600. It takes `recalled` from
+45% to 59% and it is **still climbing**. No amount of resolution fixes it.
+
+`recalled` correlates with position at **r = 0.995**, rising from 21.5 to 645.8
+between the first and last deciles. `activation` is r = 0.964 over a 40× rise.
+They are non-stationary by construction: at frame 700 there are 700 frames that
+could answer and at frame 20 there are 20. **These were ramps, not readings.**
+
+A shuffle null over a ramp tests the ramp. The null destroys order so it centres
+on the whole-series mean, while the real windowed means sit permanently below it
+early and above it late — censoring at both ends, forever.
+
+**This is the same bug as `pattern()`'s growth artefact and as the extent
+mismatch, arriving a third time by a third road**, and it retroactively explains
+the mechanism of the retracted result rather than merely recording that it
+failed. `recalled` was the channel that scored 22/24, then 18/20 at 15/15
+precision. A monotone ramp fed to the `moved` clearing re-zeros on a fixed
+period, because the ground keeps drifting under it. Evenly spaced marks against
+evenly spaced chapters. It was a clock all along, and the rotation null caught
+the symptom while this is the cause.
+
+The fix is rates, not detrending — detrending after the fact fits a model to the
+material, whereas "of the past that *could* have answered, how much did" is the
+question the count was always a proxy for, and is bounded and stationary by
+construction.
+
+| channel | r(position) | placed @1600 draws |
+|---|---|---|
+| recalled | 0.995 | 54% |
+| **recalledRate** | 0.573 | 83% |
+| activation | 0.964 | 53% |
+| **activationRate** | 0.430 | 92% |
+| reach | 0.556 | 88% |
+| **reachRate** | **0.178** | **99%** |
+
+## One hypothesis, explicitly not a result
+
+Re-running the growth rule with stationary channels and `draws` where placement
+saturates: **`reachRate` is modal-`above` in all three books under both
+perturbation families**, and clears a majority in two of three (Frankenstein and
+Heart of Darkness join; Garoa reaches 41%). Every other channel, raw or rate,
+waits everywhere.
+
+**This is not a result and must not be quoted as one.** It has the exact shape
+of the thing retracted above: a channel that looks good after I changed
+something, having seen a negative verdict first. Twenty-one book-channel pairs
+is a sweep, and the majority bar is a threshold I chose.
+
+Two things are worth saying anyway, carefully. The changes that produced it were
+instrument fixes with independent justification — stationarity is a
+precondition for a shuffle null to mean anything, and `draws` was set where
+placement saturates — not adjustments made toward a score. And `reachRate` is
+the channel that asks about *distance into the past*, which is the one thing
+surprisal structurally cannot express, whereas `recalled` and `activation` ask
+*how much*, which surprisal partly captures. There is a reason for it to be the
+one that differs.
+
+Against that: `reach` is also the channel I predicted would matter, then declared
+wrong when it scored worst on chapter alignment. Chapter alignment and the growth
+rule now disagree about which channel matters. The growth rule is the test that
+is not burned — which is an argument for taking it more seriously, and equally an
+argument that I have now been confident in both directions about the same channel.
+
+**What would settle it: the same pre-registration discipline — `reachRate` is
+modal-`above` under both families — tested on text never looked at. I have none
+left on disk.** Frankenstein, Garoa and Heart of Darkness are all spent. That is
+the honest blocker, and inventing a way around it is how the last retraction
+happened.
