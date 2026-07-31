@@ -5,7 +5,7 @@
 // is addressed to the corpus mechanically, and whatever cannot be addressed
 // is a typed gap, never a guess.
 //
-// WHERE THIS LIVES, AND WHY (eo-constitution, oracle claim surfer-snip-host):
+// WHERE THIS LIVES, AND WHY (eo-constitution, assay claim surfer-snip-host):
 // this is app-tier. It owns the session, the prompt-as-interface, and the
 // byte I/O that turns a byte range into text a reader can experience. It
 // measures nothing about the material itself — every measurement is the
@@ -58,6 +58,7 @@
 
 import { OPERATORS } from "../engine/operators.js";
 import { headingsMatch } from "../engine/perceiver/text/segments.js";
+import { diaNorm } from "../engine/perceiver/text/surfaces.js";
 import { sessionSegments, snipSegment, snipRange } from "./corpus.js";
 
 // The cell this host organ occupies on the operator grid (engine/operators.js):
@@ -66,7 +67,67 @@ import { sessionSegments, snipSegment, snipRange } from "./corpus.js";
 // conformance.
 export const CELL = Object.freeze({ op: "SEG", grain: "Ground" });
 
-const tokenize = (s) => String(s ?? "").toLowerCase().match(/[\p{L}\p{N}]{4,}/gu) ?? [];
+// The n-gram pass is computed only for this many top-lexical lines: the
+// signal reorders near-equals, so the shortlist cap bounds the cost without
+// changing what the gate admits.
+const CONTENT_SHORTLIST_CAP = 40;
+
+// A token is a run of 4+ letters/digits, folded through the canonical single-
+// pass diacritic map (diaNorm — never a third map). The 4-char floor keeps a
+// distinctive word while refusing what is not a word: "oak" alone is not
+// distinctive enough to address anything, and an un-segmented glyph run like
+// "第二回" is not a token either — treating a CJK run as one word is a value
+// claim that belongs in eoPriors, and the golden pins that address as a typed
+// gap until a segmentation prior lands.
+const tokenize = (s) => diaNorm(s).match(/[\p{L}\p{N}]{4,}/gu) ?? [];
+
+// ── n-gram signal, re-earned from specs/mechanical-retrieval-theory.md ──────
+// eoreader5 beat ColBERT on surface-form robustness with character-trigram
+// profiles, and its typo arithmetic is calibrated at n=3 ("a typo changes at
+// most 3 trigrams per character"; >50% retention keeps the rank). A wider
+// range was measured and reverted: {2..4}, {2..5}, and {4..4} change no
+// outcome on the 11 content-path golden cases, the three War-and-Peace
+// paragraph snips, or their single-typo variants (a dropped letter in a short
+// word like "sappy" still lands under pure trigrams) — the trigram is
+// sufficient, so the anchor is kept. Both sides get the same transform, so a
+// query and a line that share a phrase share its grams even when one has a
+// wrong letter or a dropped accent.
+const nGramProfile = (text, { minN = 3, maxN = 3 } = {}) => {
+  const t = String(text ?? "").toLowerCase();
+  const counts = new Map();
+  for (let n = minN; n <= maxN; n++) {
+    for (let i = 0; i + n <= t.length; i++) {
+      const key = `${n}:${t.slice(i, i + n)}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return counts;
+};
+
+// Query containment: the line's grams restricted to the query's support,
+// each capped at the query's own count, cosine against the query. This asks
+// "how much of what I asked for is in the line" and is immune to both line
+// length and repetition: a line that contains the phrase verbatim scores ~1
+// no matter how long it is, a line with only half the query's grams scores
+// proportionally, and a line that repeats a common letter pattern ("th", "he")
+// does not get extra credit for it. A plain whole-line cosine would be
+// diluted by a long line's unrelated content and would hand the tie to the
+// shorter line (measured: "the regression analysis" flipping to "3. Results").
+const queryContainment = (query, line) => {
+  let dot = 0;
+  let nq = 0;
+  let nl = 0;
+  for (const [k, qv] of query) {
+    nq += qv * qv;
+    const lv = line.get(k);
+    if (!lv) continue;
+    const capped = Math.min(lv, qv);
+    dot += qv * capped;
+    nl += capped * capped;
+  }
+  return nq && nl ? dot / (Math.sqrt(nq) * Math.sqrt(nl)) : 0;
+};
+
 const baseName = (id) =>
   String(id ?? "")
     .split(":")
@@ -92,9 +153,13 @@ const resolveTargets = (session, prompt) => {
 // clause that names it — the other documents' addresses must not bleed into
 // this one's heading match ("chapter 2 of pg84 and chapter 1 of pg1342" is
 // two targets with two addresses, not one ambiguous address). A document the
-// prompt did not name (the fan to all) keeps the whole prompt.
+// prompt did not name (the fan to all) keeps the whole prompt, and a single
+// named document keeps the whole prompt too — its prose is one address, not
+// a clause to be split ("...that Genoa and Lucca are family estates of the
+// Buonapartes" is one thought, and splitting on "and" would mangle it).
 const scopeForTarget = (prompt, doc, namedDocs) => {
   if (!namedDocs.includes(doc)) return prompt;
+  if (namedDocs.length === 1) return prompt;
   const clauses = String(prompt).split(/\s+and\s+/i).map((s) => s.trim());
   const name = baseName(doc.id).toLowerCase();
   return clauses.find((c) => c.toLowerCase().includes(name)) ?? prompt;
@@ -120,20 +185,98 @@ const headingAddress = (prompt, outline) => {
 };
 
 // 3. CONTENT — the line the prompt's tokens best cover is the anchor.
+//
+// Re-earned, not ported, from the measured eoreader5 search lessons
+// (packages/engine/search/index.js + specs/mechanical-retrieval-theory.md):
+// the composition is lexical-coverage-led because signal-led ranking was
+// measured to lose the verbatim phrase (top-1 7/14), and rarity weights exist
+// because term COUNT is not evidence strength. Two passes:
+//
+//   PASS 1 — the evidence gate. A line with zero matched tokens has nothing
+//   to say about the prompt, and the n-gram signal NEVER rescues it — silence
+//   over fabrication, and measured in eoreader5: signal alone cannot separate
+//   a genuine near-match from an absent term at this granularity.
+//
+//   PASS 2 — n-gram query containment, computed only for the lexical
+//   shortlist. It can reorder near-equals (a typo, a diacritic, a shared
+//   phrase), never admit.
+//
+//   score = coverage*0.6 + phrase*0.25 + ngram*0.15
 const contentAddress = (prompt, idx) => {
   const toks = tokenize(prompt);
   if (toks.length === 0) return null;
+
+  // Rarity weights over THIS document's lines (the index the surfer already
+  // paid for): weight = log(1 + N / (1 + df)). A stopword is nearly free, a
+  // rare word decisive. df is over diacritic-normalized lines, so "Pávlovna"
+  // and "Pavlovna" are one term.
+  const lines = idx.lines.map((l) => diaNorm(l));
+  const n = Math.max(1, lines.length);
+  const df = new Map();
+  for (const t of toks) {
+    let d = 0;
+    for (const line of lines) if (line.includes(t)) d++;
+    df.set(t, d);
+  }
+  const weight = (t) => Math.log(1 + n / (1 + (df.get(t) ?? 0)));
+  const weights = new Map(toks.map((t) => [t, weight(t)]));
+
+  const queryGrams = nGramProfile(diaNorm(prompt));
+
+  const shortlist = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    let matchedW = 0;
+    let totalW = 0;
+    let matched = 0;
+    for (const t of toks) {
+      const w = weights.get(t);
+      totalW += w;
+      if (line.includes(t)) {
+        matchedW += w;
+        matched++;
+      }
+    }
+    if (matched === 0) continue; // the evidence gate
+
+    // Longest contiguous run of query tokens present in the line — the
+    // strongest evidence short of an exact span: when the reader's words
+    // appear contiguously, the line contains the thing asked for.
+    let phrase = 0;
+    for (let len = toks.length; len >= 2 && phrase === 0; len--) {
+      for (let s = 0; s + len <= toks.length; s++) {
+        if (line.includes(toks.slice(s, s + len).join(" "))) {
+          phrase = len / toks.length;
+          break;
+        }
+      }
+    }
+
+    const coverage = totalW > 0 ? matchedW / totalW : 0;
+    shortlist.push({ i, coverage, phrase, lexical: coverage * 0.6 + phrase * 0.25 });
+  }
+  if (shortlist.length === 0) return null;
+
+  shortlist.sort((a, b) => b.lexical - a.lexical || a.i - b.i);
+  const candidates = shortlist.slice(0, CONTENT_SHORTLIST_CAP);
+
   let best = -1;
   let bestScore = 0;
-  for (let i = 0; i < idx.lines.length; i++) {
-    const line = idx.lines[i].toLowerCase();
-    let matched = 0;
-    for (const t of toks) if (line.includes(t)) matched++;
-    const score = matched / toks.length;
-    if (score > bestScore) { bestScore = score; best = i; }
+  let bestMatch = null;
+  for (const c of candidates) {
+    const ngram = queryContainment(queryGrams, nGramProfile(lines[c.i]));
+    const score = c.coverage * 0.6 + c.phrase * 0.25 + ngram * 0.15;
+    // Only a clear margin flips the winner: the n-gram signal reorders
+    // near-equals, but two lines that each contain the query's phrase are
+    // equal evidence, and the earlier line wins — determinism over noise.
+    if (score > bestScore + 1e-9) {
+      bestScore = score;
+      best = c.i;
+      bestMatch = { coverage: c.coverage, phrase: c.phrase, ngram, score };
+    }
   }
-  if (bestScore === 0) return null;
-  return { line: best, score: bestScore, anchor: idx.starts[best], addressed_by: "content" };
+  if (best === -1) return null;
+  return { line: best, score: bestScore, anchor: idx.starts[best], addressed_by: "content", match: bestMatch };
 };
 
 // RESOLUTION — the anchor is located against the whole outline, not a
@@ -184,7 +327,7 @@ export function executePrompt(session, prompt, { sourceFilter, radius } = {}) {
   );
 
   const operator = OPERATORS.SEG;
-  if (results.length === 1) return { ...results[0], operator: operator.op, verb: operator.verb };
+  if (results.length === 1) return { ...results[0], operator: operator.op, verb: operator.verb, prompt: text };
 
   // The fan: the act is aimed at every target at the height each one reached.
   // Each entry is a snip or a typed gap — a document the prompt could not
@@ -252,6 +395,7 @@ const addressDoc = (session, text, doc, { radius } = {}) => {
       addressed_by,
       heading: null,
       content_line: content?.line ?? null,
+      content_match: content?.match ?? null,
       found: false,
       windowed: true,
       prompt: text,
@@ -274,6 +418,7 @@ const addressDoc = (session, text, doc, { radius } = {}) => {
     addressed_by,
     heading: range.window ? null : range.h.label,
     content_line: content?.line ?? null,
+    content_match: content?.match ?? null,
     found: !range.window,
     windowed: Boolean(range.window),
     prompt: text,

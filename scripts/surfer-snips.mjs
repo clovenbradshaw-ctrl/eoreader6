@@ -18,6 +18,16 @@
 //
 // Every snip is registered in provenance (refId) so a later reader can cite
 // it. Every failure is a typed gap, never a guessed answer.
+//
+// A PARTICULAR PARAGRAPH, SNIPPED BY WORDS. The surfer snips at structural
+// height — the segment (chapter/letter) that brackets the passage the prompt
+// describes — so a paragraph test asks: does the snip CONTAIN the paragraph
+// the prompt addresses? War and Peace is the hard case: every book restarts
+// its chapter numerals, so a "chapter N" heading address is seventeen-way
+// ambiguous (a typed gap, honestly), and only a content address can reach a
+// specific paragraph. Each case below names a real, famous passage by its
+// own words and asserts it lands inside the snipped segment. Mechanical
+// matcher, so the prompts carry the passage's distinctive vocabulary.
 
 import { readFileSync } from "node:fs";
 import { createSession, admitChunked } from "../packages/host/corpus.js";
@@ -62,8 +72,58 @@ const show = (out, i) => {
 };
 
 const run = (session, prompts) => {
-  for (const p of prompts) show(executePrompt(session, p), prompts.indexOf(p));
+  for (const [i, p] of prompts.entries()) show(executePrompt(session, p), i);
   console.log("");
+};
+
+// ── a particular paragraph, addressed by words ───────────────────────────────
+//
+// War and Peace, three famous passages, three natural-language prompts. Each
+// case is a prompt and the exact paragraph it must land inside. The check is
+// whitespace-folded (the snip preserves the source's own line wrapping), and
+// every failure is counted — a prompt that misses its paragraph is a real,
+// visible regression, not a silent wrong segment.
+const PARAGRAPH_CASES = [
+  {
+    name: "the opening salon — Anna Pávlovna's greeting",
+    prompt:
+      "in pg2600, the opening scene where Anna Pávlovna warns Prince Vasíli that Genoa and Lucca are now just family estates of the Buonapartes",
+    mustContain: "family estates of the Buonapartes",
+  },
+  {
+    name: "the comet over the Arbat — Pierre's bright star",
+    prompt:
+      "in pg2600, Pierre standing at the entrance to the Arbat Square gazing up at the enormous brilliant comet with its long uplifted tail above the Prechistenka Boulevard",
+    mustContain: "comet with its long luminous tail",
+  },
+  {
+    name: "the transfigured old oak — Prince Andrew's springtime joy",
+    prompt:
+      "in pg2600, the old oak transfigured, spreading out a canopy of sappy dark-green foliage, and Prince Andrew seized by an unreasoning springtime feeling of joy and renewal",
+    mustContain: "spreading out a canopy of sappy dark-green foliage",
+  },
+];
+
+const flat = (s) => String(s ?? "").toLowerCase().replace(/\s+/g, " ");
+
+const testParagraphs = (session, cases) => {
+  let pass = 0;
+  console.log("── a particular paragraph, sniped by words ──");
+  for (const c of cases) {
+    const out = executePrompt(session, c.prompt);
+    if (out.gap) {
+      console.log(`  FAIL  ${c.name}`);
+      console.log(`        gap: ${out.gap} — ${out.reason}`);
+      continue;
+    }
+    const ok = flat(out.text).includes(flat(c.mustContain));
+    if (ok) pass++;
+    console.log(`  ${ok ? "PASS" : "FAIL"}  ${c.name}`);
+    console.log(`        ${out.segment}  (addressed by ${out.addressed_by})  bytes ${out.byte_start}–${out.byte_end}${out.windowed ? " · WINDOW" : ""}`);
+    if (!ok) console.log(`        the paragraph "${c.mustContain}" is not inside the snip`);
+  }
+  console.log(`\n${pass}/${cases.length} paragraphs landed in their snip\n`);
+  return pass === cases.length;
 };
 
 run(session, prompts);
@@ -74,4 +134,5 @@ if (!only && paths.length === 0) {
     "War and Peace — chapter 2 of pg2600",
     "the salon soirée in pg2600",
   ]);
+  testParagraphs(session, PARAGRAPH_CASES);
 }
