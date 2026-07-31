@@ -1,5 +1,50 @@
 # Results — the second clearing
 
+> ## RETRACTION (read this first)
+>
+> **The chapter-boundary results below did not survive a pre-registered test on
+> a second book. They were a sweep finding its best cell on one text, and this
+> file quoted a fitted number as a discovery for two commits.**
+>
+> What happened. The headline was `moved` recovering 19/24 Frankenstein chapter
+> boundaries at p≈0.000 against rotated chapters, with `recalled` at 22/24 and
+> p≈0.005. Both were computed at one configuration — 100-word chunks, a reach of
+> the present of 12 units — chosen before any alternative was measured.
+>
+> Sweeping that parameter (`scripts/declared-present.mjs`) shows the
+> significance sits in a single cell. At the two grains where the reach of the
+> present is even representable, **1 of 36 cells reaches p<0.05, where chance
+> alone delivers 1.8.** The winning cell was not chosen well; it was chosen
+> first, and could not be told apart from a fitted one on one book.
+>
+> So one book that had never been looked at, one frozen configuration — the one
+> that won on Frankenstein, to give it its best shot — two channels, no sweep
+> (`scripts/second-book.mjs`). Garoa, a Basque novel from 1912:
+>
+> | channel | recall | precision | rotated chapters | p |
+> |---|---|---|---|---|
+> | causal surprisal | 16/20 | 11/11 | 16.2±1.1 | **0.727** |
+> | recalled | 18/20 | 15/15 | 18.7±0.5 | **1.000** |
+>
+> `recalled` scores **18/20 recall at 15 out of 15 precision** — not one false
+> boundary — and **every single rotation does at least as well.** If any single
+> number in this repository is worth remembering, it is that one.
+>
+> **Retracted:** that `moved` beat a rotation null on an external reference;
+> that `recalled` is the strongest channel measured; the paragraph-derived reach
+> of the present (it never wins on Frankenstein, and degenerates on dialogue —
+> Garoa's median paragraph is 8 words).
+>
+> **Not retracted**, because none of it rests on chapter alignment: the
+> growth-matched null in `pattern()` and the two bugs it caught; the causal
+> corrections in `activation`; prefix stability; admission-order invariance;
+> the consumption refusals; the pure-binary null; the planted-regime result;
+> and the three-nulls methodology below, which is what caught this.
+>
+> The tables that follow are left exactly as they were written, wrong headline
+> and all. Editing them would remove the evidence of how convincing a fitted
+> number looks from the inside.
+
 Everything here is reproducible: `node scripts/two-clearings.mjs`,
 `node scripts/binary-clearings.mjs`. Frankenstein is read from
 `eoreader4.2/tests/fixtures/frankenstein.txt` (24 real chapter markers).
@@ -179,3 +224,39 @@ it is **9 of 14** — better than half, and better than turn 1 — but the shuff
 controls sit in the same range, so this is not yet evidence of anything. Per
 SEED.md, widening is encounter and narrowing is extraction. Recorded, not
 claimed.
+
+---
+
+## What the sweep and the second book actually established
+
+Three things, none of them about Frankenstein.
+
+**A sweep is not a test, and counting it is what turns it back into one.** Four
+window values × two channels × two match windows × two grains is 36 comparisons.
+Reporting the best one as though it were the only one is the oldest mistake
+there is, and it was made here by choosing a parameter before measuring
+alternatives — which feels nothing like p-hacking while you are doing it.
+
+**Precision does not protect you.** 15/15 precision on Garoa, and p≈1.000.
+Recall, precision and F-score are all satisfiable by a detector that emits
+roughly evenly spaced marks, because chapters are roughly evenly spaced. Only a
+null that preserves the detector's output and the truth's spacing — and breaks
+just the alignment — can tell those apart.
+
+**A test set survives exactly one sweep.** Frankenstein is burned: every future
+configuration choice made against it is fitted by construction. The remaining
+untouched references in this lineage should be spent one at a time, on
+configurations frozen in advance.
+
+## Where that leaves the reach of the present
+
+`perceiver/consumption.js` stands — a perceiver must declare how its material
+is consumed, in its own units, with a basis, and the reader refuses what is not
+sequential. What has been withdrawn is the text perceiver's *derivation* of the
+present from paragraph length, which is a guess wearing a derivation, and the
+only thing worse than an unjustified number is an unjustified number with a
+story attached.
+
+`paragraphWords` remains exported as evidence. A working basis would have to
+not collapse on bimodal paragraph distributions and to transfer across authors
+and languages — the two tests this one failed.
