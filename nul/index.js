@@ -99,7 +99,38 @@ export const burstiness = (series, { window }) => {
   return best;
 };
 
-export const STATISTICS = Object.freeze({ burstiness });
+/**
+ * A windowed mean, with the order destroyed — the null a real windowed mean can
+ * actually live inside.
+ *
+ * `burstiness` is a MAX over windows, so its null's support sits at the top of
+ * the range and an ordinary real window falls below it. That is correct and
+ * documented for clearing, where only surfeit counts. It is fatal for `level`,
+ * which needs a RANK: measured on Frankenstein, 639 of 742 real windowed means
+ * censored below the burstiness support and only 102 landed inside, so every
+ * level() call gapped before the level question was reached. SEED.md lists
+ * `level` under "not yet earned"; this is why. It was never missing an
+ * implementation, it was missing a statistic its own figures could inhabit.
+ *
+ * Taking the first window of a PERTURBED series is exactly a windowed mean with
+ * the order destroyed: under shuffle it is the mean of `window` elements drawn
+ * without regard to position. Real windowed means depart from that null when
+ * neighbouring values are correlated — which is what clustering IS — so
+ * shuffling genuinely destroys what this measures, and SEED.md #4 is satisfied.
+ * It is not shuffle-invariant the way a whole-series mean is: that returns the
+ * same number for every draw and yields a null of zero width, the lineage's
+ * most expensive dead end.
+ *
+ * Cheap as a side effect: O(window) rather than O(n·window).
+ */
+export const windowedMean = (series, { window }) => {
+  if (!Number.isInteger(window) || window < 2 || window > series.length) return NaN;
+  let s = 0;
+  for (let i = 0; i < window; i++) s += series[i];
+  return s / window;
+};
+
+export const STATISTICS = Object.freeze({ burstiness, windowedMean });
 
 /**
  * `window` is the reach of the present — how much of the material is contemporary
@@ -369,11 +400,30 @@ export const level = (observed, ownGround, targetGround) => {
   if (ownGround.kept) return gap("kept_ground", { reason: "cannot level through a ground held for testimony" });
   if (targetGround.kept) return gap("kept_ground", { reason: "cannot level against a ground held for testimony" });
 
-  const fig = difference(observed, ownGround);
+  // TWO FIGURES, NOT ONE OBSERVATION SHARED BETWEEN THEM.
+  //
+  // SEED.md's table says level is a difference against "another FIGURE's
+  // ground" — two figures. This took one scalar and pushed it through both,
+  // which is only meaningful when the two grounds are on the same scale, and
+  // the case the growth rule exists for is exactly the case where they are
+  // not: a candidate organ measures something else, in other units, by
+  // definition. Causal surprisal is in microbits (~1e6); how many prior
+  // passages answered is a count (~30). Every cross-measurement censored and
+  // every organ came back `unstable` — 12 book-channel pairs, uniformly,
+  // which is what a broken instrument looks like rather than a finding.
+  //
+  // So `observed` may be {own, target}: the same MOMENT, measured in each
+  // series' own units. The comparison stays rank-based and is now genuinely
+  // scale-free, which is what this was always documented to be.
+  const paired = observed !== null && typeof observed === "object";
+  const ownObserved = paired ? observed.own : observed;
+  const targetObserved = paired ? observed.target : observed;
+
+  const fig = difference(ownObserved, ownGround);
   if (isGap(fig)) return fig;
 
-  const cross = difference(observed, targetGround);
-  if (isGap(cross)) return gap("unstable", { reason: "cross-measurement failed", detail: cross });
+  const cross = difference(targetObserved, targetGround);
+  if (isGap(cross)) return gap("unstable", { reason: "cross-measurement failed", detail: cross, paired });
 
   const displacement = cross.rank - fig.rank;
   const threshold = 2 / ownGround.samples.length;
