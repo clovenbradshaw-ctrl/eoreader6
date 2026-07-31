@@ -9,6 +9,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { readForward, codeOf, seriesOf, tokens } from "../packages/engine/emergence/activation.js";
 
 // A small corpus with deliberate structure: two motifs that recur at range,
@@ -170,4 +171,24 @@ test("the two channels' disagreement is reported, not reconciled", () => {
   const judged = records.filter((r) => r.resonance && !r.resonance.gap);
   assert.ok(judged.length > 0, "test setup: some frame must have had something to rerank");
   for (const r of judged) assert.equal(typeof r.resonance.agrees, "boolean");
+});
+
+// ── the growth rule's verdict, pinned ───────────────────────────────────────
+
+test("the module states that it has not joined, and does not quietly become an organ", () => {
+  // SEED.md's growth rule is not advisory: an organ joins only when level()
+  // returns `above` against the core, and this one does not (10-22% of
+  // moments across three books, scripts/growth-rule.mjs). It was wired anyway
+  // on the strength of a chapter-boundary result that has since been
+  // retracted.
+  //
+  // A lint wearing an invariant's clothes, and named as such — SEED.md says
+  // exactly that about the "advisory" grep in the no-privileged-frame test, so
+  // the same honesty applies here. What it actually defends is narrow and
+  // worth defending: the status block is the only thing standing between a
+  // refuted organ and a future reader treating it as load-bearing, and it has
+  // no other enforcement. If a real join is established, delete both.
+  const src = readFileSync(new URL("../packages/engine/emergence/activation.js", import.meta.url), "utf8");
+  assert.match(src, /STATUS: HAS NOT JOINED/, "the status block was removed without the growth rule being re-run");
+  assert.match(src, /RETRACTED/, "the retracted validation must stay named in the module that rests on it");
 });
