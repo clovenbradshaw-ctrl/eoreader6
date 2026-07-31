@@ -5,6 +5,7 @@
 // See perceiver/text/material.js for the shared load/reduce contract.
 
 import { spawn } from "node:child_process";
+import { contract } from "../consumption.js";
 
 const decodeGrayImage = (path, { w = 64, h = 64 } = {}) =>
   new Promise((resolve, reject) => {
@@ -33,3 +34,15 @@ export const reduce = ({ buf, w, h }, { fraction = 1 } = {}) => {
   }
   return material;
 };
+
+// A still image is present all at once. Scanlines have an order, and that
+// order belongs to the raster, not to the picture — nobody looks at a painting
+// from the top down. Declaring this SIMULTANEOUS is what stops the reader from
+// running over it and reporting the scan order back as structure.
+export const consumption = () =>
+  contract({
+    order: "simultaneous",
+    unit: "scanline mean luminance",
+    present: 2,
+    basis: "there is no present: the whole field arrives together, and scanline order is the raster's, not the image's",
+  });
