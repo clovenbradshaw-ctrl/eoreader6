@@ -117,6 +117,60 @@ than assumed.
 
 ---
 
+## The invariance audit: what each perceiver cannot see
+
+`npm test` — `conformance/perceiver_invariance.test.js`, 15 tests, 0.2s.
+
+The clearing test above needs labelled boundaries, and outside text there are
+none, so the perceivers went unmeasured. But most of the question does not need
+labels. `reduce` is pure by contract, so the transformations of a source that
+leave `material` unchanged can be enumerated directly, and any of them that a
+competent perceiver must notice is a hole. No corpus, no ffmpeg, no fixtures.
+
+| perceiver | transformation | material |
+|---|---|---|
+| audio | 440 Hz → 880 Hz at matched amplitude | identical to 4.7e-7 |
+| audio | permute samples within each frame (tone → noise) | **exactly** identical |
+| image | scramble every pixel within its own row | **exactly** identical |
+| video | hard cut on half the frame vs. global fade, matched mean | both `[20]` |
+| video | permute pixel positions consistently across all frames | **exactly** identical |
+| video | a light coming on vs. the same light going out | **exactly** identical |
+| text | rearrange the words, same multiset | **moves** |
+
+Four reductions are first-order intensity; one is second-order surprise. Only
+the second-order one has the arrangement of its own material in the series —
+which is the same asymmetry `meanByte` (8/24) vs. causal surprisal (14/24)
+measured on bytes, arrived at from the other direction and without labels.
+
+Two further findings, neither about blindness:
+
+- **A row counter outranks the measurement.** `pickNumericColumn` takes the
+  most-parseable column, and any real measurement with a missing value loses to
+  an `id` that never has one. The counter is then *censored above* — surfeit,
+  the strongest reading `nul` can return — because a monotone ramp maximises a
+  max-over-windows statistic and its shuffles cannot come near. The actual
+  readings sit inside their support at rank 0.96.
+- **Unordered records break the premise and nothing can tell.** Every statistic
+  in `nul` is validated against a shuffle null, which presumes shuffling
+  destroys something real. For a table of records that arrived in no order,
+  shuffling destroys nothing, and the ground comes back well-formed with a
+  healthy width of 17.7. `degenerate_ground` fires on zero *width*, not on a
+  vacuous premise. Whether an index is load-bearing is a property only the
+  giver knows — the same shape as `draws`, `window`, and `reseeds`, and
+  currently the one that is never declared.
+
+**The mutation step is not optional.** Each "blind" equality was re-run against
+a minimally-repaired reduction to confirm it actually breaks there. That check
+demoted two tests: a per-row gradient reduction is *also* mirror-invariant, and
+zero-crossing rate is *also* polarity-invariant, so neither equality was
+evidence of impoverishment. An invariance is only a defect if some plausible
+improvement would remove it.
+
+What this does **not** establish: that fixing any of these improves a clearing.
+That still needs labelled events per modality, which remain the blocking gap.
+
+---
+
 ## Reading left to right: what associative memory adds
 
 `node scripts/activation-clearings.mjs`. One left-to-right pass over
