@@ -23,8 +23,25 @@
 // as knowing an mp3 carries an ID3 header — not a linguistic rule and not a
 // word set: no claim is made here about any language's vocabulary. Texts
 // without these markers pass through untouched.
-const GUTENBERG_START = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
-const GUTENBERG_END = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK[^*]*\*\*\*/i;
+// ANCHORED TO A WHOLE LINE, which eoreader4.2 had and this did not. The old
+// shape here was `\*\*\*\s*START OF ...[^*]*\*\*\*` — it matches across line
+// breaks and depends on the trailing stars being the next asterisks in the
+// file, so a book whose title contains one, or a marker PG wrote slightly
+// differently, drags the cut to the wrong place. A marker is a LINE.
+const GUTENBERG_START = /^[^\S\n]*\*{3}[^\S\n]*START OF (?:THE|THIS) PROJECT GUTENBERG EBOOK\b[^\n]*$/im;
+const GUTENBERG_END = /^[^\S\n]*\*{3}[^\S\n]*END OF (?:THE|THIS) PROJECT GUTENBERG EBOOK\b[^\n]*$/im;
+
+// THE BOOK TELLING YOU WHAT IT IS, WHICH IS NOT CHROME — the distinction
+// eoreader4.2 drew and the reason this list exists. Everything before the
+// start marker is host furniture except these: they are the work's own front
+// matter, and dropping them with the licence text loses the only place a
+// translator or an edition is ever named. They are carried over the cut.
+//
+// These are English field names and therefore a fact about PG's file format,
+// received on exactly the same terms as the markers themselves (II.2). No
+// claim is made about any language's vocabulary — a file that does not use
+// them simply keeps nothing.
+const FRONT_FIELD = /^(?:Title|Author|Editor|Translator|Illustrator|Release date|Language|Original publication|Credits)\s*:/i;
 
 // THE CONTAINER DOES NOT END AT THE START MARKER, and assuming it did put 354
 // forms of transcriber's note into the material on Heidi. Measured: the
@@ -71,11 +88,60 @@ const isContainerParagraph = (p) => {
 // priors, never a list. Declared, checked by conformance.
 export const CELL = Object.freeze({ op: "SEG", grain: "Ground" });
 
+/**
+ * Does what survived read as material at all, or as the container's error page?
+ *
+ * eoreader4.2's `looksLikeBook`, re-earned and renamed away from books.
+ * Project Gutenberg's `.txt` redirect is served with a malformed Location
+ * header, so a client that follows it lands on an HTML error page — which
+ * carries no PG markers, survives stripping untouched, and gets read as the
+ * work. 4.2 recorded the symptom exactly: "the reader parses site chrome
+ * (Search / Donate / DOCTYPE) instead of the novel."
+ *
+ * Structural and cheap: too short to be anything, or it opens on a markup
+ * tag. Nothing here knows a language. REPORTS, DOES NOT RULE — `stripContainer`
+ * returns it as a field rather than refusing, because a caller reading a
+ * genuinely tiny fragment is doing something legitimate and a perceiver is not
+ * the place to decide it is not.
+ */
+export const looksLikeMaterial = (text) => {
+  const t = String(text ?? "").replace(/^﻿/, "").trimStart();
+  if (t.length < 200) return false;
+  if (/^<(?:!doctype|html|head|body|div|meta|title|\?xml)\b/i.test(t)) return false;
+  return true;
+};
+
+/**
+ * Separate the work from the container it arrived in.
+ *
+ * Returns `{ text, offset, front, looks_like_material }`.
+ *
+ * THE CONTIGUITY CONTRACT IS WHY `front` IS A FIELD AND NOT A PREFIX.
+ * eoreader4.2 returned the front-matter lines glued onto the front of the
+ * body, which is right for a metadata harvester and wrong here: everything
+ * downstream of this resolves spans by slicing the SOURCE at `offset`, so
+ * `text` has to remain a contiguous slice of what came in. Prepending would
+ * make every anchor past the join point wrong by the length of the header —
+ * the same class of drift as the byte/character mix eoreader5 records in
+ * `host/corpus.js` ("indexOf gives a CHARACTER index; anchors are byte
+ * offsets"), arriving by a different road.
+ *
+ * So the front matter is carried, not discarded and not inlined.
+ */
 export const stripContainer = (text) => {
   let s = String(text ?? "");
   let offset = 0;
+  const front = [];
   const start = s.match(GUTENBERG_START);
   if (start) {
+    // The book telling you what it is, kept from the header before the cut.
+    for (const line of s.slice(0, start.index).split("\n")) {
+      const trimmed = line.trim();
+      if (FRONT_FIELD.test(trimmed)) {
+        const at = trimmed.indexOf(":");
+        front.push(Object.freeze({ field: trimmed.slice(0, at).trim(), value: trimmed.slice(at + 1).trim() }));
+      }
+    }
     offset = start.index + start[0].length;
     s = s.slice(offset);
 
@@ -97,7 +163,7 @@ export const stripContainer = (text) => {
   }
   const end = s.match(GUTENBERG_END);
   if (end) s = s.slice(0, end.index);
-  return { text: s, offset };
+  return { text: s, offset, front: Object.freeze(front), looks_like_material: looksLikeMaterial(s) };
 };
 
 const SENTENCE_TERMINATORS = new Set([".", "!", "?", "…"]);

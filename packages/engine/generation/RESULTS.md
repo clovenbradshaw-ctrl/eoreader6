@@ -467,3 +467,54 @@ mechanism.
 **Not yet done:** the standpoint belief has no consumption loop, so
 `witnessForm` is never called and both layers sit at their initial 50/50. The
 floor exists and is not yet exercised.
+
+## EARNED: chrome is recognised by a prior, not detected by a pattern
+
+`node scripts/chrome-is-known.mjs`. Heidi (PG 20781) read from form 0 with its
+container INTACT, against Frankenstein (PG 84) also intact. Nothing stripped;
+no marker, URL or box-drawing consulted anywhere. `order=4 alpha=0.7
+rho=0.9995 seed=20260731`.
+
+| region | nats/form vs prior | vs shuffled prior | lift |
+|---|---|---|---|
+| PG licence block | **0.15 – 0.46** | 9.33 – 9.44 | **~9.1** |
+| "other information and formats" | 1.64 | 10.46 | 8.82 |
+| this book's front matter | 10 – 20 | ~same | **~0** |
+| prose | 8.2 – 10.6 | 9.2 – 11.6 | 0.3 – 2.2 |
+
+**The licence block costs the reader essentially nothing — a 20-60x gap
+against prose — with no format knowledge in the loop.** The shuffled control
+settles what kind of recognition it is: same vocabulary, no order, 9.4 nats on
+the same text. The lift is structural.
+
+### The unpredicted result, and the strongest part
+
+**The book's own front matter stays expensive.** Title, author, illustrator,
+translator, publisher, year: 10-20 nats/form at a lift of ~0, because
+Frankenstein's prior has never met `Spyri`, `Lippincott` or `1915`.
+
+So the measurement DERIVES the distinction eoreader4.2 hand-coded as its
+`FRONT_FIELD` allow-list. Chrome is what a prior covers; the title page is the
+book telling you what it is, and no other book's prior can cover it. A written
+list of field names was an approximation of exactly this quantity.
+
+### What this refutes about the rest of this session's chrome work
+
+Three implementations across three engines, all pattern-matching one
+publisher — 4.2's `stripGutenbergBoilerplate`, 5's `indexOf`, and this
+session's line-anchored markers plus `pgdp.net` plus box-drawing detection.
+None of them reads a mailbox, a scan, or a transcript. Each is a prior that was
+never received properly.
+
+The cold-start objection to a physics gate — that the leading region is where
+a reader has the least ground of its own, and `fold` refuses there outright —
+does not survive SEED.md #1. "A standpoint with nothing settled behind it
+cannot grow a ground; the first one must be RECEIVED, not derived." A reader
+that only builds grounds from the material in front of it cannot skip
+anything. That is not a limitation of the engine; it is what reading without
+priors IS.
+
+Proposed as a constitutional amendment in `specs/chrome-is-recognised.md`
+(a PROPOSAL — IV.2, agents propose and humans dispose). The pattern-matching
+`stripContainer` stays for now and is refused as the measurement by that
+draft: a shortcut, never the gate.
