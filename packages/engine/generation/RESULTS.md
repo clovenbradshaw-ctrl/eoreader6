@@ -207,3 +207,114 @@ from a belief that is merely weak. Both were found by running things. Neither
 was found by reading them, and the second was found only because the fast path
 was pinned against the full distribution by a test whose entire job is to
 assert that two ways of computing one quantity agree.
+
+## REFUTED, TWICE, AND THE SECOND TIME IS THE USEFUL ONE: an abstraction as a backoff level
+
+`generation/slots.js`, measured on *Heidi* (Johanna Spyri, PG 20781; 62,300
+forms), held-out span at the 75% mark, forms 46,728–49,728, never trained on
+and never induced from. Reproduce with
+`node scripts/slot-abstraction.mjs scripts/corpus/pg20781.txt 46728` and
+`node scripts/slot-mechanism.mjs`.
+
+The lemma result above refuted **UniMorph lemma abstraction**. This refutes
+something wider and states the replacement it owes.
+
+### The first build was refused by the constitution, and the measurement said so first
+
+The organ began by deciding that two forms share a slot by **cosine
+similarity between their surface co-occurrence vectors**, settled by k-means.
+The constitution's II.8 names that mechanism twice: *"no cheap compatibility —
+never a dot product, overlap, or learned similarity over surfaces"*, and *"no
+averaging of grounds"*, which a centroid is. Amendment 3 enforces it as
+`weights_present`, and `true` on an engine placement is refuted.
+
+It was refused on the numbers before it was refused on the article. Sweeping
+the resolution of the grouping at 40,000 training forms:
+
+| classes | cohesion | delta vs surface | shuffled control |
+|---|---|---|---|
+| 6 | 0.5216 | −0.570 | −0.341 |
+| 16 | 0.6023 | −0.843 | −0.465 |
+| 48 | 0.6731 | −0.888 | −0.483 |
+| 140 | 0.7564 | −1.063 | −0.538 |
+| 400 | 0.8800 | −1.218 | −0.741 |
+
+Monotone in both columns. **The tighter the grouping, the worse the reading**,
+and the real inventory is worse than its own shuffled floor at every matched
+resolution — classes induced from destroyed order damaged the belief *less*
+than classes that captured real co-occurrence. A weighted combination of what
+is already there cannot differ from itself, and the harder it weights, the
+more it costs. That is II.8 arrived at from the other side.
+
+### The rebuild is constitutional, and it works as a discovery organ
+
+Per II.9's first consequence — *"a cheap sense organ is legal and useful; a
+cheap sense organ promoted to the verdict is refused"* — the cosine was kept
+and demoted to **nomination**. The verdict is a perturbation with a null:
+substituting B where A stood must move the ground less than a **reseeding**
+does, where B's successors are redrawn from the material's successor-position
+distribution keeping B's evidence count exactly and destroying which forms it
+licensed. Reported as a rank against `draws`, censored below, no threshold
+anywhere.
+
+At 40,000 training forms, 20,435 pairs nominated:
+
+| | confirmed | types placed |
+|---|---|---|
+| real material | **28.7%** | 854 |
+| order destroyed | **4.5%** | 686 |
+
+A 6.4× separation. The verdict refuses 69% of what the sense organ hands it
+(14,088 refused by the null, 474 unwitnessable), and it tells real material
+from shuffled material cleanly. **As an organ for discovering which forms
+occupy one position, this is earned.**
+
+*The first null was wrong and is recorded because the trap recurs.* It drew a
+**frequency-matched stranger** — another form with about as much evidence as
+B. On the conformance fixture it confirmed 0 of 177 pairs, because a frequency
+band is full of true positives: the "strangers" drawn as a null for `cat`/`dog`
+were mostly other nouns. The null contained the hypothesis, so nothing could
+ever be closer than all of it.
+
+### And spending it as a backoff level still loses
+
+| training | surface | + slots | delta | + shuffled | delta |
+|---|---|---|---|---|---|
+| 1,000 | — | — | *refused: degenerate_ground* | | |
+| 4,000 | 5.919 | 7.069 | **−1.150** | 7.134 | −1.215 |
+| 16,000 | 6.396 | 7.514 | **−1.118** | 7.259 | −0.863 |
+| 40,000 | 6.472 | 7.406 | **−0.934** | 7.028 | −0.557 |
+
+So a grouping that demonstrably captures substitutability, witnessed against a
+reseeding null, still makes next-form prediction worse — and at 16k and 40k
+**still worse than its own shuffled control.**
+
+**This is the finding, and it is larger than the lemma result.** The harm is
+not in where the inventory came from. A received lexicon lost by 1.52
+nats/form and a derived, null-witnessed inventory loses by 0.93, both against
+the same surface chain, and in both cases a *better* grouping does *more*
+damage. The harm is in the **spending**: an extra backoff level whose
+Witten-Bell share rises with how much it pools takes mass from levels that
+were doing better, in proportion to how coherent it managed to be. Fix 3 above
+(dividing by distinct pooled surface contexts) already corrects part of this
+and is not enough.
+
+SEED.md Amendment IV consequence 5 asks for a shared abstraction over forms.
+Two independent inventories now say the debt is **not another inventory**. It
+is a mechanism for spending one that is not a backoff level — the abstraction
+has to constrain *which* form is chosen rather than compete for mass with the
+levels that already know. `slotExpectation` is built for exactly that reading
+(H_form vs H_class: the position that knows its kind and not its word) and is
+**not yet wired into any emitter**. Under the growth rule that makes it
+unwired and therefore refuted; it is the next thing to earn.
+
+### Two defects this found on the way, both by running
+
+- **The conformance fixture, not the organ.** Cycling `NOUNS[i % 15]` beside
+  `VERBS[(i * 7) % 15]` makes the pairing deterministic, so each noun licenses
+  exactly one verb and no two nouns are substitutable. The organ refused them,
+  correctly, and the test was wrong. Members of a group now draw independently.
+- **A nine-type corpus is not a small test, it is one the organ declines.**
+  With too few forms there is no null of nonzero width, every pair returns
+  `exceeds_witness`, and `induceSlots` refuses rather than inventing a
+  grouping — SEED.md #3 holding at the fixture boundary.
