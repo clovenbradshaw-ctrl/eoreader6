@@ -7,6 +7,11 @@
 
 import { ground, pattern, volume, isGap } from "../../../nul/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Paradigm · Tracing — the reader-assimilation loop: a growing fraction
+// of the same material. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Pattern" });
+
 // A large prime seed step: reseeds*draws must never equal it, or pattern()'s
 // reseeding-null trial silently reconstructs the next pass's own ground —
 // a real bug found and fixed this session (see git history).

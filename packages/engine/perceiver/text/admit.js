@@ -9,6 +9,11 @@
 
 const resolveAnchor = (text, anchor) => (anchor ? text.indexOf(anchor) : -1);
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// DEF · Atmosphere · Clearing — received priors into DEF.admit events; a
+// prior must name its giver. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "DEF", grain: "Ground" });
+
 const inScope = (offset, scope, text) => {
   if (!scope) return true;
   for (const range of scope) {

@@ -8,6 +8,11 @@
 import { existenceDependencyTest, possibilityConstraintTest, holonLevelRelation } from "../../../holon_level/index.js";
 import { difference, isGap } from "../../../nul/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// DEF · Lens · Unraveling — settled significance becomes received existence,
+// refused before it is granted. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "DEF", grain: "Figure" });
+
 const SETTLED_RANK = 0.9;
 
 // One level: a candidate regime's existence-dependency + possibility-

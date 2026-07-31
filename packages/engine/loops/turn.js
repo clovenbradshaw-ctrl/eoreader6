@@ -20,11 +20,29 @@
 // than faked.
 
 import { ground, difference, pattern, admissible, volume, isGap, gap } from "../../../nul/index.js";
+import { cellOf } from "../operators.js";
+
+// The cells this organ occupies on the operator grid (engine/operators.js):
+// one complete turn fires all nine at Ground grain. Declared, checked by
+// conformance.
+export const CELLS = Object.freeze(
+  ["NUL", "SIG", "INS", "SEG", "CON", "SYN", "DEF", "EVA", "REC"].map((op) =>
+    Object.freeze({ op, grain: "Ground" }),
+  ),
+);
+
+// The interpretation tier's cells, derived from the algebra (operators.js) —
+// terrain and stance are entailed by (mode, grain), never hand-listed. The
+// comments record what the derivation yields, so a drift in the algebra shows
+// as a test failure, not a silent relabel.
+const DEF_GROUND = cellOf("DEF", "Ground"); // Atmosphere · Clearing
+const EVA_GROUND = cellOf("EVA", "Ground"); // Atmosphere · Tending
+const REC_GROUND = cellOf("REC", "Ground"); // Atmosphere · Cultivating
 
 // ── EXISTENCE · Void ─────────────────────────────────────────────────────────
 
 /** ① NUL · Void · Clearing — a nothing built by perturbing what is present. */
-export const clearVoid = ({ material, draws, window, seed }) => ground({ material, draws, window, seed });
+export const clearVoid = ({ material, draws, window, seed, perturbation = "shuffle" }) => ground({ material, draws, window, seed, perturbation });
 
 /**
  * ② SIG · Void · Tending — keep the nothing fit to perceive through, and
@@ -144,7 +162,7 @@ export const cultivateField = (units, extent) => {
  * reading admits both, because a reader whose ground has moved out from
  * under them has lost it just as surely as one swamped by surfeit.
  */
-export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"] }) => {
+export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"], perturbation = "shuffle" }) => {
   if (grain !== "Ground")
     return gap("unknown_spec", { reason: `grain "${grain}" is not yet earned — only Ground is built`, grain });
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
@@ -179,7 +197,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   const buildAt = (start, end, s) => {
     if (end - start < window + 2) return null;
     // ① NUL · Void · Clearing
-    const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start });
+    const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start, perturbation });
     if (isGap(built)) return null;
     // ② SIG · Void · Tending
     return tendVoid(built).viable ? built : null;
@@ -225,7 +243,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
 
     if (failure) {
       clearings++;
-      events.push({ at: i, op: "DEF", terrain: "Atmosphere", stance: "Clearing", ...failure });
+      events.push({ at: i, op: "DEF", terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, ...failure });
 
       // A failing ground is not maintained. The standing ground is held
       // fixed while consecutive failures accumulate, for both modes alike —
@@ -238,7 +256,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
           opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
           clearedBy: failure.mode,
         });
-        events.push({ at: i, op: "REC", terrain: "Atmosphere", stance: "Cultivating", clearedBy: failure.mode });
+        events.push({ at: i, op: "REC", terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy: failure.mode });
         regionStart = i;
         g = null;
         gEnd = null;
@@ -248,7 +266,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     } else {
       clearings = 0;
       tended++;
-      events.push({ at: i, op: "EVA", terrain: "Atmosphere", stance: "Tending" });
+      events.push({ at: i, op: "EVA", terrain: EVA_GROUND.terrain, stance: EVA_GROUND.stance });
       if (maintained) {
         g = maintained;
         gEnd = i;

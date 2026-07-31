@@ -1,135 +1,125 @@
 // eoreader6 · read-frankenstein — an actual reading, left to right.
 //
-// This is eoreader5's significanceSpine mechanism, re-earned here. Three
-// attempts at something cleverer failed first and each failure is worth
-// keeping:
+// The measurement unit is the SENTENCE — the perceiver's own unit. There is
+// no sentence-grouping, no stratum count, no word-count floor: a frame is
+// not a hand-written thing here, it is one measurement per sentence against
+// a belief the reader rebuilds.
 //
-//   1. Averaging per-observation KL inside a declared window. Bayesian
-//      surprise is not additive; a windowed mean of KLs is not a quantity.
-//   2. An i.i.d. multinomial null drawn from the prior. No real prose is
-//      i.i.d., so every actual frame beat it and the whole book came back as
-//      one window.
-//   3. A decayed prior that decayed priorTotal but only the ARRIVING forms,
-//      so p_prior stopped summing to 1 and KL came out negative.
+// BELIEF. A distribution over word forms, bounded by the declared `window`
+// (the reach of the present: how many sentences' forms feed the prior) and
+// decayed by the declared `gamma` (how much of the prior the posterior
+// keeps).
 //
-// What eoreader5 does instead, and it works (5/21 on the frozen span golden,
-// still the best measured there):
+// SURPRISE. Bayesian belief-shift, D_KL(posterior || prior) — surprise.js's
+// collapse-as-measurement structure: surprise is concentrated at discrete
+// measurement events, and the windows of surprise are the intervals between
+// them.
 //
-//   · history is a BOUNDED SLIDING WINDOW of recent units, not an
-//     accumulation and not a decay over everything
-//   · score = KL(unit || mean of that history)
-//   · NO NULL. Ranking is the discrimination — you take the top of the field,
-//     you never ask whether a single unit beats chance
-//   · selection is STRATIFIED across the whole extent, because any top-N over
-//     a document accumulates opening-chapter bias (measured: unmasked, 12/12
-//     selected spans fell in the first 27.5% of War and Peace)
+// NULL. The Born-shaped null — the reader's own belief CARRIED ON: `draws`
+// continuations sampled from the prior itself (surprise.js's
+// priorContinuationNull), scored with the same bayesianSurprise. A sentence
+// whose surprise the prior's own continuation cannot produce is censored
+// above — surfeit, `exceeds_witness`, exactly what nul's difference() names.
 //
-// The salience window is therefore set by surprise in the only sense that
-// survived measurement: the field of scores decides which passages are
-// windows, and how wide each one runs is how far its run of elevation
-// extends — not a declared radius.
+// WINDOWS. A run of consecutive exceedances IS a window of surprise,
+// discovered rather than declared.
+//
+// The numbers below are DECLARED, never defaulted — they are the physiology
+// of this reading, stated as such. Everything else is gone.
+//
+// The first sentences seed belief and are not measured: a first ground is
+// received, never derived (SEED.md #1).
 
 import { readFileSync } from "node:fs";
 import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
+import { bayesianSurprise, priorContinuationNull } from "../packages/engine/emergence/surprise.js";
+import { received, difference, isGap } from "../nul/index.js";
 import { readForward } from "../packages/engine/emergence/activation.js";
 
-const SENTENCES_PER_FRAME = 6;
-const HISTORY = 40;   // bounded sliding window, in frames
-const K = 18;         // strata, and therefore moments reported
+// ── declared, never defaulted ───────────────────────────────────────────────
+const WINDOW = 12;   // reach of the present: sentences feeding the prior
+const DRAWS = 200;   // resolution of testimony: finest rank sayable is 1/draws
+const GAMMA = 0.9;   // recency decay: posterior = GAMMA*prior + arrival
+const ALPHA = 1;     // smoothing: the cost a form never read still carries
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 const words = (t) => String(t ?? "").toLowerCase().match(WORD_RE) ?? [];
-
-const dist = (ws) => {
+const countsOf = (ws) => {
   const m = new Map();
   for (const w of ws) m.set(w, (m.get(w) ?? 0) + 1);
-  for (const [w, c] of m) m.set(w, c / ws.length);
   return m;
-};
-
-const klDivergence = (observed, expected, epsilon = 1e-10) => {
-  let kl = 0;
-  for (const [t, p] of observed) {
-    if (p <= 0) continue;
-    const q = Math.max(expected.get(t) ?? epsilon, epsilon);
-    kl += p * Math.log2(p / q);
-  }
-  return Math.max(0, kl);
 };
 
 const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
-
 const sentences = splitSentences(text);
-const frames = [];
-for (let i = 0; i < sentences.length; i += SENTENCES_PER_FRAME) {
-  const g = sentences.slice(i, i + SENTENCES_PER_FRAME);
-  if (g.length) frames.push({ order: frames.length, offset: g[0].offset, text: g.map((s) => s.text).join(" ") });
-}
 
-// ── one causal pass: KL against a bounded window of what was just read ──────
-const history = [];
-const scored = [];
+const windowArrivals = [];
+let prior = new Map();
+let priorTotal = 0;
 
-for (const f of frames) {
-  const ws = words(f.text);
-  if (ws.length < 20) { history.push(ws); if (history.length > HISTORY) history.shift(); continue; }
+const observations = [];
 
-  if (history.length > 0) {
-    // PRIOR: belief before this frame — the mean distribution of the window.
-    const meanOf = (frameList) => {
-      const m = new Map();
-      for (const h of frameList) for (const [w, p] of dist(h)) m.set(w, (m.get(w) ?? 0) + p);
-      for (const [w, p] of m) m.set(w, p / frameList.length);
-      return m;
-    };
-    const prior = meanOf(history);
-
-    // POSTERIOR: belief AFTER reading it — the window advanced one step,
-    // oldest dropped. With a bounded window each frame carries constant
-    // weight, so belief-change stays comparable across the whole book
-    // instead of shrinking as history piles up.
-    const advanced = history.length >= HISTORY ? [...history.slice(1), ws] : [...history, ws];
-    const posterior = meanOf(advanced);
-
-    // Itti & Baldi: how far belief MOVED. Not how divergent the observation
-    // was — that is the other lane, kept alongside so the two can be compared
-    // rather than assumed to agree.
-    scored.push({
-      ...f,
-      belief: klDivergence(posterior, prior),
-      divergence: klDivergence(dist(ws), prior),
-    });
+const advance = (arrival) => {
+  windowArrivals.push(arrival);
+  for (const [f, c] of arrival) { prior.set(f, (prior.get(f) ?? 0) + c); priorTotal += c; }
+  while (windowArrivals.length > WINDOW) {
+    const drop = windowArrivals.shift();
+    for (const [f, c] of drop) {
+      const left = prior.get(f) - c;
+      if (left <= 0) prior.delete(f); else prior.set(f, left);
+      priorTotal -= c;
+    }
   }
+};
 
-  history.push(ws);
-  if (history.length > HISTORY) history.shift();
+for (let i = 0; i < sentences.length; i++) {
+  const s = sentences[i];
+  const ws = words(s.text);
+  if (ws.length === 0) continue;
+  const arrival = countsOf(ws);
+
+  if (priorTotal === 0) { advance(arrival); continue; } // nothing measured against a first ground
+
+  const kl = bayesianSurprise(prior, priorTotal, arrival, ws.length, { gamma: GAMMA, alpha: ALPHA });
+  const samples = priorContinuationNull(prior, priorTotal, ws.length, { gamma: GAMMA, alpha: ALPHA, draws: DRAWS, seed: i });
+  const g = received({ samples, provenance: "the reader's own prior, carried on" });
+  const d = difference(kl, g);
+  const exceeded = isGap(d) && d.gap === "exceeds_witness" && d.direction === "above";
+
+  observations.push({
+    order: i, offset: s.offset, text: s.text, kl,
+    exceeded,
+    nullMax: samples ? samples[samples.length - 1] : null,
+  });
+
+  advance(arrival);
 }
 
-// ── stratified selection across the WHOLE extent ────────────────────────────
-const lo = scored[0].offset;
-const hi = scored[scored.length - 1].offset + 1;
-const strata = Array.from({ length: K }, () => []);
-for (const s of scored) {
-  strata[Math.min(K - 1, Math.floor(((s.offset - lo) / (hi - lo)) * K))].push(s);
+// ── runs of exceedance ARE the windows — nothing else selects ───────────────
+const windows = [];
+let run = null;
+for (const o of observations) {
+  if (o.exceeded) { if (!run) run = []; run.push(o); }
+  else if (run) { windows.push(run); run = null; }
 }
-const moments = strata
-  .map((b) => b.sort((a, c) => c.score - a.score)[0])
-  .filter(Boolean)
-  .sort((a, b) => a.offset - b.offset);
+if (run) windows.push(run);
 
-const { records } = readForward(frames);
+// ── the associative-memory channel, same sentences, no future ───────────────
+const { records } = readForward(sentences.map((s, i) => ({ order: i, offset: s.offset, text: s.text })));
 const recalledAt = new Map(records.map((r) => [r.order, r.recalled]));
+const windowRecall = (w) => Math.max(...w.map((o) => recalledAt.get(o.order) ?? 0));
 
-const scores = scored.map((s) => s.score).sort((a, b) => a - b);
-console.log(`READING ${TEXT_PATH.split("/").pop()} — ${sentences.length} sentences, ${frames.length} frames`);
-console.log(`scored ${scored.length} frames against a ${HISTORY}-frame sliding history`);
-console.log(`KL field: median ${scores[Math.floor(scores.length / 2)].toFixed(3)}, max ${scores[scores.length - 1].toFixed(3)}`);
-console.log(`${moments.length} moments, one per stratum across the whole arc\n`);
+const exceeds = observations.filter((o) => o.exceeded).length;
+console.log(`READING ${TEXT_PATH.split("/").pop()} — ${sentences.length} sentences, ${observations.length} measured against belief`);
+console.log(`declared: window ${WINDOW} sentences, gamma ${GAMMA}, draws ${DRAWS}, alpha ${ALPHA}`);
+console.log(`${exceeds} exceedances in ${windows.length} discovered windows (no stratum, no frame, no floor)\n`);
 
-for (const m of moments) {
-  const pct = ((m.offset / text.length) * 100).toFixed(1);
-  const shown = m.text.length > 300 ? m.text.slice(0, 300).replace(/\s+\S*$/, "") + "…" : m.text;
-  console.log(`── ${pct}%  KL ${m.score.toFixed(3)}  recalled ${recalledAt.get(m.order) ?? "—"} prior passages`);
-  console.log(`   ${shown.replace(/\n/g, " ")}\n`);
+for (const w of windows) {
+  const peak = w.reduce((a, b) => (b.kl > a.kl ? b : a));
+  const fromPct = ((w[0].offset / text.length) * 100).toFixed(1);
+  const toPct = ((w[w.length - 1].offset / text.length) * 100).toFixed(1);
+  const shown = peak.text.length > 200 ? peak.text.replace(/\s+/g, " ").slice(0, 200).replace(/\s+\S*$/, "") + "…" : peak.text.replace(/\s+/g, " ");
+  console.log(`── ${fromPct}%–${toPct}%  run of ${w.length}  peak KL ${peak.kl.toFixed(3)}  recalled ${windowRecall(w)} prior passages`);
+  console.log(`   ${shown}\n`);
 }

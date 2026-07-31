@@ -23,6 +23,14 @@
 //
 // Read SEED.md first. Especially before adding anything.
 
+// The cells this organ occupies on the operator grid (engine/operators.js):
+// the core act at each of its three uses. Declared, checked by conformance.
+export const CELLS = Object.freeze([
+  Object.freeze({ op: "NUL", grain: "Ground" }),
+  Object.freeze({ op: "EVA", grain: "Figure" }),
+  Object.freeze({ op: "REC", grain: "Ground" }),
+]);
+
 const GAP = Symbol.for("eoreader6.gap");
 
 // Every entry below is the same act at a different grain: refusing a claim.

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sources = ["nul/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js"];
+const sources = ["nul/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js", "formation/index.js"];
 
 const codeOf = (file) =>
   readFileSync(join(root, file), "utf8")
@@ -23,7 +23,7 @@ test("the doctrine is present, and the instrument is held outside the code", () 
 // priors on their way to eoPriors and has no importable surface. The test
 // below enforces that — the moment `bin` contains code it has become an organ
 // and has to be earned like one.
-const ORGANS = ["conformance", "discourse", "event_log", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
+const ORGANS = ["conformance", "discourse", "event_log", "formation", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
 const STAGED_DATA = ["bin"];
 
 test("only earned organs exist alongside the core", () => {
@@ -150,4 +150,13 @@ levelTest("discourse", "discourse/index.js", {
 levelTest("temporality", "temporality/index.js", {
   importsNul: true,
   enables: ["orderTest", "arrowTest", "temporality", "TEMPORALITIES"],
+});
+
+// The formation phases sit above the core but below the level test they invoke:
+// a diffuse emanon has no boundary and no where to ask about a place; only the
+// cut (collapse) gives it a figure, and only the level test (sustain) can earn
+// it a level. See conformance/formation.test.js, "the growth rule, measured".
+levelTest("formation", "formation/index.js", {
+  importsNul: true,
+  enables: ["emanon", "collapse", "sustain", "PHASES"],
 });

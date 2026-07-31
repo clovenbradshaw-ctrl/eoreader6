@@ -11,6 +11,11 @@
 
 import { difference, pattern, witness, keep, isGap } from "../../../nul/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Paradigm · Tracing — the figure → pattern → witness grain walk, one
+// call. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Pattern" });
+
 // Walks as far up the grain ladder as the data honestly supports. The
 // result names which grain it reached (figure / pattern / witness) and
 // whether that grain's own claim succeeded or gapped — never silently

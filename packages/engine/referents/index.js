@@ -1,5 +1,10 @@
 export const INDIVIDUATION_TYPES = Object.freeze(["field", "emanon", "protogon", "holon", "apparatus"]);
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// CON · Link · Binding — the projection over DEF.admit / CON.identity /
+// SYN.merge / SEG.split events. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "CON", grain: "Figure" });
+
 export function projectReferents(events) {
   const referents = new Map();
 

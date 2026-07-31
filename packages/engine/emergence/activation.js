@@ -71,6 +71,11 @@
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// CON · Link · Binding — associative memory that reads left to right; one
+// recurrent hop, not a flood. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "CON", grain: "Figure" });
+
 // Unicode-aware, unlike the Latin-1 class this was learned from: a memory that
 // can only wire English is not a memory, it is a language module.
 export const tokens = (t) => String(t ?? "").toLowerCase().match(WORD_RE) ?? [];

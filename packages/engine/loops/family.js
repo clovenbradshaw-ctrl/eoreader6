@@ -12,6 +12,11 @@
 
 import { ground, level, isGap } from "../../../nul/index.js";
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Paradigm · Tracing — cross-family level stability; a bad perturbation
+// fails globally. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Pattern" });
+
 const FAMILIES = ["shuffle", "resample"];
 
 // level() (unlike pattern(), which only ever compares two grounds' own

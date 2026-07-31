@@ -38,6 +38,11 @@
 
 const LOG2 = Math.LN2;
 
+// The cell this organ occupies on the operator grid (engine/operators.js):
+// EVA · Lens · Binding — the two lanes kept apart: novelty and bayesian
+// surprise. Declared, checked by conformance.
+export const CELL = Object.freeze({ op: "EVA", grain: "Figure" });
+
 /**
  * A prior smoothed over an explicit form-set. Both lanes must consume the
  * SAME smoothed prior or the boundary identity is only approximate — the
