@@ -23,16 +23,21 @@ const FAMILIES = ["shuffle", "resample"];
 // guaranteed within its support by construction — so figure always
 // resolves, and what's actually being tested (does the relationship
 // against targetGround hold across families) is what surfaces.
-export const crossFamilyLevel = ({ ownMaterial, targetMaterial, window, draws, seed = 0 }) => {
+export const crossFamilyLevel = ({ ownMaterial, targetMaterial, window, draws, seed = 0, statistic = "burstiness", observedAt = null }) => {
   const relations = [];
   for (const perturbation of FAMILIES) {
-    const ownG = ground({ material: ownMaterial, draws, window, seed, perturbation });
-    const targetG = ground({ material: targetMaterial, draws, window, seed: seed + 1, perturbation });
+    const ownG = ground({ material: ownMaterial, draws, window, seed, perturbation, statistic });
+    const targetG = ground({ material: targetMaterial, draws, window, seed: seed + 1, perturbation, statistic });
     if (isGap(ownG) || isGap(targetG)) {
       relations.push({ perturbation, gap: isGap(ownG) ? ownG : targetG });
       continue;
     }
-    const observed = ownG.samples[Math.floor(ownG.samples.length / 2)]; // median of own's own achievable range
+    // With a statistic whose null a real observation can inhabit (see
+    // nul::windowedMean), a REAL moment can be used and the question becomes
+    // about the material rather than about the null's own median. Falls back
+    // to the median of own's achievable range when no moment is supplied,
+    // which is all that was possible while burstiness was the only statistic.
+    const observed = observedAt ?? ownG.samples[Math.floor(ownG.samples.length / 2)];
     const lv = level(observed, ownG, targetG);
     relations.push(isGap(lv) ? { perturbation, gap: lv } : { perturbation, relationship: lv.relationship, displacement: lv.displacement });
   }

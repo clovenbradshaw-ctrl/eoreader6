@@ -260,3 +260,65 @@ story attached.
 `paragraphWords` remains exported as evidence. A working basis would have to
 not collapse on bimodal paragraph distributions and to transfer across authors
 and languages — the two tests this one failed.
+
+---
+
+## The growth rule, finally run — and `activation` does not pass it
+
+`node scripts/growth-rule.mjs`. SEED.md: *"An organ joins only when the level
+test returns `above` against the core. `peer` or `unstable` means it waits.
+Unwired is failing."* `activation` was built, wired and validated against an
+external reference; that validation is retracted above, and the test the seed
+actually names had never been run. It has now.
+
+**First it could not be run at all, and the reason is a defect in `nul`.**
+
+`level()` took one scalar and pushed it through both grounds, which is only
+meaningful when the grounds share a scale — and the case the growth rule exists
+for is precisely the case where they do not. Causal surprisal is in microbits
+(~10⁶); "how many prior passages answered" is a count (~30). Every
+cross-measurement censored: 12 book-channel pairs, uniformly `unstable`. That
+is what a broken instrument looks like, not a finding. `level` now accepts
+`{own, target}` — the same *moment*, measured in each series' own units — and
+the comparison is genuinely rank-based and scale-free, as it was always
+documented to be.
+
+**Then it still could not be run, for a second and deeper reason.**
+
+The engine had exactly one statistic, and `burstiness` is a MAX over windows, so
+its null's support sits at the top of the range. Measured on Frankenstein: of
+742 real windowed means, **639 fall below the support and 102 land inside.** The
+figure censors before the level question is reached. This is why SEED.md lists
+`level` under "not yet earned" — it was never missing an implementation, it was
+missing a statistic its own figures could inhabit.
+
+`nul::windowedMean` is that statistic: a windowed mean with the order destroyed.
+Under shuffle it is the mean of `window` elements drawn without regard to
+position, so a real windowed mean departs from it exactly when neighbours are
+correlated — which is what clustering is. Same material, same window: **635 of
+742 inside, 49 below, 58 above.** A figure that can be ranked.
+
+| | inside support | below | above |
+|---|---|---|---|
+| burstiness | 102 | 639 | 1 |
+| windowedMean | **635** | 49 | 58 |
+
+**And the answer is no.**
+
+Across Frankenstein, Garoa and Heart of Darkness, four channels each, sampled
+across the whole extent and asked again by a second perturbation family:
+`above` never exceeds 19% of moments, `below` dominates wherever anything
+resolves, and no channel reaches a majority `above` in any book. Nothing joins.
+
+By the growth rule that is a refutation and not a delay: **`activation`
+re-describes what causal surprisal already grounds rather than adding a
+dimension to it.** Wiring it anyway is the thing the rule exists to prevent, and
+it was wired anyway — on the strength of a chapter-boundary number that has
+since been retracted.
+
+Two honest limits on this verdict. Between 22% and 55% of moments still come
+back `exceeds_witness` even with the better statistic, so a substantial share of
+the material remains unplaceable and the verdict rests on the remainder. And
+`below` is the modal resolved relationship, which is a stronger claim than
+`peer` — it says the core's ground places these moments more comfortably than
+the organ's own does — and I do not yet have an account of why that should be so.
