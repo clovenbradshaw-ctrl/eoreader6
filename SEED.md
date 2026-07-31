@@ -1,5 +1,9 @@
 # The seed
 
+> **Governance:** this engine is the `engine` domain of the EO constitution —
+> `../eo-constitution/CONSTITUTION.md`. Nothing ships here unless the routing
+> oracle sustains the placement. Organs re-earn or they do not come.
+
 > **Perceive only by difference from a ground you rebuild.
 > Testify only from a ground you kept.
 > Stay alive by never letting the ground close.**
