@@ -352,7 +352,137 @@ export const absoluteError = (dist, observed) => {
   });
 };
 
-export const SCORING_RULES = Object.freeze({
+/**
+ * Sequence log loss for a SCOPED emission — the live ground written out, the
+ * settled ground by reference.
+ *
+ * ── WHY THIS IS A SEPARATE RULE AND NOT A BRANCH ──────────────────────────
+ *
+ * Declared as its own rule id so two runs that scored differently are visibly
+ * two measurements rather than one. `sequence-log-loss` reads a materialised
+ * `probs` object per step; this reads a live object plus a reference, and has
+ * to be HANDED the settled ground at reveal time. Folding them together would
+ * let a caller that forgot to supply the ground silently fall through to the
+ * live support alone, which prices every remembered form at the floor and
+ * makes a scoped emitter look catastrophically worse than it is.
+ *
+ * ── THE HASH IS THE TAMPER GUARD, AND IT REPLACES THE COPY ────────────────
+ *
+ * This is what `settled.js` was for. A horizon-20 continuation over a
+ * 3,523-form vocabulary carried 70,480 probability entries, and
+ * `commitPrediction` canonical-hashed all of them while `revealAndScore`
+ * hashed them again — 235ms to seal what took 121ms to imagine.
+ *
+ * A commitment has to be tamper-evident over WHAT THE EMITTER CHOSE. The
+ * settled ground is not something the emitter chose; it is what it inherited,
+ * and it cannot have changed, because the material behind the fold has
+ * perished. So sealing the live distribution plus the ground's content hash
+ * covers exactly the emitter's freedom, and this function REFUSES a ground
+ * whose hash does not match the one that was sealed. The guarantee is the
+ * same; the copy is gone.
+ *
+ * ── AND IT MUST AGREE WITH THE UNSCOPED RULE ──────────────────────────────
+ *
+ * Pinned by conformance, because "the same belief, scored two ways" is exactly
+ * the shape of test that caught four of the five defects in the last round of
+ * this work. A scoped emission and the full emission of the same belief over
+ * the same targets must produce the same loss to float equality.
+ */
+export const scopedSequenceLogLoss = (dist, observed, settled) => {
+  if (!dist || dist.kind !== "sequence-scoped")
+    return improper("scoped-sequence-log-loss", dist?.kind, "requires a scoped sequence output");
+  if (!Array.isArray(dist.steps) || dist.steps.length === 0)
+    throw new TypeError("scoring: sequence-scoped.steps must be a non-empty array");
+  if (!Array.isArray(observed))
+    throw new TypeError("scoring: a sequence output must be scored against an array of observed forms");
+  if (observed.length !== dist.steps.length)
+    throw new RangeError(
+      `scoring: horizon mismatch — committed ${dist.steps.length} steps, revealed ${observed.length} targets`,
+    );
+  // A scoped emission that referenced a settled ground cannot be scored
+  // without it. Refusing is the only honest move: scoring from the live
+  // support alone would price every remembered form at the floor and report a
+  // number that looks like a measurement.
+  if (dist.settled !== null) {
+    if (!settled || typeof settled.massOf !== "function")
+      throw new TypeError(
+        "scoring: a scoped emission referencing a settled ground must be handed that ground at reveal — its absence is not a zero",
+      );
+    if (settled.hash !== dist.settled.hash)
+      throw new Error(
+        `scoring: the settled ground supplied at reveal is not the one that was sealed (${settled.hash} vs ${dist.settled.hash}) — a perished ground cannot have changed, so this is a substitution`,
+      );
+  }
+
+  const FLOOR = -Math.log(Number.MIN_VALUE);
+  let loss = 0;
+  let unplaced = 0;
+  let reachedBack = 0;
+
+  for (let i = 0; i < dist.steps.length; i++) {
+    const step = dist.steps[i];
+    if (!step || !step.live) throw new TypeError(`scoring: sequence-scoped.steps[${i}] must carry a live support`);
+    // BOTH GROUNDS CONTRIBUTE, ALWAYS — the settled one is not a fallback.
+    //
+    // Caught by the conformance identity test, and it is the same defect shape
+    // as the reserve bug in settled.js. The first version read
+    // `step.live[form]` and consulted memory only when the present had no
+    // entry at all. But a form the present AND the past both know receives
+    // mass from both, and belief.js sums them. Taking only the live share
+    // under-priced every such form — 0.045 against 0.033 on a three-form
+    // target: small enough to pass for float noise, systematic enough to be
+    // wrong on every common word in the language.
+    const inLive = typeof step.live[observed[i]] === "number";
+    let p = inLive ? step.live[observed[i]] : 0;
+    if (dist.settled !== null) {
+      // The same renormalisation belief.js applies to any received layer, so
+      // the two paths stay one belief rather than becoming two conventions.
+      if (!inLive) reachedBack++;
+      const ctx = step.context ?? [];
+      const admissible = 1 - settled.reserveAt(ctx);
+      if (admissible > 0) p += (step.settled_mass * settled.massOf(ctx, observed[i]).mass) / admissible;
+    }
+    if (!(p > 0)) {
+      // THE UNSEEN RESERVE, AND THE SAME CONDITION `sequenceLogLoss` PUTS ON
+      // IT. A form neither the present nor the settled ground has ever met is
+      // not a wrong guess, it is an unmet form, and its price is the mass the
+      // emission parked for exactly that. Charging the finite floor instead
+      // made ONE unmet form cost 708 nats and dominate an entire continuation:
+      // measured at 815 against 81 on a twelve-form target, which is what sent
+      // the scoped reader to 27 nats/form against the full reader's 7.
+      //
+      // Conditional on `covers_vocabulary`, because that is what makes a
+      // missing key mean UNMET rather than "any word other than my guess" —
+      // the loophole `baseline:copy-previous` exploited in this repo's own
+      // suite before it was caught. A scoped emission may assert it: both its
+      // grounds back off to order 0, so between them they place every form
+      // either has met.
+      if (dist.covers_vocabulary === true && typeof step.unseen_mass === "number" && step.unseen_mass > 0) {
+        loss += -Math.log(step.unseen_mass);
+      } else {
+        loss += FLOOR;
+      }
+      unplaced++;
+      continue;
+    }
+    loss += -Math.log(p);
+  }
+
+  return Object.freeze({
+    rule: "scoped-sequence-log-loss",
+    loss,
+    proper: true,
+    kind: dist.kind,
+    steps: dist.steps.length,
+    unplaced,
+    // How often the present could not supply the target and memory was
+    // consulted. A reading of the material, not a statistic about the run.
+    reached_back: reachedBack,
+    ...(unplaced > 0 ? { note: `${unplaced} of ${dist.steps.length} targets fell outside both the present and what it settled` } : {}),
+  });
+};
+
+const SCORING_RULES = Object.freeze({
   "log-loss": logLoss,
   brier: brierScore,
   crps,
@@ -360,6 +490,7 @@ export const SCORING_RULES = Object.freeze({
   "squared-error": squaredError,
   "absolute-error": absoluteError,
   "sequence-log-loss": sequenceLogLoss,
+  "scoped-sequence-log-loss": scopedSequenceLogLoss,
   "prefix-agreement": prefixAgreement,
   "exact-match": exactMatch,
 });
@@ -370,8 +501,12 @@ export const SCORING_RULES = Object.freeze({
  * apply to the emitted kind; the caller records that limitation rather than
  * treating an improper score as a proper one.
  */
-export const score = (dist, observed, { rule = "crps" } = {}) => {
+export const score = (dist, observed, { rule = "crps", settled = null } = {}) => {
   const fn = SCORING_RULES[rule];
   if (!fn) throw new TypeError(`scoring: unknown scoring rule ${rule}`);
-  return fn(dist, observed);
+  // The settled ground is passed through rather than closed over, so a rule
+  // that needs one receives it and every rule that does not is unchanged. A
+  // scoped emission handed no ground raises inside its own rule rather than
+  // quietly scoring from the live support alone.
+  return fn(dist, observed, settled);
 };

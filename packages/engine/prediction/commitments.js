@@ -26,7 +26,15 @@ import { score } from "./scoring.js";
 // were live when a guess was made is part of what the seal covers, so a
 // competency claim can never be re-read later as though the reader had been
 // working from this text alone.
-const SUPPORTED_KINDS = new Set(["point", "gaussian", "categorical", "quantiles", "samples", "sequence"]);
+// "sequence-scoped" joined when the seal turned out to cost more than the
+// imagining. A scoped emission writes out the LIVE ground and carries the
+// SETTLED ground by content hash, so the sealed body is the emitter's own
+// choices plus a pin on what it inherited. That is exactly the guarantee a
+// commitment owes: the settled ground is not something the emitter chose, and
+// it cannot have changed, because the material behind the fold has perished.
+// Measured on Heidi: 70,480 entries hashed twice per continuation, 235ms to
+// seal against 121ms to imagine.
+const SUPPORTED_KINDS = new Set(["point", "gaussian", "categorical", "quantiles", "samples", "sequence", "sequence-scoped"]);
 
 const assertStep = (value, label) => {
   if (!Number.isInteger(value) || value < 0)
@@ -89,7 +97,7 @@ export const commitPrediction = (c) => {
  * not measurements that came out empty, and SEED.md #7 spends the type error
  * before it spends the null.
  */
-export const revealAndScore = ({ commitment, observed, revealed_at_step, scoring_rule = "crps" }) => {
+export const revealAndScore = ({ commitment, observed, revealed_at_step, scoring_rule = "crps", settled = null }) => {
   if (!commitment || typeof commitment !== "object") throw new TypeError("commitments: commitment is required");
   if (canonicalHashSync(sealedBody(commitment)) !== commitment.commitment_hash)
     throw new Error("commitments: commitment_hash mismatch — this prediction was altered after it was sealed");
@@ -99,7 +107,10 @@ export const revealAndScore = ({ commitment, observed, revealed_at_step, scoring
       `commitments: leakage refused — target revealed at step ${revealed_at_step} but this commitment is not eligible before step ${commitment.reveal_not_before_step}`,
     );
 
-  const scored = score(commitment.predictive_output, observed, { rule: scoring_rule });
+  // The settled ground is supplied AT REVEAL, never sealed by value. Its hash
+  // is inside the sealed body, so the scorer refuses a substituted ground —
+  // the tamper guarantee survives without the copy.
+  const scored = score(commitment.predictive_output, observed, { rule: scoring_rule, settled });
   return Object.freeze({
     commitment_id: commitment.commitment_id,
     task_id: commitment.task_id,

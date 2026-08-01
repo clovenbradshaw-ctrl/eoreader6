@@ -207,3 +207,405 @@ from a belief that is merely weak. Both were found by running things. Neither
 was found by reading them, and the second was found only because the fast path
 was pinned against the full distribution by a test whose entire job is to
 assert that two ways of computing one quantity agree.
+
+## REFUTED, TWICE, AND THE SECOND TIME IS THE USEFUL ONE: an abstraction as a backoff level
+
+`generation/slots.js`, measured on *Heidi* (Johanna Spyri, PG 20781; 62,300
+forms), held-out span at the 75% mark, forms 46,728–49,728, never trained on
+and never induced from. Reproduce with
+`node scripts/slot-abstraction.mjs scripts/corpus/pg20781.txt 46728` and
+`node scripts/slot-mechanism.mjs`.
+
+The lemma result above refuted **UniMorph lemma abstraction**. This refutes
+something wider and states the replacement it owes.
+
+### The first build was refused by the constitution, and the measurement said so first
+
+The organ began by deciding that two forms share a slot by **cosine
+similarity between their surface co-occurrence vectors**, settled by k-means.
+The constitution's II.8 names that mechanism twice: *"no cheap compatibility —
+never a dot product, overlap, or learned similarity over surfaces"*, and *"no
+averaging of grounds"*, which a centroid is. Amendment 3 enforces it as
+`weights_present`, and `true` on an engine placement is refuted.
+
+It was refused on the numbers before it was refused on the article. Sweeping
+the resolution of the grouping at 40,000 training forms:
+
+| classes | cohesion | delta vs surface | shuffled control |
+|---|---|---|---|
+| 6 | 0.5216 | −0.570 | −0.341 |
+| 16 | 0.6023 | −0.843 | −0.465 |
+| 48 | 0.6731 | −0.888 | −0.483 |
+| 140 | 0.7564 | −1.063 | −0.538 |
+| 400 | 0.8800 | −1.218 | −0.741 |
+
+Monotone in both columns. **The tighter the grouping, the worse the reading**,
+and the real inventory is worse than its own shuffled floor at every matched
+resolution — classes induced from destroyed order damaged the belief *less*
+than classes that captured real co-occurrence. A weighted combination of what
+is already there cannot differ from itself, and the harder it weights, the
+more it costs. That is II.8 arrived at from the other side.
+
+### The rebuild is constitutional, and it works as a discovery organ
+
+Per II.9's first consequence — *"a cheap sense organ is legal and useful; a
+cheap sense organ promoted to the verdict is refused"* — the cosine was kept
+and demoted to **nomination**. The verdict is a perturbation with a null:
+substituting B where A stood must move the ground less than a **reseeding**
+does, where B's successors are redrawn from the material's successor-position
+distribution keeping B's evidence count exactly and destroying which forms it
+licensed. Reported as a rank against `draws`, censored below, no threshold
+anywhere.
+
+At 40,000 training forms, 20,435 pairs nominated:
+
+| | confirmed | types placed |
+|---|---|---|
+| real material | **28.7%** | 854 |
+| order destroyed | **4.5%** | 686 |
+
+A 6.4× separation. The verdict refuses 69% of what the sense organ hands it
+(14,088 refused by the null, 474 unwitnessable), and it tells real material
+from shuffled material cleanly. **As an organ for discovering which forms
+occupy one position, this is earned.**
+
+*The first null was wrong and is recorded because the trap recurs.* It drew a
+**frequency-matched stranger** — another form with about as much evidence as
+B. On the conformance fixture it confirmed 0 of 177 pairs, because a frequency
+band is full of true positives: the "strangers" drawn as a null for `cat`/`dog`
+were mostly other nouns. The null contained the hypothesis, so nothing could
+ever be closer than all of it.
+
+### And spending it as a backoff level still loses
+
+| training | surface | + slots | delta | + shuffled | delta |
+|---|---|---|---|---|---|
+| 1,000 | — | — | *refused: degenerate_ground* | | |
+| 4,000 | 5.919 | 7.069 | **−1.150** | 7.134 | −1.215 |
+| 16,000 | 6.396 | 7.514 | **−1.118** | 7.259 | −0.863 |
+| 40,000 | 6.472 | 7.406 | **−0.934** | 7.028 | −0.557 |
+
+So a grouping that demonstrably captures substitutability, witnessed against a
+reseeding null, still makes next-form prediction worse — and at 16k and 40k
+**still worse than its own shuffled control.**
+
+**This is the finding, and it is larger than the lemma result.** The harm is
+not in where the inventory came from. A received lexicon lost by 1.52
+nats/form and a derived, null-witnessed inventory loses by 0.93, both against
+the same surface chain, and in both cases a *better* grouping does *more*
+damage. The harm is in the **spending**: an extra backoff level whose
+Witten-Bell share rises with how much it pools takes mass from levels that
+were doing better, in proportion to how coherent it managed to be. Fix 3 above
+(dividing by distinct pooled surface contexts) already corrects part of this
+and is not enough.
+
+SEED.md Amendment IV consequence 5 asks for a shared abstraction over forms.
+Two independent inventories now say the debt is **not another inventory**. It
+is a mechanism for spending one that is not a backoff level — the abstraction
+has to constrain *which* form is chosen rather than compete for mass with the
+levels that already know. `slotExpectation` is built for exactly that reading
+(H_form vs H_class: the position that knows its kind and not its word) and is
+**not yet wired into any emitter**. Under the growth rule that makes it
+unwired and therefore refuted; it is the next thing to earn.
+
+### Two defects this found on the way, both by running
+
+- **The conformance fixture, not the organ.** Cycling `NOUNS[i % 15]` beside
+  `VERBS[(i * 7) % 15]` makes the pairing deterministic, so each noun licenses
+  exactly one verb and no two nouns are substitutable. The organ refused them,
+  correctly, and the test was wrong. Members of a group now draw independently.
+- **A nine-type corpus is not a small test, it is one the organ declines.**
+  With too few forms there is no null of nonzero width, every pair returns
+  `exceeds_witness`, and `induceSlots` refuses rather than inventing a
+  grouping — SEED.md #3 holding at the fixture boundary.
+
+## The scoped reader runs, and has no boundary to run in
+
+`node scripts/speak-from-here.mjs scripts/corpus/pg20781.txt 0.75`. Heidi,
+62,300 forms, standpoint at form 46,725. The machinery of `settled.js` +
+`standpoint.js` end to end, with the fold boundary taken from
+`loops/atmosphere` rather than declared.
+
+### What worked
+
+The settled ground is exact and cheap. Conformance sweeps every form in every
+context against the unscoped belief at 1e-12, on both the O(order) fast path
+and `expand()`. Measured earlier at a hand-passed boundary: 70,480 → 7,820
+entries per continuation, seal 235ms → 25ms.
+
+### What did not: ONE boundary in 46,725 forms
+
+| | |
+|---|---|
+| boundaries atmosphere found | **1**, at form 354 |
+| the resulting "present" | 46,371 forms |
+| vocabulary the reader speaks from | **97.4%** |
+
+There is no scoping. The live wave is the whole novel, and the scoped emitter
+is 1.5× faster only because it is barely scoping anything.
+
+**And the one boundary is CORRECT, which is the interesting part.** Form 354
+is where Project Gutenberg's front matter ends and the prose begins — the
+transcriber's note, the PGDP credits, the publisher's preface. Atmosphere
+found the single genuine change of ambient ground in the document. It is not
+malfunctioning; it is reporting that *a novel does not concede its ground
+again*, at this grain, on this statistic.
+
+So the architecture has no within-book boundary detector. `surf`'s waves are
+the obvious next source and carry a caution rather than a warrant: surf as a
+CANDIDATE GENERATOR is refuted (bba5b29, 0.66–0.71× chance at matched budget).
+Surf as a boundary is a different question and has earned nothing yet.
+
+### THE SMALL GROUND IS THE LOUD ONE — a real defect, not a scale artefact
+
+With `perished` = 354 forms of boilerplate and `live` = the whole book, the
+reader still reached back **6 times in 20** and imported the publisher's name,
+a copyright year and a page number into imagined prose.
+
+The cause is in the mixture and it generalises past this run. λ apportions
+`1 − λ` to the settled ground on the strength of the LIVE ground's evidence
+alone — nothing asks whether the settled ground has anything worth saying. A
+192-form boilerplate ground receives exactly the share a 46,000-form memory
+would. Where the context is rare λ collapses and the boilerplate gets almost
+everything.
+
+This is the same shape as a defect `belief.js` already logged for foreign
+gifts — "it makes a book audible for KNOWING THIS CONTEXT rather than for
+BEING RELEVANT TO THIS TEXT" — and the relevance machinery built to fix it does
+not engage here: `shares()` returns `[1]` for a single received layer, so the
+self-past is weighted unconditionally. **A one-gift mixture has no relevance
+test at all**, and that was invisible while every run had three gifts.
+
+### A third defect, found on the way
+
+`stripContainer` leaves the transcriber's note and PGDP credits in the
+material. The container is leaking into the text it is supposed to strip, and
+every form-position number in this file is shifted by it.
+
+## The window is a coordinate division, and both genetic detectors refuse to cut
+
+Three organs were asked for the window of what is relevant. The first two
+answered a different question correctly, and the third one's own header said
+so before the measurement did.
+
+| source | waves/boundaries over 2,952 sentences | present | reader speaks from |
+|---|---|---|---|
+| `atmosphere` re-zero | 2 (both in the first 156 forms) | 46,429 forms | **98.8%** |
+| `surf` genetic (`mode: "surfeit"`) | 4, the one containing `here` spanning [28..2944] | 46,429 forms | **98.8%** |
+| `surf` coordinate (`mode: "extent"`) | 25, present [2888..2944] | **1,041 forms** | **10.5%** |
+
+**Both genetic detectors are correct and neither cuts.** They fail for one
+cause, and SEED.md #5 already names it: the ground grows over the whole
+regime, becomes wide, and nothing exceeds it — "a statistic whose window
+follows material length means a different thing before and after material
+arrives."
+
+`surf`'s header states this as design rather than limitation: *"The subjective
+unity dominating the process forbids the division of that extensive
+quantum... surf has no code that splits it, AND THAT IS NOT AN OMISSION."*
+Genetic division is one uncut ground by construction. Cutting is the
+**coordinate** mode, which "ignores the subjective unity by construction,
+which Whitehead says in as many words is what dividing does." Asking the
+genetic division to produce a window was asking it to do the thing it exists
+not to do.
+
+The coordinate cut declares `every` and marks every standpoint `mightBe`.
+That is what separates it from the sliding window II.8 refuses: it does not
+claim the material changed here, it claims a reader may stand here, and it
+says so in the record instead of hardening into a found boundary.
+
+### And atmosphere's boundary was the CHROME boundary
+
+The previous entry reported "1 boundary in 46,725 forms" as a failed detector.
+That misread a correct detection. Form 354 was the seam between Project
+Gutenberg's container and the work. Atmosphere concedes ground where the
+AMBIENT changes, and in a novel that happens essentially once.
+
+Chrome is general — credits and transcriber's notes here, headers and
+signatures and quoted replies in a mailbox, running heads in a scan, an intro
+in a video — and "the region that does not participate in the ground the rest
+of the material builds" is exactly what a conceded ground names. That is the
+organ working, at the only scale where a novel has an ambient change.
+
+### Scoped, the reader is 7.6x faster and reaches back a third of the time
+
+| | |
+|---|---|
+| per continuation, scoped | **13ms** |
+| per continuation, unscoped | 99ms |
+| reached back | 4–7 of 20 forms |
+
+`reached_back` is the reading rather than the benchmark: it counts how often
+the present could not supply the next form. A stretch where it climbs is a
+stretch this standpoint does not cover.
+
+### Two defects fixed
+
+**The container leaked past its own marker.** `stripContainer` cut at
+`*** START OF ... ***` and stopped, leaving PG's producer credits and a boxed
+transcriber's note in the material — 117 forms, and they became the perished
+ground of the standpoint reader, which is why it said a publisher's name in
+the middle of imagined prose. Leading container paragraphs are now stripped by
+FORM (ornamental rules, box drawing) plus one format marker (a PG URL),
+bounded to the leading run so an author's own ornament inside the work
+survives. Offsets accumulate through the strip; a version that forgot would
+silently shift every citation.
+
+**A lone gift is ungated, and that is a hole rather than a simplification.**
+`shares()` returns `[1]` for a single received layer, so it takes the whole of
+`1 - lambda` without earning any of it — no decay, no floor, no measured
+standing. Every restriction Amendment IV places on relevance is skipped. It
+was invisible for as long as every run had three gifts.
+
+`relevanceReport` now declares `gated` and `ungated_reason` so the unearned
+share is visible in the record, and `standpointBelief` supplies a shuffled
+control of the perished material — order destroyed, vocabulary intact — which
+makes `received.length === 2`, puts `rho` in play, and turns relevance back
+into something measured. That is the existing machinery engaging, not a new
+mechanism.
+
+**Not yet done:** the standpoint belief has no consumption loop, so
+`witnessForm` is never called and both layers sit at their initial 50/50. The
+floor exists and is not yet exercised.
+
+## EARNED: chrome is recognised by a prior, not detected by a pattern
+
+`node scripts/chrome-is-known.mjs`. Heidi (PG 20781) read from form 0 with its
+container INTACT, against Frankenstein (PG 84) also intact. Nothing stripped;
+no marker, URL or box-drawing consulted anywhere. `order=4 alpha=0.7
+rho=0.9995 seed=20260731`.
+
+| region | nats/form vs prior | vs shuffled prior | lift |
+|---|---|---|---|
+| PG licence block | **0.15 – 0.46** | 9.33 – 9.44 | **~9.1** |
+| "other information and formats" | 1.64 | 10.46 | 8.82 |
+| this book's front matter | 10 – 20 | ~same | **~0** |
+| prose | 8.2 – 10.6 | 9.2 – 11.6 | 0.3 – 2.2 |
+
+**The licence block costs the reader essentially nothing — a 20-60x gap
+against prose — with no format knowledge in the loop.** The shuffled control
+settles what kind of recognition it is: same vocabulary, no order, 9.4 nats on
+the same text. The lift is structural.
+
+### The unpredicted result, and the strongest part
+
+**The book's own front matter stays expensive.** Title, author, illustrator,
+translator, publisher, year: 10-20 nats/form at a lift of ~0, because
+Frankenstein's prior has never met `Spyri`, `Lippincott` or `1915`.
+
+So the measurement DERIVES the distinction eoreader4.2 hand-coded as its
+`FRONT_FIELD` allow-list. Chrome is what a prior covers; the title page is the
+book telling you what it is, and no other book's prior can cover it. A written
+list of field names was an approximation of exactly this quantity.
+
+### What this refutes about the rest of this session's chrome work
+
+Three implementations across three engines, all pattern-matching one
+publisher — 4.2's `stripGutenbergBoilerplate`, 5's `indexOf`, and this
+session's line-anchored markers plus `pgdp.net` plus box-drawing detection.
+None of them reads a mailbox, a scan, or a transcript. Each is a prior that was
+never received properly.
+
+The cold-start objection to a physics gate — that the leading region is where
+a reader has the least ground of its own, and `fold` refuses there outright —
+does not survive SEED.md #1. "A standpoint with nothing settled behind it
+cannot grow a ground; the first one must be RECEIVED, not derived." A reader
+that only builds grounds from the material in front of it cannot skip
+anything. That is not a limitation of the engine; it is what reading without
+priors IS.
+
+### NARROWED BY ITS OWN ADVERSARIAL TEST
+
+`node scripts/chrome-needs-the-right-prior.mjs`. Same document, same declared
+numbers, three priors:
+
+| | prior WITH container | prior PROSE ONLY | shuffled prose |
+|---|---|---|---|
+| licence block | **0.28** | **9.49** | 10.42 |
+| prose | 9.29 | 9.32 | 10.04 |
+
+**A reader that has read an entire novel and never seen a licence finds the
+licence block MORE expensive than prose** — 9.49 against 9.32. The 33x gap was
+entirely the prior having met that exact container.
+
+So coverage is SPECIFIC, and the broad reading of the result above is refuted
+by its own measurement. "Read with priors" is not "any priors will do."
+
+Which lands the finding on II.2 rather than making it a technique. That a
+licence block is container is WITNESS KNOWLEDGE ABOUT THE MATERIAL'S FORMAT —
+received, naming its giver, and deriving it is a wall. Every hardcoded
+stripper in this lineage was therefore not a mistake about mechanism but a
+CONTAINER PRIOR WRITTEN IN THE WRONG TIER. `stripGutenbergBoilerplate` IS the
+container prior for PG; it lives in code, unnamed and ungiven.
+
+The consequence is not to delete the pattern-matching. It is that container
+knowledge belongs in `eoPriors` naming its giver, that the engine reports a
+TYPED GAP where no container prior covers the material rather than silently
+reading chrome as content, and that the physics stays the CHECK rather than
+the finder — a container prior that does not make its region nearly free is a
+prior that is wrong about this document.
+
+Proposed as a constitutional amendment in `specs/chrome-is-recognised.md`
+(a PROPOSAL — IV.2, agents propose and humans dispose).
+
+## EARNED: the prequential run completes, and the scoped path is the same belief
+
+`node scripts/scoped-prediction.mjs`. Heidi on NET material — container
+subtracted at offset 2,470 — standpoint at form 46,637 (75%), present set by
+surf's coordinate division at form 45,596. 132 sentences x 12 withheld forms =
+1,584 sealed, revealed, leakage-guarded targets. `order=4 alpha=0.7 every=30
+hop=4 stride=5 seed=20260731`.
+
+### Teacher-forced: the representation, isolated
+
+| | cumulative loss | per form | entries sealed | seal time |
+|---|---|---|---|---|
+| scoped | 11,238 | **7.095** | 581,328 | 384ms |
+| full | 11,238 | **7.095** | 5,513,904 | 4,205ms |
+
+**EXACT agreement, at 10.9x cheaper sealing over 9.5x fewer entries.** The
+settled ground carried by reference is the same belief, not an approximation
+of it — proved on real material, not only on a fixture.
+
+### Free-running: the reader, honestly
+
+| | per form |
+|---|---|
+| scoped | 11.051 |
+| full | 11.015 |
+
+The two diverge by 57 nats over 1,584 targets (0.3%) because they are
+genuinely different emitters free-running: the scoped one takes its mode over
+the LIVE support and the full one over everything, so a differing choice at any
+step compounds. That difference is a decision declared on the emission as
+`selection_scope`, not a defect — and **the cost of speaking only from what is
+in play is 0.3%, not the 3x the first run reported.**
+
+### THREE DEFECTS, ALL IN THE SCORER, NONE FOUND BY READING
+
+The first run reported scoped 30.9 against full 11.0 and I nearly published it
+as "scoping costs 3x". Every one of the three was found by refusing to trust a
+number, and the third was found only because the second control still failed.
+
+1. **The settled ground consulted only as a fallback.** The first scorer read
+   `step.live[form]` and asked memory only when the present had no entry. A
+   form BOTH grounds know receives mass from both, and belief.js sums them.
+   Under-priced every common word: 0.045 against 0.033 on a three-form target.
+   Caught by the conformance identity test.
+
+2. **The free-running comparison was not a control.** Two emitters walking
+   different paths price a target at different contexts, so it measures the
+   emitters, not the representation. Teacher-forcing holds contexts identical
+   and is the actual control. `emitScoped` could not teacher-force at all,
+   which is a real gap given the task record DECLARES conditioning.
+
+3. **NO UNSEEN RESERVE — the one that produced the 3x.** A form neither ground
+   has met is UNMET, and `sequenceLogLoss` routes it to the reserve. The
+   scoped scorer charged the finite floor: **708 nats for one unmet form,
+   dominating an entire continuation** — 815 against 81 on one twelve-form
+   target. Conditional on `covers_vocabulary`, which a scoped emission may
+   honestly assert because both its grounds back off to order 0.
+
+The conformance fixture never exposed defect 3 because its small vocabulary
+had no unmet forms. **A fixture with no unmet form cannot test the reserve**,
+which is exactly the sort of hole the repo's own history keeps recording.

@@ -140,9 +140,32 @@ const ctxKey = (tokens, from, order) => (order === 0 ? "" : tokens.slice(from - 
  * a default makes two runs incomparable while looking like it made them
  * comparable. gamma = 1 is a corpus statistic; gamma < 1 is a reader.
  */
-export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstraction = null }) => {
+/**
+ * WHICH WORLD A LAYER'S FORMS BELONG TO.
+ *
+ * `other` — a foreign source. Its forms must clear the existence gate before
+ *   they may be said here, because a gift can otherwise populate this book
+ *   with somebody else's characters. The default, and the case the gate was
+ *   built for.
+ *
+ * `this` — the SAME material, from an earlier standpoint. Whitehead's
+ *   perished occasion, which `loops/surf` already names: "the many become one,
+ *   and are increased by one", and in perishing the occasion becomes datum for
+ *   the one after it. So the reader's own settled past is genuinely RECEIVED by
+ *   its present — it names a giver like any gift, and the giver is this reader
+ *   at an earlier here.
+ *
+ *   It is exempt from the attestation gate, and the exemption is definitional
+ *   rather than convenient: the gate asks "is this form of this universe", and
+ *   a form read earlier IN THIS MATERIAL is of this universe by construction.
+ *   Requiring two givers to attest it would refuse the reader its own memory.
+ */
+export const WORLDS = Object.freeze(["this", "other"]);
+
+export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstraction = null, world = "other" }) => {
   if (typeof id !== "string" || !id) throw new TypeError("belief: a layer must have an id");
   if (!TIERS.includes(tier)) throw new TypeError(`belief: unknown tier ${tier}`);
+  if (!WORLDS.includes(world)) throw new TypeError(`belief: unknown world ${world}`);
   if (tier === "received" && (typeof giver !== "string" || !giver))
     throw new TypeError("belief: a received layer must name its giver — a prior is a gift (SEED.md #1)");
   if (!Number.isInteger(order) || order < 0)
@@ -331,6 +354,7 @@ export const createLayer = ({ id, tier, giver = null, order, gamma, alpha, abstr
     id,
     tier,
     giver,
+    world,
     order,
     gamma,
     alpha,
@@ -458,8 +482,14 @@ export const createBelief = ({ layers, rho, referents = null }) => {
    * would let a single giver attest itself twice and vote its own referents in.
    */
   const attestors = new Map();
-  const sources = received.filter((l) => !l.id.startsWith("shuffled:"));
+  const sources = received.filter((l) => !l.id.startsWith("shuffled:") && l.world !== "this");
   const isReferent = typeof referents === "function" ? referents : (f) => referents?.has?.(f) === true;
+  // The reader's own perished past. Received, and of THIS world — so it is
+  // neither an attestor (it cannot vote a foreign referent in) nor subject to
+  // the gate (its forms came from this material and need no visa). See
+  // `WORLDS` above; without this a reader scoped to a live wave could not
+  // reach its own memory, because one giver can never satisfy `n >= 2`.
+  const selfPast = received.filter((l) => l.world === "this");
 
   const attestedBy = (form) => {
     let n = attestors.get(form);
@@ -473,6 +503,9 @@ export const createBelief = ({ layers, rho, referents = null }) => {
 
   const admits = (form) => {
     if (readLayer.has(form)) return true; // our own world, referents included
+    // A form this same reader met earlier in this same material. Of this
+    // universe by construction, so the gate has nothing to protect against.
+    for (const l of selfPast) if (l.has(form)) return true;
     // A REFERENT DOES NOT CROSS. Attestation by two givers is the right bar for
     // ordinary vocabulary and much too weak here: `elizabeth`, `london` and
     // `god` are attested by several worlds and are exactly the things that must
@@ -517,6 +550,28 @@ export const createBelief = ({ layers, rho, referents = null }) => {
    */
   const shares = () => {
     if (received.length === 0) return [];
+    // A LONE GIFT IS UNGATED, AND THAT IS A HOLE RATHER THAN A SIMPLIFICATION.
+    //
+    // There is no share to divide between one gift and nothing, so this
+    // returns 1 — and it means the gift receives the whole of `1 - lambda`
+    // without ever being asked whether it earned any of it. Every restriction
+    // Amendment IV places on relevance is silently skipped: no decay, no
+    // noise floor, no measured standing.
+    //
+    // MEASURED, and it was invisible for as long as every run had three gifts.
+    // A standpoint reader with one perished layer of 354 forms of Project
+    // Gutenberg boilerplate reached back 6 times in 20 and said the
+    // publisher's name, a copyright year and a page number, because at a rare
+    // context lambda collapses and an unweighted lone gift takes almost
+    // everything. A 192-form container ground received exactly the share a
+    // 46,000-form memory would.
+    //
+    // The hole is not closed here, because closing it means measuring
+    // relevance against a floor and a floor is something a caller SUPPLIES —
+    // see `shuffledGift` in ./candidates.js. What is fixed here is the
+    // silence: `relevanceReport` now declares `gated: false` so a lone gift's
+    // unearned share is visible in the record instead of being a number with
+    // nothing underneath it.
     if (received.length === 1) return [1];
     const z = discountedZ > 0 ? discountedZ : 1;
     const mean = received.map((l) => logW.get(l.id) / z);
@@ -793,6 +848,16 @@ export const createBelief = ({ layers, rho, referents = null }) => {
       observations: relevanceObservations.n,
       rho: received.length > 1 ? rho : null,
       effective_encounters: discountedZ,
+      // Whether any gift's share was EARNED. False for a lone gift: with
+      // nothing to divide against, `shares()` returns 1 unconditionally and
+      // every restriction Amendment IV places on relevance is skipped. Stated
+      // rather than left to be inferred from `rho: null`, because the failure
+      // it produces looks like a working reader — see `shares()`.
+      gated: received.length > 1,
+      ungated_reason:
+        received.length === 1
+          ? "a single received layer takes the whole of 1 - lambda without earning it: no decay, no noise floor, no measured standing. Supply a control (see shuffledGift) to make relevance measurable."
+          : null,
       referent_gate: referents ? "referents require unanimity" : "no referent inventory supplied — nothing is treated as a name",
       noise_floor: floor > 0 ? floor : null,
       layers: Object.freeze(
