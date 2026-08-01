@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const sources = ["nul/index.js", "cascade/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js", "formation/index.js"];
+const sources = ["nul/index.js", "cascade/index.js", "verdict/index.js", "provenance/index.js", "event_log/index.js", "holon_level/index.js", "discourse/index.js", "temporality/index.js", "formation/index.js", "frame/index.js"];
 
 const codeOf = (file) =>
   readFileSync(join(root, file), "utf8")
@@ -23,7 +23,7 @@ test("the doctrine is present, and the instrument is held outside the code", () 
 // priors on their way to eoPriors and has no importable surface. The test
 // below enforces that — the moment `bin` contains code it has become an organ
 // and has to be earned like one.
-const ORGANS = ["cascade", "conformance", "discourse", "event_log", "formation", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
+const ORGANS = ["cascade", "conformance", "discourse", "event_log", "formation", "frame", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
 const STAGED_DATA = ["bin"];
 
 test("only earned organs exist alongside the core", () => {
@@ -168,4 +168,15 @@ levelTest("formation", "formation/index.js", {
 levelTest("cascade", "cascade/index.js", {
   importsNul: true,
   enables: ["coarsen", "cascade", "licensed", "preserves"],
+});
+
+// frame holds a sequence of the engine's own acts, which is what firstness
+// needed to be enforceable at all and what the privileged frame IS. Admitted
+// after the level test was run as a measurement rather than asserted: asked
+// which of two readers is closing, the core's sign is right on 0 of 15 cells
+// and its one `closed` lands on the wrong reader; the organ is right on 15 of
+// 15. See conformance/frame.test.js, "the growth rule, measured".
+levelTest("frame", "frame/index.js", {
+  importsNul: true,
+  enables: ["openFrame", "note", "selfMaterial", "selfLevel", "selfWitness"],
 });
