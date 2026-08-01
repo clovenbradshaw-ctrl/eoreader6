@@ -164,7 +164,13 @@ test("an ordinary regime stays a protogon — peer means it waits", () => {
 });
 
 test("disagreeing gates are a typed gap, a result and not an error", () => {
-  const e = emanon({ material: quiet, window: W, draws: D, firstGround: recPlain });
+  // A mild constant-offset regime is the disagreement made flesh: it shifts
+  // the mean (possibility-constraint says yes) without moving the burstiness
+  // ground's volume (existence-dependency says no). The old fixture — an
+  // ordinary stretch of quiet — only disagreed under the organ's broken null;
+  // calibrated, it is correctly a peer.
+  const offset = [...quiet.slice(0, 10), 3, 3, 3, 3, 3, ...quiet.slice(10)];
+  const e = emanon({ material: offset, window: W, draws: D, firstGround: recPlain });
   const c = collapse({ emanon: e, observed: 1.0, regime: { start: 10, end: 15 } });
   assert.equal(c.phase, "protogon");
   const s = sustain({ protogon: c, reseeds: 8 });

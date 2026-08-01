@@ -173,7 +173,11 @@ export const sustain = ({ protogon: p, reseeds } = {}) => {
   if (!Number.isInteger(reseeds) || reseeds < 2)
     return gap("undeclared", { what: "reseeds", why: "the resolution of pattern is never a default" });
 
-  const existence = existenceDependencyTest(p.material, regime, { reseeds });
+  const existence = existenceDependencyTest(p.material, regime, {
+    draws: p.spec.draws,
+    window: p.spec.window,
+    reseeds,
+  });
   if (isGap(existence)) return existence;
   const constraint = possibilityConstraintTest(p.material, regime, { reseeds });
   if (isGap(constraint)) return constraint;

@@ -55,6 +55,32 @@ test("settled requires stable rank across reseeding", () => {
   }
 });
 
+test("settled is reachable: a mid-support observation with the cited material", () => {
+  const g = g0();
+  // The median of the null's own samples ranks mid-support against every
+  // reseed of the same material; if anything is settled, this is.
+  const mid = g.samples[Math.floor(g.samples.length / 2)];
+  const v = verdict(mid, g, { reseeds: 8, material: quiet });
+  assert.equal(v.verdict, "settled");
+  assert.deepEqual(v.spec, g.spec);
+});
+
+test("stability without material stays supported — never settled, never void", () => {
+  const g = g0();
+  const mid = g.samples[Math.floor(g.samples.length / 2)];
+  const v = verdict(mid, g, { reseeds: 8 });
+  assert.equal(v.verdict, "supported");
+});
+
+test("stability over material the ground does not cite is a type error", () => {
+  const g = g0();
+  const mid = g.samples[Math.floor(g.samples.length / 2)];
+  const wrong = quiet.map((v) => v + 1); // right length, not the cited material
+  const v = verdict(mid, g, { reseeds: 8, material: wrong });
+  assert.equal(v.verdict, "void");
+  assert.equal(v.gap, "unreceived_origin");
+});
+
 test("settled verdict carries its ground spec", () => {
   const g = g0();
   const v = verdict(observed, g, { reseeds: 8, spec: g.spec });

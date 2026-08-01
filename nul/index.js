@@ -457,6 +457,16 @@ const sameSpec = (a, b) =>
 const fingerprint = (m) =>
   `n${m.length}:${m.reduce((h, v) => (Math.imul(h ^ Math.round(v * 1e6), 16777619) | 0), 2166136261) >>> 0}`;
 
+/**
+ * Does this constructed ground cite exactly this material? A ground stores a
+ * content fingerprint (`from`), not its material, so this is the only question
+ * about material identity it can answer — and the one every reseeding null
+ * needs answered, because a null built over material the ground never
+ * perturbed is measuring something else entirely, at any extent.
+ */
+export const cites = (g, material) =>
+  Boolean(g && g.from != null && Array.isArray(material) && g.from === fingerprint(material));
+
 const quantile = (sorted, q) => {
   const i = (sorted.length - 1) * q;
   const lo = Math.floor(i);
@@ -654,6 +664,15 @@ export const pattern = ({ before, after, material, reseeds }) => {
       before: before.extent,
       after: after.extent,
     });
+  // Extent alone is not identity: a different material of the right length
+  // passed the check above for as long as it was the only check, and the
+  // docstring's "checked rather than trusted" was a length test wearing an
+  // identity test's clothes. The ground already cites its material by
+  // fingerprint, so ask it.
+  if (!cites(before, material))
+    return gap("unreceived_origin", {
+      reason: "this material has BEFORE's extent but is not the material BEFORE cites — the null would be built over something the ground never perturbed",
+    });
   if (after.extent < before.extent)
     return gap("incommensurate_extent", {
       reason: "the later ground was built over LESS material: there is no growth for the null to match",
@@ -794,6 +813,10 @@ export const level = (observed, ownGround, targetGround, { material, reseeds } =
         reason: "the null must be built over OWN's own material",
         given: material.length,
         own: ownGround.extent,
+      });
+    if (!cites(ownGround, material))
+      return gap("unreceived_origin", {
+        reason: "this material has OWN's extent but is not the material OWN cites",
       });
 
     reseedNull = 0;
