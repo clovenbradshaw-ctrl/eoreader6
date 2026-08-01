@@ -144,13 +144,37 @@ re-earned here or does not come, including the good ones.
 
 Stated so it is not mistaken for done:
 
-- **No privileged frame** — nothing yet puts this module's own acts in the
-  record. The conformance test for it greps for the word "advisory," which is a
-  lint wearing an invariant's clothes.
-- **Firstness** — `received` exists, but nothing enforces that a *first* ground
-  is a received one, because nothing here holds a sequence.
-- **`level`** — the third use of the one operation. The first sheath, and the
-  one everything else reduces to.
+- **The privileged frame is possible, not mandatory** — `frame` puts an act in
+  the record and measures a sequence of them, so the debt below is no longer
+  that the thing cannot be done. It is that nothing *requires* an organ to
+  record what it did. The "advisory" grep is still a lint wearing an
+  invariant's clothes, and it stays until an organ that fails to declare its
+  acts is refused rather than merely unaudited.
+- **Reader-sclerosis is not separated from material-quiescence** — and cannot
+  be, here. A ground is built by perturbing present material and the engine
+  carries no state between acts, so it has nothing that could ossify
+  independently of what it reads. `frame` separates a momentary silence from a
+  *trend*, which is the distinction that matters operationally and which no
+  single act can make. Separating the two *causes* needs a reader that carries
+  state across acts — `generation/belief.js` is one — and that is a different
+  measurement than this one.
+- **Nothing holds a sequence of sequences** — `frame` is one trajectory. Two
+  readers, or one reader across a re-zero, are not yet comparable as
+  trajectories.
+
+### Earned since, and recorded so the list stays honest
+
+- **Firstness** — enforced. `frame.note` refuses an opening act whose ground
+  names no giver, which was impossible while nothing held a sequence. The
+  origin is held apart from the trajectory rather than averaged into it: a
+  gift's ananda is in its giver's units and an act's is in the statistic's, and
+  the first version of the organ mixed them and made every reader look
+  identical.
+- **`level`** — built, in `nul`, and load-bearing for the growth rule. This
+  list said otherwise for longer than it was true. Note that its own null
+  reseeds a ground over its own material, which is the wrong counterfactual for
+  any question about a *split*; `frame` measured it coin-flipping on stationary
+  readers and supplies an order-destroying null instead.
 
 ## Amendments
 
