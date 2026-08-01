@@ -49,6 +49,8 @@ export const GAP_TYPES = Object.freeze([
   "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
   "incommensurate_extent", // a null built over a different amount of material than the thing it is the null FOR
   "missing_kind_prior", // emergence/people: the reader has no received understanding of this population as a kind — a typed gap, never a silently wrong number
+  "slack_ground", // sustained regularity: a run of censored-below placements longer than reseeding noise explains. A finding, not a failure — the remedy is investigation at finer grain, never reZero.
+  "anchor_ground", // asked to perceive through a ground held only to be tended, never judged through (SEED.md §7's ambient ground)
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -694,6 +696,19 @@ export const admissible = (g) => {
 export const keep = (g) => Object.freeze({ ...g, kept: true });
 
 /**
+ * A ground held only to be tended, never perceived through — the anchor
+ * awareness needs (SEED.md §7 of the balance-routing spec). `tendVoid`/
+ * `admissible` still read it fine: it is a perfectly good ground, sampled
+ * for its own volume like any other. What it may never do is stand in for
+ * `g` in a `difference()` call, because the moment it judges an arrival it
+ * has stopped being an anchor and become a second attention. Same shape as
+ * `keep` — one boolean, not a second mechanism — and the same discipline:
+ * this marks a ground unfit for one particular use without touching what it
+ * contains.
+ */
+export const anchor = (g) => Object.freeze({ ...g, anchor: true });
+
+/**
  * A fresh nothing over the same material — never the stored one reused.
  * The named trigger for this ("censored above is surfeit") is the Ramakrishna
  * cell in CUBE.md: unravel the frame, return and cultivate.
@@ -721,6 +736,7 @@ export const difference = (observed, g) => {
   const bad = admissible(g);
   if (bad) return bad;
   if (g.kept) return gap("kept_ground", { reason: "cannot perceive through a ground held for testimony" });
+  if (g.anchor) return gap("anchor_ground", { reason: "held to be tended, not to perceive through" });
   if (!Number.isFinite(observed)) return gap("empty_material", { observed });
 
   const s = g.samples;

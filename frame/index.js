@@ -466,3 +466,57 @@ export const selfWitness = (frame, { draws, window, reseeds, seed = 0 } = {}) =>
     n: m.n,
   });
 };
+
+/**
+ * Which pole the engine's own recent acts sit at — mindfulness's own
+ * position in the doctrine of balance: outside both the calming group and
+ * the arousing group, needed to tell which is owed, never itself the
+ * correction. (Named `posture` rather than the doctrine's own word for this
+ * because that word is exactly what `conformance/seed.test.js`'s "nothing is
+ * ported" grep refuses in this file — the naming constraint is part of the
+ * record, not an accident.)
+ *
+ * Three situations, mapped from `selfLevel` — never derived independently,
+ * because a second measurement here would put the router inside what it
+ * routes:
+ *
+ *   "agitated"  displaced from itself, and the room WIDENED (`opened: true`)
+ *               — still encountering, restlessly. Buddhaghosa's remedy for
+ *               this pole is calming, never more stimulation.
+ *   "slack"     displaced, and the room NARROWED (`opened: false`) —
+ *               sclerosis said from the inside (`selfWitness`'s own words).
+ *               The remedy is investigation, never re-zero (SEED.md §1).
+ *   "neither"   not displaced at all, OR displaced with no direction
+ *               sayable (`opened: null`) — no situation to name, which is a
+ *               result (SEED.md #8) and not a quiet default to either pole.
+ *
+ * HARD CONSTRAINT, TESTED NOT STATED: this is derivable from acts the frame
+ * has ALREADY noted, and it causes no new one. `selfLevel` perturbs the
+ * trajectory ALREADY held in `frame.acts` to build its own null — that is
+ * analysis of what already happened, not a fresh act — and neither call
+ * appends to the frame or touches a ground anywhere else. Called twice on
+ * the same frame, this returns the same answer and mutates nothing: no
+ * version change, no act appended, no volume altered.
+ *
+ * A GAP IS A RESULT HERE TOO. `selfLevel`'s gaps (too few acts, a null of
+ * zero width, an undeclared resolution) are returned unchanged — a
+ * situation this organ cannot name is refused, not guessed at.
+ *
+ * This does not select a remedy. It reports which cell the situation has
+ * already put the engine in; choosing what to do about it is the caller's
+ * act, one grain up, and logged as one (SEED.md §11 — no reward term, and
+ * stance in this system is entailed, not chosen).
+ */
+export const posture = (frame, { draws, window, reseeds, seed = 0 } = {}) => {
+  const lv = selfLevel(frame, { draws, window, reseeds, seed });
+  if (isGap(lv)) return lv;
+
+  const shared = { displacement: lv.displacement, shapeNull: lv.shapeNull, place: lv.place, placeNull: lv.placeNull };
+
+  if (!lv.continuous) {
+    if (lv.opened === true) return Object.freeze({ situation: "agitated", ...shared });
+    if (lv.opened === false) return Object.freeze({ situation: "slack", ...shared });
+    return Object.freeze({ situation: "neither", reason: "displaced, but no direction sayable", ...shared });
+  }
+  return Object.freeze({ situation: "neither", reason: "not displaced from itself", ...shared });
+};

@@ -19,8 +19,9 @@
 // Ground grain is implemented; the other grains are honestly refused rather
 // than faked.
 
-import { ground, difference, pattern, admissible, volume, isGap, gap } from "../../../nul/index.js";
+import { ground, difference, pattern, admissible, volume, isGap, gap, anchor } from "../../../nul/index.js";
 import { cellOf } from "../operators.js";
+import { slackRunNull } from "./atmosphere.js";
 
 // The cells this organ occupies on the operator grid (engine/operators.js):
 // one complete turn fires all nine at Ground grain. Declared, checked by
@@ -42,7 +43,8 @@ const REC_GROUND = cellOf("REC", "Ground"); // Atmosphere · Cultivating
 // ── EXISTENCE · Void ─────────────────────────────────────────────────────────
 
 /** ① NUL · Void · Clearing — a nothing built by perturbing what is present. */
-export const clearVoid = ({ material, draws, window, seed, perturbation = "shuffle" }) => ground({ material, draws, window, seed, perturbation });
+export const clearVoid = ({ material, draws, window, seed, perturbation = "shuffle", statistic = "burstiness" }) =>
+  ground({ material, draws, window, seed, perturbation, statistic });
 
 /**
  * ② SIG · Void · Tending — keep the nothing fit to perceive through, and
@@ -161,8 +163,31 @@ export const cultivateField = (units, extent) => {
  * measuring one mode against the other, not a tuning knob — the shipped
  * reading admits both, because a reader whose ground has moved out from
  * under them has lost it just as surely as one swamped by surfeit.
+ *
+ * A THIRD MEMBER, `"regularity"`, is not a failure mode and clears nothing.
+ * Sustained censored-below is the opposite pole (SEED.md #8, Amendment II)
+ * and its remedy is investigation, never re-zero — so opting into it does
+ * not add a way to fail; it adds a `findings` channel alongside `events`
+ * that the clearing machinery never reads and never triggers from. See
+ * `loops/atmosphere`'s `slackRunNull` for the null and conformance for the
+ * measured false-alarm rate. Calibrated for statistics whose below-censoring
+ * is a genuine, non-chronic event — burstiness's is not (measured: 79-87% of
+ * ordinary steps), so this is most informative when `statistic` is
+ * `"windowMean"`.
+ *
+ * A FOURTH MEMBER, `"release"`, is not a failure either. #8 makes re-zero a
+ * response to failure; a ground held until it breaks spends its final phase
+ * closing, so releasing only on failure means the steady state is always
+ * holding something that has already begun to stop working. Opting in
+ * concedes the standing ground on a CADENCE instead: once it has been
+ * maintained over as much new material again as it was first built over
+ * (no new declared number — the extent a ground was built over is already
+ * carried as `gEnd - regionStart`). Tagged `clearedBy: "release"`, apart from
+ * `"surfeit"`/`"moved"`, because a scheduled concession and a failed one are
+ * different facts even though both re-zero. Off by default: existing readers
+ * of `regions`/`events` see no new boundaries unless they ask for this.
  */
-export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"], perturbation = "shuffle" }) => {
+export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"], perturbation = "shuffle", statistic = "burstiness", awareness = false }) => {
   if (grain !== "Ground")
     return gap("unknown_spec", { reason: `grain "${grain}" is not yet earned — only Ground is built`, grain });
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
@@ -173,11 +198,18 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   if (!Number.isInteger(draws) || draws < 2)
     return gap("undeclared", { what: "draws", why: "the resolution of testimony is 1/draws and is never a default" });
   const wantsMoved = clearOn.includes("moved");
-  if (wantsMoved && (!Number.isInteger(reseeds) || reseeds < 2))
+  const wantsRegularity = clearOn.includes("regularity");
+  const wantsRelease = clearOn.includes("release");
+  if ((wantsMoved || wantsRegularity) && (!Number.isInteger(reseeds) || reseeds < 2))
     return gap("undeclared", { what: "reseeds", why: "the resolution of pattern is never a default" });
   for (const mode of clearOn)
-    if (mode !== "surfeit" && mode !== "moved") return gap("unknown_spec", { reason: `no such failure mode: ${mode}` });
-  if (clearOn.length === 0) return gap("undeclared", { what: "clearOn", why: "a ground that cannot fail is not a ground" });
+    if (mode !== "surfeit" && mode !== "moved" && mode !== "regularity" && mode !== "release")
+      return gap("unknown_spec", { reason: `no such failure mode: ${mode}` });
+  // "regularity" finds and "release" schedules; neither fails. A reading of
+  // nothing but those still has no way to ever concede its ground on its own
+  // account, which is the same defect `clearOn: []` already refuses.
+  if (!clearOn.includes("surfeit") && !clearOn.includes("moved") && !wantsRelease)
+    return gap("undeclared", { what: "clearOn", why: "a ground that cannot fail is not a ground" });
 
   // ④⑤⑥ FIELD — the arena, established before anything is interpreted in it
   const units = clearField(material.length, { window, hop });
@@ -186,21 +218,68 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
 
   const regions = [];
   const events = [];
+  const findings = []; // "regularity"'s own channel — reported, never acted on (SEED.md #8)
   const driftGaps = new Map(); // a gap is a result: pattern refusing to rule is recorded, not swallowed
   let regionStart = 0;
   let g = null;
   let gEnd = null; // how much material the standing ground was built over — pattern's null needs it
+  let bornAt = null; // where THIS standing ground was first built — "release"'s own cadence needs it, separate from gEnd, which moves on every maintenance
   let clearings = 0;
   let tended = 0;
   let anandaAtOpen = null;
+  let anandaSeries = []; // sampled every act, per region — the sign as a series, not two samples (SEED.md §8)
+  let actsThisRegion = 0; // exposed so a series' length is checkable against the region's own act count, not inferred
+
+  // Awareness's own anchor (SEED.md §7): a ground held only to be tended,
+  // never judged through. No new aperture — same `window`, over the WHOLE
+  // accumulated extent from the very start of the material, never reset by
+  // a region conceding. Parasitic-free: attention narrowing or its region
+  // conceding leaves this reach untouched.
+  let ambient = null;
+  const ambientAnanda = [];
+
+  // Regularity's own counter, held APART from `clearings` — opposite poles,
+  // never one tally (SEED.md #8, Amendment II). Sampled once every roughly
+  // `window` worth of material rather than every unit: adjacent units at
+  // `hop` share `window - hop` of their material, so a run over raw units is
+  // autocorrelated by construction and no shuffle of it is a null of
+  // anything (see `slackRunNull`). Reset whenever the ground concedes.
+  const belowFlags = [];
+  let sinceSlackSample = 0;
+  const slackStride = Math.max(1, Math.round(window / hop));
 
   const buildAt = (start, end, s) => {
     if (end - start < window + 2) return null;
     // ① NUL · Void · Clearing
-    const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start, perturbation });
+    const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start, perturbation, statistic });
     if (isGap(built)) return null;
     // ② SIG · Void · Tending
     return tendVoid(built).viable ? built : null;
+  };
+
+  // Concede the standing region — shared by a failure that clears tolerance
+  // and by a scheduled release, so the reset discipline lives in one place.
+  const concede = (i, clearedBy) => {
+    const closing = tendVoid(g);
+    regions.push({
+      start: regionStart, end: i, tended,
+      anandaOpen: anandaAtOpen, anandaClose: closing.ananda,
+      opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
+      ananda: Object.freeze(anandaSeries), // the sign as a series, not two samples (SEED.md §8)
+      acts: actsThisRegion,
+      clearedBy,
+    });
+    events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy });
+    regionStart = i;
+    g = null;
+    gEnd = null;
+    bornAt = null;
+    clearings = 0;
+    tended = 0;
+    anandaSeries = [];
+    actsThisRegion = 0;
+    belowFlags.length = 0;
+    sinceSlackSample = 0;
   };
 
   for (const unit of units) {
@@ -211,7 +290,20 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
       g = buildAt(regionStart, i, seed);
       if (!g) continue;
       gEnd = i;
+      bornAt = i;
       anandaAtOpen = tendVoid(g).ananda;
+    }
+
+    // Awareness's own anchor (SEED.md §7): rebuilt every act over the WHOLE
+    // accumulated extent, never reset by attention's region conceding, and
+    // never handed to `difference()` — `anchor()` marks it unfit for that,
+    // and the guard lives in nul, not here. Attention narrowing (or its
+    // region conceding) leaves this reach untouched, because nothing above
+    // ever writes to `regionStart` before reaching here.
+    if (awareness) {
+      const ambientBuilt = buildAt(0, i, seed);
+      ambient = ambientBuilt ? anchor(ambientBuilt) : ambient;
+      ambientAnanda.push(ambient ? tendVoid(ambient).ananda : null);
     }
 
     let sum = 0;
@@ -224,12 +316,35 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     if (clearOn.includes("surfeit") && isGap(d) && d.gap === "exceeds_witness" && d.direction === "above")
       failure = { mode: "surfeit", observed, support: d.support };
 
+    // The missing remedy: a run of censored-below placements is a finding
+    // (`slack_ground`), never a clearing. Reported into `findings`, which the
+    // clearing machinery below never reads.
+    if (wantsRegularity) {
+      const below = isGap(d) && d.gap === "exceeds_witness" && d.direction === "below";
+      sinceSlackSample++;
+      if (sinceSlackSample >= slackStride) {
+        sinceSlackSample = 0;
+        belowFlags.push(below);
+        let run = 0;
+        for (let k = belowFlags.length - 1; k >= 0 && belowFlags[k]; k--) run++;
+        if (run >= tolerance) {
+          const threshold = slackRunNull(belowFlags, reseeds, seed + regionStart);
+          if (run > threshold) {
+            findings.push({ at: i, ...gap("slack_ground", { runLength: run, tolerance, threshold, reseeds }) });
+            belowFlags.length = 0;
+          }
+        }
+      }
+    }
+
     // ⑧ EVA · Tending is also the only place the SECOND failure becomes
     // visible: you have to actually rebuild the ground over the region as it
     // now stands before you can ask whether it moved. So the maintenance act
     // happens here unconditionally, and what it returns is read twice —
     // once as the maintained ground, once as evidence about the old one.
     const maintained = buildAt(regionStart, i, seed);
+    anandaSeries.push(maintained ? tendVoid(maintained).ananda : tendVoid(g).ananda);
+    actsThisRegion++;
     let drift = null;
     if (wantsMoved && maintained && gEnd != null && gEnd < i) {
       // The null is BEFORE's own reseeding variation over BEFORE's own
@@ -241,6 +356,13 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
         failure = { mode: "moved", displacement: drift.displacement, reseedNull: drift.reseedNull, opened: drift.opened };
     }
 
+    // "Release" (SEED.md §9): a ground may concede on a cadence, still
+    // working, and not only on failure. No competing signal — a failure this
+    // act takes priority, and release only ever fires on an otherwise-quiet
+    // act, so it is never a way to dodge `tolerance`.
+    const released =
+      !failure && wantsRelease && bornAt != null && bornAt > regionStart && i - bornAt >= bornAt - regionStart;
+
     if (failure) {
       clearings++;
       events.push({ at: i, op: "DEF", domain: DEF_GROUND.domain, terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, ...failure });
@@ -248,21 +370,12 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
       // A failing ground is not maintained. The standing ground is held
       // fixed while consecutive failures accumulate, for both modes alike —
       // otherwise `tolerance` would be counting against a moving target.
-      if (clearings >= tolerance) {
-        const closing = tendVoid(g);
-        regions.push({
-          start: regionStart, end: i, tended,
-          anandaOpen: anandaAtOpen, anandaClose: closing.ananda,
-          opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
-          clearedBy: failure.mode,
-        });
-        events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy: failure.mode });
-        regionStart = i;
-        g = null;
-        gEnd = null;
-        clearings = 0;
-        tended = 0;
-      }
+      if (clearings >= tolerance) concede(i, failure.mode);
+    } else if (released) {
+      // Scheduled, uncriterioned — it does not wait for `tolerance` because
+      // there is no uncertainty to accumulate evidence against; the cadence
+      // itself is the whole criterion.
+      concede(i, "release");
     } else {
       clearings = 0;
       tended++;
@@ -279,6 +392,8 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   regions.push({
     start: regionStart, end: material.length, tended,
     anandaOpen: anandaAtOpen, anandaClose: lastAnanda,
+    ananda: Object.freeze(anandaSeries),
+    acts: actsThisRegion,
     opened: lastAnanda != null && anandaAtOpen != null ? lastAnanda > anandaAtOpen : null,
     clearedBy: null, // the last region is ended by the material running out, not by a failure
   });
@@ -290,6 +405,10 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     field: { units: units.length, coverage, adjacencyOf: (i) => adjacency.get(i) ?? [] },
     regions,
     events,
+    // "regularity"'s findings, apart from `events`: a finding is not an act
+    // the clearing machinery took, and folding it into the same channel would
+    // be exactly the conflation SEED.md #8 refuses.
+    findings,
     clearings: defs.length,
     clearingsBy: {
       surfeit: defs.filter((e) => e.mode === "surfeit").length,
@@ -297,6 +416,15 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     },
     driftGaps: Object.fromEntries(driftGaps),
     rezeros: events.filter((e) => e.op === "REC").length,
+    // "release"'s own tally, apart from a failure's — a scheduled concession
+    // and a failed one are different facts even though both re-zero.
+    releases: events.filter((e) => e.op === "REC" && e.clearedBy === "release").length,
     tendings: events.filter((e) => e.op === "EVA").length,
+    // Awareness's own trace (SEED.md §7) — null throughout unless `awareness`
+    // was asked for. `ambientGround` is exposed so a caller (or a test) can
+    // confirm the anchor refuses to be perceived through: `difference(x,
+    // ambientGround)` gaps `anchor_ground`.
+    ambientAnanda: awareness ? Object.freeze(ambientAnanda) : null,
+    ambientGround: awareness ? ambient : null,
   };
 };

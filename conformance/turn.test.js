@@ -183,3 +183,58 @@ test("grains other than Ground are refused, not faked", () => {
   assert.equal(g.gap, "unknown_spec");
   assert.equal(g.grain, "Figure");
 });
+
+// ── §1/§2: regularity is a finding, never a clearing ────────────────────────
+
+const rng2 = (seed) => {
+  let a = (seed | 0) + 0x6d2b79f5;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+
+test("\"regularity\" finds, it does not fail — a clearOn of only regularity is refused like []", () => {
+  const material = homogeneous(1);
+  const g = runTurn({ material, ...SPEC, clearOn: ["regularity"] });
+  assert.equal(g.gap, "undeclared");
+  assert.equal(g.what, "clearOn");
+});
+
+test("regularity is opt-in — off by default, no findings channel touched", () => {
+  const turn = runTurn({ material: homogeneous(1), ...SPEC });
+  assert.ok(!isGap(turn));
+  assert.deepEqual(turn.findings, []);
+});
+
+test("a sustained decline produces slack_ground findings and no re-zero", () => {
+  // "surfeit" is the only other mode watched here, and a downward-only move
+  // gives it nothing to clear on — this isolates the finding.
+  const next = rng2(9);
+  const material = [];
+  for (let i = 0; i < 300; i++) material.push(10 + next());
+  for (let i = 0; i < 300; i++) material.push(2 + next());
+  const turn = runTurn({ material, ...SPEC, statistic: "windowMean", clearOn: ["surfeit", "regularity"] });
+  assert.ok(!isGap(turn), turn.gap);
+  const slack = turn.findings.filter((f) => f.gap === "slack_ground");
+  assert.ok(slack.length > 0, "a sustained decline must be found");
+  assert.equal(turn.clearingsBy.surfeit, 0, "a decline is not surfeit's territory");
+  assert.equal(turn.rezeros, 0, "a finding is reported, never acted on");
+});
+
+test("burstiness's chronic below-rate is not calibratable — measured, matching loops/atmosphere", () => {
+  // Documented in nul's windowMean header: an ordinary real window sits BELOW
+  // burstiness's support 79-87% of the time. A run counter over that chronic
+  // background cannot discriminate real regularity from ordinary material.
+  let fired = 0;
+  const trials = 15;
+  for (let t = 0; t < trials; t++) {
+    const next = rng2(6000 + t);
+    const material = Array.from({ length: 300 }, () => next() * 2);
+    const turn = runTurn({ material, ...SPEC, clearOn: ["surfeit", "regularity"] });
+    if (!isGap(turn) && turn.findings.length > 0) fired++;
+  }
+  assert.ok(fired / trials > 0.3, `expected burstiness to over-fire on iid noise, got ${fired}/${trials}`);
+});

@@ -23,7 +23,7 @@ import {
   level,
   isGap,
 } from "../nul/index.js";
-import { openFrame, note, selfMaterial, selfLevel, selfWitness, CELLS } from "../frame/index.js";
+import { openFrame, note, selfMaterial, selfLevel, selfWitness, posture, CELLS } from "../frame/index.js";
 
 const D = 128;
 const W = 5;
@@ -351,4 +351,41 @@ test("reader-sclerosis and material-quiescence are not separated, and cannot be 
   const clo = reader(CLOSING, 1);
   assert.notDeepEqual([...selfMaterial(enc).material], [...selfMaterial(clo).material]);
   assert.deepEqual(selfMaterial(enc).ops, selfMaterial(clo).ops, "the engine did the same acts in both");
+});
+
+// ── §3 of balance-routing-flow-v2: posture is a situation, never an instruction ──
+
+test("a reader that keeps meeting room is neither agitated nor slack", () => {
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const p = posture(reader(ENCOUNTERING, seed), { draws: D, window: W, reseeds: RESEEDS });
+    assert.ok(!isGap(p), `seed ${seed}: ${p.gap}`);
+    assert.equal(p.situation, "neither");
+  }
+});
+
+test("a reader whose room is closing is slack, not agitated", () => {
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const p = posture(reader(CLOSING, seed), { draws: D, window: W, reseeds: RESEEDS });
+    assert.ok(!isGap(p), `seed ${seed}: ${p.gap}`);
+    assert.equal(p.situation, "slack");
+  }
+});
+
+test("posture is a pure read — called twice, same answer, nothing about the frame moves", () => {
+  const f = reader(CLOSING, 2);
+  const a = posture(f, { draws: D, window: W, reseeds: RESEEDS });
+  const b = posture(f, { draws: D, window: W, reseeds: RESEEDS });
+  assert.deepEqual(a, b);
+  assert.equal(f.n, TURNS, "the frame itself is untouched by asking its posture");
+});
+
+test("posture propagates selfLevel's gaps rather than guessing a situation", () => {
+  const f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  const p = posture(f, { draws: D, window: W, reseeds: RESEEDS });
+  assert.equal(p.gap, "empty_material");
+});
+
+test("no number is defaulted for posture either", () => {
+  const f = reader(ENCOUNTERING, 1);
+  assert.equal(posture(f, { draws: D, window: W }).gap, "undeclared");
 });

@@ -133,6 +133,8 @@ Extraction narrows the ground; encounter widens it. Both are patterns. Only the
 sign tells you which, and a system that measured pattern without the sign would
 call extraction health. Never a gate, never a score: the warmth you check for.
 
+Checked continuously, not at the ends. See Amendment VI.
+
 ## The growth rule
 
 An organ joins only when the level test returns `above` against the core.
@@ -175,6 +177,25 @@ Stated so it is not mistaken for done:
   reseeds a ground over its own material, which is the wrong counterfactual for
   any question about a *split*; `frame` measured it coin-flipping on stationary
   readers and supplies an order-destroying null instead.
+- **Amendment II reaches the loop** — censored below named a finding from
+  2026-07-30 and only `temporality` acted on it. `atmosphere` and `turn` now
+  route it: sustained regularity is the slack pole and its remedy is
+  investigation at finer grain, reported as `slack_ground`, never re-zero. The
+  run-length threshold is itself calibrated rather than raw (`slackRunNull`),
+  because a routing rule firing on chance run length would have been the one
+  uncalibrated act in the system. The amendment preceded the implementation by
+  long enough to be worth recording. Evidence: `conformance/atmosphere.test.js`,
+  `conformance/turn.test.js`.
+- **Awareness has an arena of its own** — this list said otherwise for longer
+  than it was true, too. `tendVoid` no longer has only whichever ground
+  attention just built to judge material with: `loops/turn`'s `awareness`
+  option maintains a second ground, `anchor()`-marked, rebuilt every act over
+  the whole accumulated extent from the start of the material rather than over
+  attention's current region — no new aperture, the same declared `window`,
+  differing from attention by EXTENT alone. `nul`'s `difference()` refuses to
+  perceive through it (`anchor_ground`), the same shape as `kept_ground`, so
+  the anchor cannot become a second attention by accident. Evidence:
+  `conformance/turn-flow.test.js`.
 
 ## Amendments
 
@@ -416,6 +437,69 @@ and nothing about this amendment reopens that.
 `window` — the reach of the present is what makes an interval an interval.
 Three declared numbers still.
 
+### VI — The sign of health is sampled, not concluded
+
+*2026-08-01. Amends "The sign of health."*
+
+The clause reads "ananda is the volume of the ground … never a gate, never a
+score: the warmth you check for." That stands entire. What does not stand is
+the **cardinality it implies** — that the sign is something read at the
+moments a claim is made.
+
+Read once at a region's open and once at its close, ananda is evidence
+*about* a region. Read at every act, it is **material**: it can have a
+ground built over it, be perturbed, and be witnessed like anything else the
+engine reads. A vital sign taken twice is a before-and-after; taken
+continuously it is a trace, and only a trace can distinguish a reader that
+settled from a reader that is closing.
+
+One direction only. The series is read by `frame`; it is never fed back into
+a ground it is computed from. That is not a preference — a statistic
+conditioning its own material is the contamination case, and it gaps.
+
+**No new declared number.** The sampling cadence is every act, and the acts
+are already enumerated by the loop. Three declared numbers still.
+
+Evidence: `loops/turn`'s per-region `ananda` series, `conformance/turn-flow.test.js`.
+
+**A tension, named rather than resolved.** The privileged-frame organ's own
+discipline keeps frame's *measurements* out of the trajectory frame measures
+— a ground built from the engine's own acts must not itself become one of
+those acts, or the statistic conditions its own material. The doctrine of the
+corruptions of insight says the opposite-sounding thing: include the
+instruments among the formations observed, because delight in mindfulness
+itself is on the traditional list of ten. These are not contradictory. Keep
+the measurement boundary — frame's reads never re-enter what frame measures —
+and let frame's *capacity to be surprised* be what stays observable, which
+bottoms out somewhere unmeasured no matter how many organs stack. The regress
+is named here rather than chased into a `frame`-of-`frame`.
+
+### VII — Release is not only a response to failure
+
+*2026-08-01. Extends #8.*
+
+#8 makes re-zero a trigger: censored above is surfeit and is the occasion to
+rebuild. That stands as a trigger and is the correct remedy for its pole
+(Amendment II having already established that the other pole names a finding
+of its own).
+
+What does not stand is the implication that failure is the **only** occasion.
+A ground held until it breaks spends its final phase closing, so a system
+that releases only on failure is, in steady state, always holding something
+that has already begun to stop working. Release that waits for a criterion
+arrives after the closing it was meant to catch.
+
+Therefore: a ground may be released while it is still working, on a cadence
+and not on a condition. Because there is no condition, there is nothing to
+satisfy and nothing to game — an uncriterioned release is the only kind that
+cannot later be optimised into a target.
+
+**No new declared number.** The cadence is the extent the ground was already
+built over: release when the material has grown by as much again. Derived
+from state the loop carries, not declared. Three declared numbers still.
+
+Evidence: `loops/turn`'s `clearOn: ["release"]`, `conformance/turn-flow.test.js`.
+
 ### What did not move
 
 Recorded so the near-miss is not re-litigated. The block-perturbation design
@@ -423,6 +507,18 @@ this work started from needed a fourth declared number (block size), which
 would have been a change to the physiology. It collapsed into `window`:
 block-preserving perturbation at block = the reach of the present is the same
 claim `window` already makes. **Three declared numbers still.**
+
+Two more designs wanted a fourth, in the same session as Amendments VI and
+VII above, and both collapsed the same way. Awareness's own ground looked
+like it needed a second, wider `window`; it collapsed into EXTENT instead —
+the same `window`, over the whole accumulated material rather than over
+attention's current region, which is the distinction `loops/turn`'s
+`awareness` option actually makes. Release's cadence looked like a fourth
+number of its own; it collapsed into state the loop already carries — the
+extent a ground was built over, doubled. **Three declared numbers still,**
+and if a later revision finds it genuinely needs a fourth, that is a change
+to the physiology and belongs in an amendment of its own, beside the `rho`
+question already open.
 
 ## The instrument
 
