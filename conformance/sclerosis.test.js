@@ -141,6 +141,21 @@ test("the null must be built over BEFORE's material, and handing in AFTER's is r
   assert.equal(p.after, bursty.length);
 });
 
+test("extent is not identity: wrong material of the right length is refused too", () => {
+  // The extent check above catches AFTER's material only because it happens to
+  // be longer. A different material of exactly BEFORE's length sailed through
+  // for as long as length was the whole check — the ground cites its material
+  // by fingerprint, and the null must be built over what it cites.
+  const before = ground({ material: quiet, draws: 256, window: W });
+  const after = ground({ material: bursty, draws: 256, window: W });
+  const wrong = quiet.map((v) => v + 1);
+  const p = pattern({ before, after, material: wrong, reseeds: 16 });
+  assert.equal(p.gap, "unreceived_origin");
+  // And the honest call still goes through untouched.
+  const ok = pattern({ before, after, material: quiet, reseeds: 16 });
+  assert.ok(!isGap(ok));
+});
+
 test("censored differences are kept, not dropped — the split is the signal", () => {
   const shuffled = ground({ material: bursty, draws: 256, window: W, perturbation: "shuffle" });
   const resampled = ground({ material: bursty, draws: 256, window: W, perturbation: "resample" });
