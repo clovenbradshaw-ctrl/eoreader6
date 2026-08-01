@@ -27,7 +27,7 @@
 // of 1 re-zeros on every outlier and finds boundaries everywhere; a
 // tolerance the length of the material finds none.
 
-import { ground, difference, isGap, gap, volume } from "../../../nul/index.js";
+import { ground, difference, isGap, gap, volume, PERTURBATIONS } from "../../../nul/index.js";
 import { cellOf } from "../operators.js";
 
 // The cells this organ occupies on the operator grid (engine/operators.js):
@@ -58,6 +58,42 @@ export const PLACEMENT = Object.freeze({
   OTHER: "other", // REC · Cultivating
 });
 
+/**
+ * A run of consecutive below-censorings is expected at some length by
+ * chance, and a routing rule that fires on raw run length is the one
+ * uncalibrated act in the system (SEED.md #3, again). This is the null for
+ * it: shuffle the run's own below/not-below sequence — nul's own
+ * `shuffle`, the same perturbation licensed for order questions — and take
+ * the 95th percentile of the longest run each shuffle produces. Modelled on
+ * `holon_level`'s `percentile95` device (conformance/calibration.test.js)
+ * rather than inventing a new shape.
+ *
+ * `flags` must already be sampled coarsely enough that consecutive entries
+ * are independent trials. Adjacent PUSHES are not: a censoring at t and one
+ * at t+1 share `window - 1` of the material their windows are built from,
+ * so shuffling raw per-push flags is not a null of anything — it is
+ * shuffling an artefact of the overlap. Sampled every `window` pushes, the
+ * windows compared no longer share material, and a shuffle of that sequence
+ * is a real null. (Measured: at stride 1 the false-alarm rate on iid noise
+ * runs 55-90%; at stride `window` it holds at 0-3%. See the calibration
+ * test for the numbers this cost to find.)
+ */
+export const slackRunNull = (flags, reseeds, seed) => {
+  const asNumbers = flags.map((f) => (f ? 1 : 0));
+  const longestRun = (bits) => {
+    let run = 0;
+    let longest = 0;
+    for (const b of bits) {
+      if (b) { run++; longest = Math.max(longest, run); } else run = 0;
+    }
+    return longest;
+  };
+  const runs = [];
+  for (let r = 0; r < reseeds; r++) runs.push(longestRun(PERTURBATIONS.shuffle(asNumbers, seed + r * 7919)));
+  runs.sort((a, b) => a - b);
+  return runs[Math.floor(runs.length * 0.95)];
+};
+
 export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0, statistic = "burstiness" }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
   if (!Number.isInteger(tolerance) || tolerance < 1)
@@ -73,6 +109,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   let g = null;
   let clearings = 0;
   let tended = 0;
+  let anandaAtOpen = null; // equanimity toward what arises and passes (SEED.md §5): a closed region is reported with the same prominence as an open one
 
   const groundFrom = (start, end) => {
     if (end - start < window + 2) return null;
@@ -84,6 +121,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
     if (!g) {
       g = groundFrom(regionStart, i);
       if (!g) continue;
+      anandaAtOpen = volume(g);
     }
 
     // The observation must be commensurate with the ground's own statistic:
@@ -107,13 +145,23 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
       events.push({ at: i, op: "DEF", domain: DEF_GROUND.domain, terrain: DEF_GROUND.terrain, stance: DEF_GROUND.stance, direction: d.direction });
 
       if (clearings >= tolerance) {
-        // REC · Cultivating — concede the ground and grow a new one here
-        regions.push({ start: regionStart, end: i, ananda: volume(g), tended });
+        // REC · Cultivating — concede the ground and grow a new one here.
+        // Widening is encounter, narrowing is extraction, and NULL (the sign
+        // not earned, because an open value was never sampled) is a third
+        // outcome — never folded into either (SEED.md §5). Reported with the
+        // same prominence a still-open region gets below.
+        const closingAnanda = volume(g);
+        regions.push({
+          start: regionStart, end: i, tended,
+          anandaOpen: anandaAtOpen, anandaClose: closingAnanda,
+          opened: anandaAtOpen != null ? closingAnanda > anandaAtOpen : null,
+        });
         events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, reason: "ground conceded after repeated clearing" });
         regionStart = i;
         g = null;
         clearings = 0;
         tended = 0;
+        anandaAtOpen = null;
       }
     } else {
       // EVA · Tending — the ground holds; maintain it against the new material
@@ -125,7 +173,15 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   }
 
   const last = g ?? groundFrom(regionStart, material.length);
-  regions.push({ start: regionStart, end: material.length, ananda: last ? volume(last) : null, tended });
+  const lastAnanda = last ? volume(last) : null;
+  // The final region is closed by the material running out, not by a
+  // failure — as reportable a result as one that closed on a clearing, and
+  // not a worse read than one that is still open (SEED.md §5).
+  regions.push({
+    start: regionStart, end: material.length, tended,
+    anandaOpen: anandaAtOpen, anandaClose: lastAnanda,
+    opened: anandaAtOpen != null && lastAnanda != null ? lastAnanda > anandaAtOpen : null,
+  });
 
   return { regions, events, clearingCount: events.filter((e) => e.op === "DEF").length, rezeroCount: events.filter((e) => e.op === "REC").length };
 };
@@ -180,19 +236,41 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
  * ground held" is a silently wrong number of exactly the kind a typed gap
  * exists to refuse.
  */
-export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statistic = "burstiness" }) => {
+/**
+ * `findOn` is an ABLATION HANDLE like `clearOn` in `loops/turn.js` — an
+ * opt-in, never a default. Its one legal member today is `"regularity"`:
+ * sustained censored-below, reported as a typed finding and never as an
+ * action. Reusing `tolerance` (the resolution of refusal) rather than
+ * inventing a second constant — slackness is refusal in the other
+ * direction — and reusing `reseeds` (the resolution of pattern) for the
+ * finding's own null, per `slackRunNull` above.
+ */
+export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statistic = "burstiness", findOn = [], reseeds }) => {
   if (!Number.isInteger(tolerance) || tolerance < 1)
     throw new TypeError("atmosphere: tolerance is the resolution of refusal and is never a default");
   if (!Number.isInteger(window) || window < 2)
     throw new TypeError("atmosphere: window is the reach of the present and is never derived from material length");
   if (!Number.isInteger(draws) || draws < 2)
     throw new TypeError("atmosphere: draws is the resolution of testimony and is never a default");
+  const findsRegularity = findOn.includes("regularity");
+  if (findsRegularity && (!Number.isInteger(reseeds) || reseeds < 2))
+    throw new TypeError("atmosphere: reseeds is the resolution of the slack-run null and is never a default");
 
   const seen = [];
   let regimeStart = 0;
   let g = null;
   let clearings = 0;
   let rezeroCount = 0;
+
+  // Regularity's own counter, held APART from `clearings`: the two poles are
+  // opposite findings (SEED.md #8, Amendment II) and must not share one
+  // tally. Sampled every `window` pushes rather than every push — adjacent
+  // pushes share window-1 of their material, so a run over raw pushes is
+  // autocorrelated by construction and no shuffle of it is a null of
+  // anything (see `slackRunNull`). Reset whenever the ground is conceded: a
+  // fresh ground inherits no predecessor's history of slack.
+  const belowFlags = [];
+  let sinceSlackSample = 0;
 
   const groundFrom = (start, end) => {
     if (end - start < window + 2) return null;
@@ -213,6 +291,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
         rezeroed: false,
         placement: gap("no_ground", { why: "less material has arrived than one window of reach", arrived: t, window }),
         ananda: g ? volume(g) : null,
+        finding: null,
       };
 
     const built = groundFrom(regimeStart, t - window);
@@ -223,6 +302,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
         rezeroed: false,
         placement: gap("no_ground", { why: "no ground could be built over the region so far", regimeStart, upTo: t - window }),
         ananda: null,
+        finding: null,
       };
 
     // Commensurate with the ground's own statistic: burstiness is a
@@ -236,11 +316,44 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
     // and the samples are a max over many, so "below" is where an ordinary
     // window lives (measured: 79-87% of steps) and only surfeit can clear.
     // Against `windowMean` the null is the SAME functional as the observation,
-    // so both censorings are findings and a level DROP is as real as a rise
-    // (Amendment II). See nul's `windowMean`.
-    const twoSided = statistic === "windowMean";
+    // so both censorings look like findings and a level DROP is as real as a
+    // rise (Amendment II) — UNLESS regularity has somewhere else to go. Once
+    // `findOn` asks for it, below is routed to the slack channel below
+    // instead of the clearing channel: SEED.md #8 is exact on this point —
+    // "censored above is surfeit and is the trigger to re-zero. Censored
+    // below is regularity and must not be mistaken for it" — and treating a
+    // level drop as a clearing was always that mistake wearing "two-sided"
+    // as a name. See nul's `windowMean`.
+    const twoSided = statistic === "windowMean" && !findsRegularity;
     const strained =
       isGap(d) && d.gap === "exceeds_witness" && (twoSided || d.direction === "above");
+
+    // The missing remedy (SEED.md's Amendment II, made mechanical): a run of
+    // censored-below placements this ground never earns a clearing for is a
+    // finding in its own right — reported, never acted on. Burstiness's
+    // below-censoring is near-universal (79-87% of ordinary steps) and
+    // therefore uninformative here; this is calibrated for statistics whose
+    // below-censoring is a genuine, non-chronic event, `windowMean` among
+    // them. See conformance for the measured false-alarm rate.
+    let finding = null;
+    if (findsRegularity) {
+      const below = isGap(d) && d.gap === "exceeds_witness" && d.direction === "below";
+      sinceSlackSample++;
+      if (sinceSlackSample >= window) {
+        sinceSlackSample = 0;
+        belowFlags.push(below);
+        let run = 0;
+        for (let k = belowFlags.length - 1; k >= 0 && belowFlags[k]; k--) run++;
+        if (run >= tolerance) {
+          const threshold = slackRunNull(belowFlags, reseeds, seed + regimeStart);
+          if (run > threshold) {
+            finding = gap("slack_ground", { runLength: run, tolerance, threshold, reseeds });
+            belowFlags.length = 0;
+          }
+        }
+      }
+    }
+
     let rezeroed = false;
     if (strained) {
       // DEF · Clearing. Only surfeit clears — censored BELOW is regularity,
@@ -253,6 +366,8 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
         clearings = 0;
         rezeroCount++;
         rezeroed = true;
+        belowFlags.length = 0;
+        sinceSlackSample = 0;
       }
     } else {
       clearings = 0; // EVA · Tending
@@ -262,6 +377,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
       rezeroed,
       placement: rezeroed ? PLACEMENT.OTHER : strained ? PLACEMENT.STRAINED : PLACEMENT.PLACED,
       ananda: g ? volume(g) : null,
+      finding,
     };
   };
 
