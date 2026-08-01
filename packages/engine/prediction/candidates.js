@@ -120,11 +120,20 @@ const diffs = (xs) => {
  * atmosphere's re-zero boundaries, as a predictor. Mean and spread of history
  * since the last conceded ground. Read against baseline:moving-mean-W, whose
  * slice is a fixed length instead.
+ *
+ * `statistic` is the minimal contrast between the two instances of this
+ * candidate. EVERYTHING else — estimator, spread, fallback, tolerance, seed — is
+ * identical, so the gain between them measures exactly one thing: whether a
+ * null commensurable with the observation finds better boundaries than one that
+ * is not. Against `burstiness` the observation is a single window's mean and the
+ * ground's samples are a max over many windows, which is the same mismatch
+ * `extremeGround` corrects in the other direction; against `windowMean` the two
+ * are the same functional. See nul's `windowMean`.
  */
-export const regimeMean = ({ window, draws, tolerance, seed = 0 }) => {
-  const tracker = createRegimeTracker({ window, draws, tolerance, seed });
+export const regimeMean = ({ window, draws, tolerance, seed = 0, statistic = "burstiness" }) => {
+  const tracker = createRegimeTracker({ window, draws, tolerance, seed, statistic });
   return {
-    id: "candidate:regime-mean",
+    id: statistic === "burstiness" ? "candidate:regime-mean" : `candidate:regime-mean-${statistic}`,
     prime: (warmupHistory) => {
       for (const x of warmupHistory) tracker.push(x);
     },
@@ -350,6 +359,7 @@ export const boundaryControl = (boundaries, id = "candidate:boundary-null") => {
  */
 export const defaultCandidates = ({ window, draws, tolerance, seed = 0 }) => [
   regimeMean({ window, draws, tolerance, seed }),
+  regimeMean({ window, draws, tolerance, seed, statistic: "windowMean" }),
   anandaScaled({ window, draws, seed }),
   regimeAnanda({ window, draws, tolerance, seed }),
   placementRate({ window, draws, tolerance, seed }),

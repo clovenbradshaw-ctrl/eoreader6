@@ -12,6 +12,7 @@
 // material look like having read only this much of the real thing so far."
 
 import fs from "node:fs";
+import { stripContainer } from "./spans.js";
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 const MICROBITS = 1_000_000;
@@ -54,7 +55,46 @@ export const chunkWords = (words, size) => {
   return chunks;
 };
 
-export const load = async (path) => tokenize(fs.readFileSync(path, "utf8"));
+/**
+ * THE CONTAINER IS NOT THE WORK, and this path used to read it as one.
+ *
+ * `stripContainer` lived in `spans.js` and the sentence path called it; this —
+ * the NUMERIC path, the one `surf`, `fold` and the whole `nul` substrate go
+ * through — did not. So every ground built here was grown partly over the
+ * distributor's licence.
+ *
+ * MEASURED, 2026-07-31, Heidi (Project Gutenberg 20781), 1376 chunks:
+ *   - all 30 of `surf`'s wave-breaks fell in the licence, none in the novel;
+ *   - from a standpoint at chunk 547, 38 of 60 placed positions (63%) were
+ *     wrapper rather than Heidi, and the wrapper held the top of the ranking.
+ *
+ * eoreader5 had already found this and fixed it at ingest
+ * (`packages/host/corpus.js::ingestFile`): "the markers bracket the actual
+ * work, and leaving them in put license text into search results." That fix was
+ * not re-earned here. This is it, re-earned at the perceiver rather than the
+ * host, because this module is where the numeric material is born.
+ *
+ * NOT A MEASUREMENT, and it must not become one. Knowing where the container
+ * ends is received knowledge about the FILE FORMAT — the same kind as knowing
+ * an mp3 carries an ID3 header (see `spans.js`) — so markers are the right
+ * instrument, not a weaker one. eoreader5's `emergence/boundaries/index.js`
+ * records why the alternative fails: "concentration alone is a clustering
+ * heuristic that happily individuates boilerplate." A salience measure finds
+ * the wrapper BECAUSE the wrapper is statistically distinctive, which makes it
+ * a false-positive generator rather than a detector.
+ *
+ * NO OFFSET IS CARRIED, deliberately. What this module produces is a
+ * chunk-indexed series with no byte anchors, so there is nothing here for an
+ * offset to correct. A caller mapping a position back to the FILE takes the
+ * offset from `spans.js::stripContainer`, which returns `{ text, offset }` for
+ * exactly that reason — eoreader5 measured the cost of dropping it on pg84.txt:
+ * "spans came back verbatim but 686 bytes early, which looks correct in every
+ * test that only re-reads through this process and is wrong the moment anyone
+ * opens the file."
+ *
+ * A text with no markers passes through untouched.
+ */
+export const load = async (path) => tokenize(stripContainer(fs.readFileSync(path, "utf8")).text);
 
 export const reduce = (words, { fraction = 1, chunkSize = 40 } = {}) => {
   const readWords = words.slice(0, Math.max(1, Math.floor(words.length * fraction)));

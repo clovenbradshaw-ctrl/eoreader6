@@ -58,7 +58,7 @@ export const PLACEMENT = Object.freeze({
   OTHER: "other", // REC · Cultivating
 });
 
-export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0 }) => {
+export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0, statistic = "burstiness" }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
   if (!Number.isInteger(tolerance) || tolerance < 1)
     return gap("undeclared", { what: "tolerance", why: "the resolution of refusal is never a default" });
@@ -76,7 +76,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
 
   const groundFrom = (start, end) => {
     if (end - start < window + 2) return null;
-    const built = ground({ material: material.slice(start, end), draws, window, seed: seed + start });
+    const built = ground({ material: material.slice(start, end), draws, window, statistic, seed: seed + start });
     return isGap(built) ? null : built;
   };
 
@@ -180,7 +180,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
  * ground held" is a silently wrong number of exactly the kind a typed gap
  * exists to refuse.
  */
-export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
+export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statistic = "burstiness" }) => {
   if (!Number.isInteger(tolerance) || tolerance < 1)
     throw new TypeError("atmosphere: tolerance is the resolution of refusal and is never a default");
   if (!Number.isInteger(window) || window < 2)
@@ -196,7 +196,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
 
   const groundFrom = (start, end) => {
     if (end - start < window + 2) return null;
-    const built = ground({ material: seen.slice(start, end), draws, window, seed: seed + start });
+    const built = ground({ material: seen.slice(start, end), draws, window, statistic, seed: seed + start });
     return isGap(built) ? null : built;
   };
 
@@ -231,7 +231,16 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0 }) => {
     for (let j = t - window; j < t; j++) sum += seen[j];
     const d = difference(sum / window, g);
 
-    const strained = isGap(d) && d.gap === "exceeds_witness" && d.direction === "above";
+    // Which censorings clear is a property of the (statistic, observation) PAIR,
+    // not a constant. Against `burstiness` the observation is one window's mean
+    // and the samples are a max over many, so "below" is where an ordinary
+    // window lives (measured: 79-87% of steps) and only surfeit can clear.
+    // Against `windowMean` the null is the SAME functional as the observation,
+    // so both censorings are findings and a level DROP is as real as a rise
+    // (Amendment II). See nul's `windowMean`.
+    const twoSided = statistic === "windowMean";
+    const strained =
+      isGap(d) && d.gap === "exceeds_witness" && (twoSided || d.direction === "above");
     let rezeroed = false;
     if (strained) {
       // DEF · Clearing. Only surfeit clears — censored BELOW is regularity,

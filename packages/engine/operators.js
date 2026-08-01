@@ -166,6 +166,8 @@ export const ORGANS = Object.freeze([
   { id: "emergence/kinds", module: "packages/engine/emergence/kinds.js", fn: "induceKinds", op: "SYN", grain: "Pattern", verb: "compile", what: "kinds induced from relation-term records; one SIG→CON→EVA→DEF→INS→SYN chain, height discovered by the two Born gates, peer first-class" },
   { id: "emergence/kinds/ins", module: "packages/engine/emergence/kinds.js", fn: "induceKinds", op: "INS", grain: "Pattern", verb: "admit", what: "instantiate the kind's members from the material; a kind admits exactly what it earned" },
   { id: "emergence/coverage", module: "packages/engine/emergence/coverage.js", fn: "coverageReport", op: "EVA", grain: "Ground", verb: "evaluate", what: "the instrument's own occupancy: which cells are earned, which are open questions; measured, never classified" },
+  { id: "emergence/people", module: "packages/engine/emergence/people.js", fn: "understand", op: "EVA", grain: "Pattern", verb: "evaluate", what: "does this population already have a kind — the check, addressed and mechanical; a missing prior is the typed gap missing_kind_prior, never a silently wrong number" },
+  { id: "emergence/people/invent", module: "packages/engine/emergence/people.js", fn: "inventKind", op: "SYN", grain: "Pattern", verb: "compile", what: "the kind the reader had no prior for, induced from the material's own structural facts — the same SIG→CON→EVA→DEF→INS→SYN chain, stamped invented" },
 ]);
 
 export const organsByOp = (op) => ORGANS.filter((o) => o.op === op);
