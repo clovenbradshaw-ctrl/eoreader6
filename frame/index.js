@@ -27,18 +27,39 @@
 //
 // The seed says this is "largely self-announcing," and it is — from OUTSIDE.
 // A reader watching the engine go quiet can tell. The engine cannot, because
-// two situations are identical from where it stands:
+// every single act looks the same from where it stands: `witness` refusing.
+// One refusal is a quiet passage. A hundred of them in a row, each individually
+// correct, is a ground that has closed — and no act can see the hundred,
+// because no act outlives itself. What separates them is not a better statistic
+// at the act. It is a SEQUENCE, and the engine had no record of its own.
 //
-//   the material stopped surprising me     nothing to say, and correctly so
-//   I stopped being able to be surprised   the death
+// So what this organ actually buys, stated as narrowly as it was measured:
 //
-// Both look like `witness` refusing. They are told apart only by asking
-// whether the ENGINE'S OWN ground is still moving while the material's has
-// gone quiet, and that question cannot be asked without a record of the
-// engine's own acts. That is the whole reason this organ exists. It is not
-// introspection and it is not a health check — it is the same difference
-// against the same kind of nothing, with the engine's own trajectory handed in
-// as the material.
+//   a momentary silence   vs   a TREND of narrowing
+//
+// That is a real distinction, it is the one that matters operationally, and it
+// is unavailable to every organ in this repo including the core — measured, and
+// the core does not merely miss it but inverts it (conformance/frame.test.js,
+// "the growth rule, measured").
+//
+// WHAT IT DOES NOT BUY, so the stronger claim is not read into it: it does not
+// separate the two CAUSES of a closing ground.
+//
+//   the material stopped surprising me     the room shrank from outside
+//   I stopped being able to be surprised   the room shrank from inside
+//
+// Those are not distinguishable here, and not because the organ is weak. A
+// ground is built by perturbing present material and this engine carries no
+// state between acts, so it has nothing that COULD ossify independently of what
+// it reads. In an engine like this one the two are the same event. Separating
+// them needs a reader that carries state across acts —
+// `packages/engine/generation/belief.js` is one, with its decay and its layered
+// gifts — and that is a different measurement than this one. Recorded here and
+// in SEED.md rather than implied.
+//
+// It is not introspection and it is not a health check — it is the same
+// difference against the same kind of nothing, with the engine's own trajectory
+// handed in as the material.
 //
 // ── ANANDA IS THE MATERIAL HERE, AND IT IS STILL NOT A SCORE ───────────────
 //
