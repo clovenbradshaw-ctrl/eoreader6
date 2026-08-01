@@ -58,6 +58,41 @@ test("returned spans stay byte-accurate — the span registry text is untouched"
   assert.equal(rec.byte_end, span.byte_end);
 });
 
+// REGRESSION: production eochat asked "who is neil armstrong" against a
+// ~5000-span War and Peace session. Every span containing "who" and "is" —
+// dozens of them, since both words are near-ubiquitous in a 500K-word novel —
+// scored the same flat 0.5 as a genuinely on-topic match, because "neil" and
+// "armstrong" being ABSENT cost nothing under plain present/total coverage.
+// The model was handed one of these as a real citation and, told it had
+// found a relevant passage, produced fabricated narrative detail attributed
+// to it. Reproduced here with a small corpus that has the same shape: many
+// spans share the query's common words, exactly one has its rare ones.
+test("a span matching only common words scores far below one that also matches rare ones", () => {
+  const session = createSession();
+  const commonOnly = (i) => `Chapter ${i}. Who is the man who is standing there? He is who he is.`;
+  for (let i = 0; i < 20; i++) {
+    admit(session, commonOnly(i), `source:filler-${i}.txt`);
+  }
+  admit(
+    session,
+    "Who is Neil Armstrong? He is the astronaut who first set foot on the Moon.",
+    "source:the-real-one.txt",
+  );
+
+  const out = searchSpans(session, { query: "who is neil armstrong", limit: 30 });
+  // source_id carries chunkText's ":chunk-N" suffix, e.g. "source:the-real-one.txt:chunk-0".
+  const real = out.spans.find((s) => s.source_id.startsWith("source:the-real-one.txt"));
+  const filler = out.spans.filter((s) => !s.source_id.startsWith("source:the-real-one.txt"));
+
+  assert.ok(real, "the span with the query's rare words must still be found");
+  assert.ok(filler.length > 0, "the filler spans must still match on their common words");
+  assert.ok(
+    filler.every((f) => real.score > f.score * 3),
+    "the rare-word match must score decisively above every common-word-only match, not tie with it",
+  );
+  assert.ok(out.spans[0].source_id.startsWith("source:the-real-one.txt"), "the rare-word match must rank first");
+});
+
 test("empty and whitespace queries are typed no-ops, not searches", () => {
   const session = createSession();
   admit(session, FIXTURE);

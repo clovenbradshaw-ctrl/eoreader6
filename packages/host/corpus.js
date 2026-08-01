@@ -136,18 +136,52 @@ export function searchSpans(session, { query, limit = 10 }) {
   // Lexical presence, never derivation: a span earns a match by containing a
   // query word as a token — no stemming, no synonymy, no fuzzy distance. The
   // query need not be a contiguous substring (a reader asks in words, not in
-  // strings), and a span's score is the honest fraction of query words it
-  // actually contains, so a query that shares only its common words with a
-  // span ranks it below one that shares its rare ones. Tokens come from the
-  // perceiver's WORD_RE — letters, numbers, apostrophes — so "town" matches
-  // "town." and a query in any script matches the same material.
-  const matches = [];
+  // strings). Tokens come from the perceiver's WORD_RE — letters, numbers,
+  // apostrophes — so "town" matches "town." and a query in any script matches
+  // the same material.
+  //
+  // Rarity weight, re-earned from surfer.js's contentAddress (measured there:
+  // term COUNT is not evidence strength — a stopword is nearly free, a rare
+  // word decisive): weight = log(1 + N / (1 + df)), df is corpus-wide document
+  // frequency (spans containing the token, out of N spans total). No
+  // hardcoded stopword list (bin/README.md: "a hardcoded English stopword
+  // list would be a lie" for any other language or a non-text medium) — a
+  // word's ordinariness is read off this corpus's own statistics.
+  //
+  // REGRESSION this replaces: plain present/total coverage gave every query
+  // word equal credit, so "who is neil armstrong" against a 5000-span novel
+  // scored 0.5 (2 of 4 words present) on every one of dozens of spans that
+  // merely contain "who" and "is" — indistinguishable from a genuinely
+  // on-topic match, because "neil" and "armstrong" being ABSENT cost nothing.
+  // Weighting fixes this without a second pass: "neil"/"armstrong" have df=0
+  // (highest possible weight, since they never occur), so they dominate the
+  // denominator for every span, and a span that only matches "who"/"is" —
+  // both near-ubiquitous, near-zero weight — scores close to zero instead of
+  // tying with real matches.
+  //
+  // One walk of the corpus computes both df (pass 1) and, once weights are
+  // known, each span's score (pass 2) — no second full scan.
+  const hits = [];
+  const df = new Map(phraseWords.map((w) => [w, 0]));
   for (const span of session.spans.values()) {
     if (!span.text) continue;
-    const words = tokenize(span.text);
-    const present = phraseWords.filter((w) => words.includes(w));
+    const words = new Set(tokenize(span.text));
+    const present = phraseWords.filter((w) => words.has(w));
     if (present.length === 0) continue;
-    const coverage = present.length / phraseWords.length;
+    for (const w of present) df.set(w, df.get(w) + 1);
+    hits.push({ span, present });
+  }
+  if (hits.length === 0) return { spans: [], gaps: null };
+
+  const n = hits.length;
+  const weight = (w) => Math.log(1 + n / (1 + (df.get(w) ?? 0)));
+  const weights = new Map(phraseWords.map((w) => [w, weight(w)]));
+  const totalW = phraseWords.reduce((s, w) => s + weights.get(w), 0);
+
+  const matches = [];
+  for (const { span, present } of hits) {
+    const matchedW = present.reduce((s, w) => s + weights.get(w), 0);
+    const coverage = totalW > 0 ? matchedW / totalW : 0;
     span.score = coverage;
     span.coverage = coverage;
     span.phrase = query;
