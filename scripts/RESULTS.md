@@ -233,3 +233,50 @@ it is **9 of 14** — better than half, and better than turn 1 — but the shuff
 controls sit in the same range, so this is not yet evidence of anything. Per
 SEED.md, widening is encounter and narrowing is extraction. Recorded, not
 claimed.
+
+---
+
+## `frame` on real material: what it will and will not say about itself
+
+`node scripts/frame-real.mjs`. Material: the 96 lines (32 × 3 velocity
+components) of 1024 points through the JHTDB `isotropic1024coarse` DNS already
+in `goldens/`. Reader: 32 successive acts over 32 points each, `window 5`
+(sub-Taylor, received from the flow), `draws 128`, `reseeds 16`.
+
+`conformance/frame.test.js` establishes the organ on synthetic readers whose
+ananda was *made* to hold or *made* to decay. That proves it can separate two
+arranged answers and proves nothing about what it does when nobody arranged
+one. Homogeneous isotropic turbulence is stationary in space by construction,
+so a reader working along a line meets material with no trend in it. **Any
+trend the organ reports there, it invented.** That is SEED.md #3 one grain up,
+and it is the test that matters, because the thing this organ reports is a
+death.
+
+| | continuous / silent | closing | opening |
+|---|---|---|---|
+| **as measured** (no trend to find) | **89/96** | **0/96** | 7/96 |
+| **attenuated** (a real decline imposed) | 13/96 | **81/96** | 0/96 |
+
+Read `selfWitness`, so "closing" means a witnessed record with `opened: false`
+— it passed the same gate every other claim passes. Two of the attenuated
+lines came back `exceeds_witness` and are counted outside all three columns.
+
+Three things are worth keeping:
+
+- **The false-closing rate on stationary real material is zero.** Not low —
+  zero, across 96 lines. The organ never once told the engine it was dying on
+  material where it was not.
+- **Its errors have the right sign.** The 7 false positives on stationary
+  material are all `opened: true`, the harmless direction. The 13 misses on
+  attenuated material are silences, not wrong answers. Under-reporting a death
+  and over-reporting health are not the same mistake, and this organ makes only
+  the first one.
+- **84% sensitivity is the price of that.** A real decline imposed on real
+  material is caught 81 times in 96 and missed 13 times. That trade is not
+  tuned and could not be tuned without a threshold, which the organ does not
+  have — the miss rate is whatever the order-destroying null makes it.
+
+What this does not establish: the material's decline is imposed, so the
+attenuated arm is a control and not a finding. And a stationary field is the
+easy case for specificity — real material that drifts for reasons of its own
+would be the harder one, and has not been run.
