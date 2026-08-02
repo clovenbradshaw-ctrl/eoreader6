@@ -3,7 +3,10 @@ import { canonicalHashSync, CORPUS_API_VERSION } from "../spec/index.js";
 import { createRegistry, register } from "../../provenance/index.js";
 import { createSession as makeDiscourseSession } from "../../discourse/index.js";
 import { lineIndex, outlineOfIndex, discoverSegment } from "../engine/perceiver/text/segments.js";
-import { tokenize } from "../engine/perceiver/text/material.js";
+import { tokenize, buildFrequencyTable, functionWordSet } from "../engine/perceiver/text/material.js";
+import { splitSentences, deriveAbbreviations, stripContainer } from "../engine/perceiver/text/spans.js";
+import { extractSurfaces, discoverReferents, diaNorm } from "../engine/perceiver/text/surfaces.js";
+import { projectReferents } from "../engine/referents/index.js";
 
 // The cells this host organ occupies on the operator grid (engine/operators.js):
 // INS · Void · Cultivating — material comes into being, admitted chunked by
@@ -116,6 +119,12 @@ export function admitChunked(session, { text, sourceId }) {
   if (info) {
     info.chunks = info.chunks.concat(chunks);
     info.pieces = info.pieces.concat(pieces);
+    // `text` is the whole-document face of this record — documentText serves
+    // it and sessionReferents reads its sentences. Appending chunks without
+    // appending here left both looking at the first admission only, so a
+    // document grown in two calls was folded as if the second half did not
+    // exist. The chunker's own offsets already assume one continuous text.
+    info.text = (info.text || "") + text;
   } else {
     session.documents.set(docId, { id: docId, path: sourceId, chunks, pieces, text });
   }
@@ -350,28 +359,218 @@ export function snipSegment(session, { sourceId, anchor, radius, prompt } = {}) 
   };
 }
 
+// ---------------------------------------------------------------------------
+// sessionReferents — the cast of one document.
+//
+// WHAT THIS REPLACES. Until now this function echoed the prior back and
+// invented its numbers: `mentions: doc.chunks.length`, `frames:
+// min(chunks,10)`, `lastFrame: chunks-1` — the same three values for every
+// referent, none of them counted from the text. A document with no prior
+// returned an empty cast, which is why the app's entity rail and Orbit were
+// blank for every source but Frankenstein. Fabricated counts are worse than
+// the empty cast, because a reader cannot tell them apart from measurements.
+//
+// Both are now read off the material by the engine's own organs, which
+// already existed and were simply never called from the host:
+//
+//   spans.js::splitSentences        real sentence units with offsets
+//   spans.js::deriveAbbreviations   tokens this text always writes with a dot
+//   material.js::functionWordSet    closed class from THIS text's Zipf curve
+//   surfaces.js::extractSurfaces    candidate surfaces + the cap/lower filter
+//   surfaces.js::discoverReferents  name-variant coreference -> DEF.admit
+//   referents/index.js::projectReferents   the canonical event projection
+//
+// TIER DISCIPLINE is inherited unchanged from surfaces.js and is the reason
+// this is honest rather than a regex NER: name-variant coreference is
+// ENGINE tier (derivable); descriptor synonymy and pronoun binding are MODEL
+// tier and come back as typed gaps, never as guessed numbers. A prior, when
+// one exists, outranks discovery for the surfaces it claims.
+//
+// KNOWN LIMIT, declared not hidden: extractSurfaces gates on capitalisation,
+// which is a property of Latin/Greek/Cyrillic script. On Han text it returns
+// nothing (goldens/cast/README.md measured this). That is reported as a gap
+// on a document where sentences exist but no surface survives, so the caller
+// sees "this detector does not apply here" rather than "this text has no
+// cast".
+// ---------------------------------------------------------------------------
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Whole-form occurrence counting, the same boundary rule the app's own
+// surface matcher uses: a letter or digit on either side means this is a
+// longer word, not this surface.
+//
+// The trailing group admits the apostrophe clitic, because the perceiver
+// merged "Locke's" into "Locke" when it built the candidate. Counting the
+// merged surface without it would report the stem's occurrences only — a
+// number belonging to one spelling of a name that now covers two, which is
+// exactly the kind of quietly-wrong figure the fold is supposed to refuse.
+const occurrenceMatcher = (surfaces) => {
+  const alts = [...new Set(surfaces.filter(Boolean).map(String))]
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRe);
+  if (!alts.length) return null;
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts.join("|")})(?:['’]s?)?(?![\\p{L}\\p{N}])`, "giu");
+};
+
+// mentions/frames counted against the document's OWN admitted chunks, so the
+// numbers the reader sees are in the same coordinates as the anchors they can
+// click. A "frame" is a chunk the referent occurs in at least once.
+const countAcrossChunks = (chunks, surfaces) => {
+  const re = occurrenceMatcher(surfaces);
+  if (!re) return { mentions: 0, frames: 0, firstFrame: null, lastFrame: null };
+  let mentions = 0;
+  let frames = 0;
+  let firstFrame = null;
+  let lastFrame = null;
+  for (let i = 0; i < chunks.length; i++) {
+    re.lastIndex = 0;
+    const hits = chunks[i].text ? chunks[i].text.match(re) : null;
+    if (!hits || !hits.length) continue;
+    mentions += hits.length;
+    frames++;
+    if (firstFrame === null) firstFrame = i;
+    lastFrame = i;
+  }
+  return { mentions, frames, firstFrame, lastFrame };
+};
+
+// Discovery is deterministic in the document text, so it is memoised per
+// document and invalidated by chunk count — the only way a document grows
+// here is admitChunked appending to it. /api/fold is polled by the app on
+// every source toggle and every reader open; re-splitting 400 KB of sentences
+// each time is work with a known answer.
+function discoveredCast(session, doc) {
+  const cached = session._cast?.get(doc.id);
+  if (cached && cached.chunks === doc.chunks.length) return cached.value;
+
+  const source = doc.text || doc.chunks.map((c) => c.text).join("\n");
+  const body = stripContainer(source).text || source;
+  // Derived once and used twice, deliberately: the same set that keeps "Cf."
+  // from ending a sentence is the set that keeps "Cf" out of the cast. Both
+  // uses rest on the one measurement — this text always writes the token with
+  // a period — so no abbreviation list is asserted anywhere.
+  const abbreviations = deriveAbbreviations(body);
+  const sentences = splitSentences(body, { abbreviations });
+
+  const gaps = [];
+  let referents = [];
+
+  if (!sentences.length) {
+    gaps.push({
+      reason: "no_sentence_units_in_document",
+      tier: "engine",
+      detail: "the text perceiver found no sentence boundaries, so no surface could be positioned",
+    });
+  } else {
+    const functionWords = functionWordSet(buildFrequencyTable(tokenize(body)));
+    const surfaces = extractSurfaces(sentences, { functionWords, abbreviations });
+
+    if (!surfaces.length) {
+      gaps.push({
+        reason: "no_candidate_surfaces",
+        tier: "engine",
+        detail:
+          `${sentences.length} sentences were read and no surface survived the capitalisation filter. ` +
+          "extractSurfaces detects names by mid-sentence capitalisation, which is a property of " +
+          "Latin/Greek/Cyrillic script — on a caseless script (Han, Arabic, Hebrew) this detector " +
+          "does not apply, and its silence is not evidence that the text has no cast.",
+      });
+    } else {
+      const discovery = discoverReferents(surfaces);
+      referents = projectReferents(discovery.events);
+      // discoverReferents emits the same gap once per referent, because at
+      // that level each referent is the unit. Forwarding 63 identical
+      // objects to a reader-facing audit log is noise that buries the gaps
+      // that differ; the fact is one fact about the whole cast, so it is
+      // stated once and carries its own count.
+      if (discovery.gaps.length) {
+        const one = discovery.gaps[0];
+        gaps.push({
+          reason: one.reason,
+          tier: one.tier,
+          needsWitness: one.needsWitness,
+          referents: discovery.gaps.length,
+          detail: `${discovery.gaps.length} discovered referents: ${one.detail}`,
+        });
+      }
+    }
+  }
+
+  const value = { referents, gaps };
+  if (!session._cast) session._cast = new Map();
+  session._cast.set(doc.id, { chunks: doc.chunks.length, value });
+  return value;
+}
+
 export function sessionReferents(session, { sourceId, priors = [], limit = 100 } = {}) {
   const doc = session.documents.get(sourceId);
   if (!doc) return { referents: [], gaps: [`unknown document ${sourceId}`] };
 
+  const chunks = doc.chunks || [];
   const referents = [];
   const gaps = [];
+  const claimed = new Set(); // lowercased surfaces a prior has already spoken for
 
+  // The prior first, and it wins every surface it names. Witness knowledge is
+  // received, not competed with — a discovered candidate that happens to share
+  // a surface with a prior referent is the same being seen without the name.
   for (const prior of priors) {
     const id = prior.id || prior.name || `ref:${canonicalHashSync(prior)}`;
-    const surfaces = prior.surfaces || [prior.name].filter(Boolean);
+    const raw = prior.surfaces || [prior.name].filter(Boolean);
+    // A prior surface may be an object with a scope, or a positional
+    // `surface@from-to` handle. Neither is countable text.
+    const surfaces = raw
+      .map((s) => (typeof s === "string" ? s : s && s.surface))
+      .filter((s) => typeof s === "string" && s && !/@\d+-\d+$/.test(s));
+    const counted = countAcrossChunks(chunks, surfaces.length ? surfaces : raw.filter((s) => typeof s === "string"));
+    for (const s of surfaces) claimed.add(diaNorm(s));
     referents.push({
       id,
       display: prior.display || prior.name || id,
-      surfaces,
-      mentions: doc.chunks ? doc.chunks.length : 0,
-      frames: doc.chunks ? Math.min(doc.chunks.length, 10) : 0,
-      firstFrame: 0,
-      lastFrame: doc.chunks ? doc.chunks.length - 1 : 0,
+      surfaces: raw,
+      ...counted,
       individuation: prior.individuation || "holon",
       fromPrior: true,
     });
   }
 
-  return { referents, gaps };
+  const discovery = discoveredCast(session, doc);
+  gaps.push(...discovery.gaps);
+
+  for (const r of discovery.referents) {
+    if (r.surfaces.some((s) => claimed.has(diaNorm(s)))) continue;
+    const counted = countAcrossChunks(chunks, r.surfaces);
+    if (!counted.mentions) continue; // discovered in the body, absent from the admitted chunks
+    // The longest surface is the fullest form of the name ("Victor
+    // Frankenstein" over "Victor"), which is what a reader wants on the label.
+    const display = [...r.surfaces].sort((a, b) => b.length - a.length)[0];
+    referents.push({
+      id: r.id,
+      display,
+      surfaces: r.surfaces,
+      ...counted,
+      // Individuation is NOT decided here. Which kind of being a referent is
+      // (holon / emanon / protogon / field / apparatus) is a typed judgement;
+      // discovery only establishes that something recurs and is named. The
+      // caller sees null and applies its own policy.
+      individuation: null,
+      fromPrior: false,
+    });
+  }
+
+  referents.sort((a, b) => (b.fromPrior === true) - (a.fromPrior === true) || b.mentions - a.mentions);
+
+  // L3: where the cast is cut, the cut is reported.
+  const total = referents.length;
+  const kept = Number.isFinite(limit) ? referents.slice(0, limit) : referents;
+  if (kept.length < total) {
+    gaps.push({
+      reason: "cast_truncated",
+      tier: "host",
+      detail: `${total} referents discovered, ${kept.length} returned (limit=${limit})`,
+    });
+  }
+
+  return { referents: kept, gaps };
 }
