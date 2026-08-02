@@ -51,6 +51,8 @@ export const GAP_TYPES = Object.freeze([
   "missing_kind_prior", // emergence/people: the reader has no received understanding of this population as a kind — a typed gap, never a silently wrong number
   "slack_ground", // sustained regularity: a run of censored-below placements longer than reseeding noise explains. A finding, not a failure — the remedy is investigation at finer grain, never reZero.
   "anchor_ground", // asked to perceive through a ground held only to be tended, never judged through (SEED.md §7's ambient ground)
+  "no_candidate", // host/sing: the reader's own search found nothing it has not already met — the run is over, and the ending is a result (SEED #8)
+  "self_referential", // frame: an act that reads the trail's own trail is the watcher's regress — refused at the gate, never a number
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -529,7 +531,7 @@ const quantile = (sorted, q) => {
 };
 
 /** Construct a nothing by perturbing present material. */
-export const ground = ({ material, draws, window, perturbation = "shuffle", statistic = "burstiness", seed = 0 }) => {
+export const ground = ({ material, draws, window, perturbation = "shuffle", statistic = "burstiness", seed = 0, via }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
   if (!Number.isInteger(draws) || draws < 2)
     return gap("undeclared", { what: "draws", why: "the resolution of testimony is 1/draws and is never a default" });
@@ -549,7 +551,7 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
     return gap("degenerate_ground", { reason: "zero width: this null would clear anything", statistic, perturbation });
 
   return Object.freeze({
-    spec: Object.freeze({ perturbation, statistic, seed, draws, window }),
+    spec: Object.freeze({ perturbation, statistic, seed, draws, window, ...(via ? { via } : {}) }),
     from: fingerprint(material),
     // How much material this nothing was built by perturbing. Recorded because
     // SEED.md #5 turns out to bite harder than it reads: `window` is declared
@@ -712,9 +714,16 @@ export const anchor = (g) => Object.freeze({ ...g, anchor: true });
  * A fresh nothing over the same material — never the stored one reused.
  * The named trigger for this ("censored above is surfeit") is the Ramakrishna
  * cell in CUBE.md: unravel the frame, return and cultivate.
+ *
+ * The fresh nothing is TAGGED via:"reZero" in its spec. The tag is why a
+ * re-zero is never mistaken for a fresh beginning: two nulls with identical
+ * parameters give an identical verdict, and only the tag says one of them
+ * came out of a re-zero. Replaying a tagged spec reproduces the tag, so the
+ * replay is faithful; a double re-zero is visible in the tag and the seed,
+ * never silent.
  */
 export const reZero = (g, { material, seed }) =>
-  ground({ ...g.spec, material, seed: seed ?? g.spec.seed + g.spec.draws });
+  ground({ ...g.spec, material, seed: seed ?? g.spec.seed + g.spec.draws, via: "reZero" });
 
 /**
  * Ananda is the room left to be surprised in. Interquartile, not range: range
@@ -722,6 +731,16 @@ export const reZero = (g, { material, seed }) =>
  * measure of how many times we sampled.
  */
 export const volume = (g) => (g?.samples?.length ? quantile(g.samples, 0.75) - quantile(g.samples, 0.25) : 0);
+
+/**
+ * The tails' own room. Interquartile is the middle's width; this is the
+ * outer 90% — 0.95 minus 0.05, so the two move independently: the middle can
+ * narrow while the tails hold, and the tails can spread while the middle
+ * holds. Volume and tail span are companions, not copies; ananda that stayed
+ * still is no proof the tails did. Companion to `volume`, never a fourth
+ * declared number — it is derived from the same samples.
+ */
+export const tailSpan = (g) => (g?.samples?.length ? quantile(g.samples, 0.95) - quantile(g.samples, 0.05) : 0);
 
 /**
  * Where the observation sits in its own nothing.

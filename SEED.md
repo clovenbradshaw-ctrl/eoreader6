@@ -163,6 +163,12 @@ Stated so it is not mistaken for done:
 - **Nothing holds a sequence of sequences** — `frame` is one trajectory. Two
   readers, or one reader across a re-zero, are not yet comparable as
   trajectories.
+- **Firstness at the turn boundary is partially earned — the register exists,
+  the enforcement is the host's** — a later turn receives the earlier turn's
+  `register`, and a region that opens with nothing carried says
+  `openedFrom: "own"`. What remains unearned is that a genuinely *first* ground
+  is a *received* one: whether the caller read nothing before is the host's to
+  declare, because the host owns the sequence of turns (Amendment IX).
 
 ### Earned since, and recorded so the list stays honest
 
@@ -519,6 +525,79 @@ extent a ground was built over, doubled. **Three declared numbers still,**
 and if a later revision finds it genuinely needs a fourth, that is a change
 to the physiology and belongs in an amendment of its own, beside the `rho`
 question already open.
+
+### VIII — The frame was claimed before it existed, and the watcher's regress is measured
+
+*2026-08-01. Amends "Not yet earned", "No privileged frame".*
+
+The build record said of the frame: "nothing yet puts this module's own acts
+in the record." That was true of the code, and the spec that shipped alongside
+it claimed otherwise. On pull, `frame/`, `conformance/frame.test.js`,
+`openFrame`, `note`, `selfMaterial`, `selfLevel`, and `selfWitness` did not
+exist anywhere in this subtree, and the origin/trajectory unit conflation
+cited at `frame/index.js` had no line to point at. The record is corrected,
+not rewritten: the frame organ is now built — DEF · Figure (firstness,
+enforced) and EVA · Pattern (the reflexive level test and self-witness), a
+top-level organ like verdict or formation — holding a sequence of the engine's
+own acts. Firstness lives in `note` and nowhere else: the opening act of a
+frame must carry a ground that names its giver (`provenance`), the origin is
+held apart from the trajectory rather than averaged into it, and every later
+act must cite the material it perturbed at the same spec and extent — one
+trajectory or none (conformance/frame.test.js).
+
+The §4 measure, recorded as the dead end it is: an organ that reads the
+reading's own trail, then an organ that reads that organ, collapses into a
+clock reading its own arithmetic — the same failure the turn's moved clearing
+showed against a grown null (turn.js, "a growing ground is not a moving one").
+No level of watchers fixes it; each adds another layer reading its own sums.
+The frame refuses the regress by type, at the same gate as everything else:
+a constructed ground can never open a sequence, so a reading cannot record
+itself reading. The refusal exists so the regress stays a measured dead end,
+never a silent feature.
+
+The frame is not bolted onto the turn. `runTurn`'s regions are built over
+constructed grounds, and no constructed ground can be the first act of a
+frame — so a live reading's regions do not open frames of their own; the
+organ holds records when a caller opens one with a received ground and feeds
+`selfMaterial`'s series back through the same witness gate.
+
+**No fourth declared number.** `tailSpan` is derived from the same samples as
+`volume`, not declared; the re-zero's `via` tag is provenance on a spec, not a
+resolution. Three declared numbers still.
+
+### IX — Firstness, partially earned: the turn holds a sequence
+
+*2026-08-01. Amends "Not yet earned", "Firstness".*
+
+"Not yet earned" recorded: "`received` exists, but nothing enforces that a
+*first* ground is a received one, because nothing here holds a sequence." The
+second half is no longer true of the turn. `runTurn` now receives a `register`
+— the prior turn's closing warmth plus the measurement's own declared choice
+(the perturbation) — and hands its own back, so the engine holds the sequence
+locally at the turn boundary. A later turn's first region opens with exactly
+the warmth the earlier turn closed with, by identity, the same way a region
+opens with the region before it (turn.js, "the register"). A region that opens
+with nothing carried says `openedFrom: "own"` rather than pretending to be a
+continuation.
+
+So firstness is now **partially earned**: the engine holds a sequence, and it
+never claims firstness for the caller — "own" states that nothing was received,
+and whether this was the first reading ever is the host's to declare, because
+the host owns the sequence of turns and a prior names its giver (#1). What is
+still not earned is the enforcement that a genuinely-first ground is *received*
+— the engine cannot know that the caller read nothing before, and no number
+here changes that. The watcher's regress is untouched: the register is one
+closing scalar plus a declared choice, never a rollup of the trail.
+
+The register also pays the debt #6 and Amendment I name: all judgement lives in
+the choice of perturbation, so the register carries that choice — and refuses
+a past built on a different perturbation by type (`unknown_spec`), because two
+grounds built to different specs were never comparable (#5).
+
+**No fourth declared number.** `close` is one closing ananda, the same scalar
+the ananda flow already carried across regions; the register's perturbation is
+the measurement owning a choice, not a resolution. Three declared numbers
+still.
 
 ## The instrument
 

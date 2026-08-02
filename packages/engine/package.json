@@ -8,6 +8,8 @@
     "./replay": "./replay/index.js",
     "./search": "./search/index.js",
     "./emergence/fold": "./emergence/fold.js",
+    "./emergence/graph": "./emergence/graph.js",
+    "./perceiver/text/relations": "./perceiver/text/relations.js",
     "./loops/surf": "./loops/surf.js",
     "./observation-index": "./observation-index.js",
     "./perceiver/text/presence": "./perceiver/text/presence.js",

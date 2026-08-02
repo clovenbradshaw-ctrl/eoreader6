@@ -18,6 +18,31 @@
 // ⑦⑧⑨'s settled output is what turn 2 RECEIVES as its existence tier. Only
 // Ground grain is implemented; the other grains are honestly refused rather
 // than faked.
+//
+// ANANDA FLOWS: a region closes with its warmth and the next region opens with
+// that SAME warmth — by identity, not by resemblance. The reading's own settled
+// past is received by its present (SEED.md #1; belief.js WORLDS.this: "the
+// giver is this reader at an earlier here"). No gate decides it, no number
+// modulates it; the only ground that opens cold is the first one.
+//
+// THE REGISTER: the past also crosses TURN boundaries. The caller hands the
+// previous turn's `register` in — the closing warmth plus the measurement's own
+// declared choice (the perturbation) — and this turn's first region opens with
+// that warmth instead of cold, and the turn hands its own register back.
+// Firstness is never derived: a region that
+// opens with nothing carried says `openedFrom: "own"` and is only first if the
+// caller actually read nothing before. A register built on a different
+// perturbation is refused, not mixed (SEED.md #6, Amendment I: sensitivity is
+// a property of the pair). The register is one scalar plus a declared choice,
+// never a rollup of the trail — the watcher's regress is refused exactly where
+// it was before.
+//
+// THE FRAME organ (frame/) holds the reading's trail of its own acts — the
+// refusal that ended a region and the re-zero that followed, provenance
+// "received", the watcher's regress refused by type. It lives apart from the
+// turn (conformance/frame.test.js enforces firstness and one trajectory); a
+// turn does not bolt it on, because a constructed ground can never be the
+// first act of a sequence (SEED.md #1).
 
 import { ground, difference, pattern, admissible, volume, isGap, gap, anchor } from "../../../nul/index.js";
 import { cellOf } from "../operators.js";
@@ -187,7 +212,7 @@ export const cultivateField = (units, extent) => {
  * different facts even though both re-zero. Off by default: existing readers
  * of `regions`/`events` see no new boundaries unless they ask for this.
  */
-export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"], perturbation = "shuffle", statistic = "burstiness", awareness = false }) => {
+export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, tolerance, hop = 1, seed = 0, clearOn = ["surfeit", "moved"], perturbation = "shuffle", statistic = "burstiness", awareness = false, giver = "reader", register = null }) => {
   if (grain !== "Ground")
     return gap("unknown_spec", { reason: `grain "${grain}" is not yet earned — only Ground is built`, grain });
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
@@ -210,6 +235,26 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   // account, which is the same defect `clearOn: []` already refuses.
   if (!clearOn.includes("surfeit") && !clearOn.includes("moved") && !wantsRelease)
     return gap("undeclared", { what: "clearOn", why: "a ground that cannot fail is not a ground" });
+
+  // The past a register carries must be receivable: typed, giver-named,
+  // one closing warmth, and built on the same perturbation this present is
+  // built on. Mixing a past measured against another perturbation would be an
+  // averaging of grounds (SEED.md #6, constitution II.8), refused here by type.
+  if (register != null) {
+    if (typeof register !== "object" || Array.isArray(register))
+      return gap("unreceived_origin", { reason: "a register must be a typed object, not a bare value" });
+    if (typeof register.giver !== "string" || register.giver.length === 0)
+      return gap("unreceived_origin", { reason: "a carried past must name whose past it is — a prior names its giver (SEED.md #1)" });
+    if (register.close != null && !Number.isFinite(register.close))
+      return gap("unknown_spec", { reason: "the carried warmth is one closing volume — never a rollup of the trail" });
+    if (register.perturbation != null && register.perturbation !== perturbation)
+      return gap("unknown_spec", {
+        reason: "a past built on a different perturbation cannot open this present — two grounds built to different specs were never comparable (SEED.md #5), and sensitivity is a property of the (statistic, perturbation) pair (Amendment I)",
+        carried: register.perturbation,
+        here: perturbation,
+      });
+  }
+  const carried = register?.close != null ? register.close : null;
 
   // ④⑤⑥ FIELD — the arena, established before anything is interpreted in it
   const units = clearField(material.length, { window, hop });
@@ -248,6 +293,9 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   let sinceSlackSample = 0;
   const slackStride = Math.max(1, Math.round(window / hop));
 
+  let anandaReceived = null; // the flow: last region's close, carried into the next region's open
+  let regionOpenCarried = false; // the open warmth's provenance: carried past or own ground
+
   const buildAt = (start, end, s) => {
     if (end - start < window + 2) return null;
     // ① NUL · Void · Clearing
@@ -268,6 +316,11 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
       ananda: Object.freeze(anandaSeries), // the sign as a series, not two samples (SEED.md §8)
       acts: actsThisRegion,
       clearedBy,
+      // The open warmth's provenance: whether this region's present had a
+      // past to open with. "own" is never firstness claimed — it is the
+      // engine saying it received nothing, so firstness is the caller's to
+      // declare, never derived here.
+      openedFrom: regionOpenCarried ? "carried" : "own",
     });
     events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, clearedBy });
     regionStart = i;
@@ -280,6 +333,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     actsThisRegion = 0;
     belowFlags.length = 0;
     sinceSlackSample = 0;
+    anandaReceived = closing.ananda; // the warmth flows across the boundary
   };
 
   for (const unit of units) {
@@ -291,7 +345,15 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
       if (!g) continue;
       gEnd = i;
       bornAt = i;
-      anandaAtOpen = tendVoid(g).ananda;
+      // ANANDA FLOWS: a region opens with the warmth the last region closed
+      // with — the reading's own settled past received by its present
+      // (belief.js WORLDS.this). The past crosses TURN boundaries through the
+      // register, so the first region of a later turn opens with the previous
+      // turn's closing warmth, and only a region that received nothing opens
+      // cold, against its own fresh ground: firstness is received, never
+      // derived. Not a gate: tendVoid's viability still decides everything.
+      regionOpenCarried = carried != null || anandaReceived != null;
+      anandaAtOpen = carried ?? anandaReceived ?? tendVoid(g).ananda;
     }
 
     // Awareness's own anchor (SEED.md §7): rebuilt every act over the WHOLE
@@ -389,13 +451,23 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
 
   const last = g ?? buildAt(regionStart, material.length, seed);
   const lastAnanda = last ? tendVoid(last).ananda : null;
+  // The last region opens with the warmth carried across the boundary — or its
+  // own fresh ground, but only if it is genuinely the first (nothing carried
+  // AND nothing built in the loop). `anandaAtOpen` may be stale here: if the
+  // previous region's close consumed the last buildable unit, this region
+  // never opened in the loop, so the carried close — from the last region or
+  // from the prior turn's register — is what it opens with.
+  const lastOpen = anandaReceived ?? anandaAtOpen ?? carried;
+  const lastOpenCarried =
+    anandaReceived != null || (anandaAtOpen != null && regionOpenCarried) || (anandaAtOpen == null && carried != null);
   regions.push({
     start: regionStart, end: material.length, tended,
-    anandaOpen: anandaAtOpen, anandaClose: lastAnanda,
+    anandaOpen: lastOpen, anandaClose: lastAnanda,
     ananda: Object.freeze(anandaSeries),
     acts: actsThisRegion,
-    opened: lastAnanda != null && anandaAtOpen != null ? lastAnanda > anandaAtOpen : null,
+    opened: lastAnanda != null && lastOpen != null ? lastAnanda > lastOpen : null,
     clearedBy: null, // the last region is ended by the material running out, not by a failure
+    openedFrom: lastOpenCarried ? "carried" : "own",
   });
 
   const defs = events.filter((e) => e.op === "DEF");
@@ -426,5 +498,16 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     // ambientGround)` gaps `anchor_ground`.
     ambientAnanda: awareness ? Object.freeze(ambientAnanda) : null,
     ambientGround: awareness ? ambient : null,
+    // The register the next turn receives: the reader's own settled past
+    // (one closing warmth — never a rollup of the trail) plus the
+    // measurement's own declared choice (the perturbation). The host holds
+    // the sequence of turns; this is what it hands forward. A register built
+    // on a different perturbation is refused, never mixed (SEED.md #6).
+    close: lastAnanda,
+    register: Object.freeze({
+      giver,
+      close: lastAnanda,
+      perturbation,
+    }),
   };
 };

@@ -107,8 +107,13 @@ export const snapshot = (graph) => ({
   provenance: [...(graph.provenance ?? [])],
 });
 
-/** Apply an arrival to a copy, with graph.js's own decay-then-add-then-prune order. */
-const applyTo = (g, arrival) => {
+/**
+ * Apply an arrival to a copy, with graph.js's own decay-then-add-then-prune
+ * order. Exported so sibling organs (the search relevance gate) measure with
+ * the same advance — measuring and believing must not drift apart, and
+ * neither may two measurements drift apart.
+ */
+export const applyTo = (g, arrival) => {
   for (const [k, w] of g.edges) g.edges.set(k, w * g.gamma);
   g.edgeTotal *= g.gamma;
   for (const [k, c] of arrival) {
@@ -135,6 +140,7 @@ const parseEdge = (key) => {
   const neg = mid.startsWith("!");
   return { s: key.slice(0, i), v: neg ? mid.slice(1) : mid, o: key.slice(j + 1), neg };
 };
+export { parseEdge };
 
 const flipOf = (key) => {
   const { s, v, o, neg } = parseEdge(key);

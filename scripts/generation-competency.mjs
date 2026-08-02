@@ -33,7 +33,7 @@ const SELECTION = "mode"; // deterministic: a competency run is not a demo
 import { readFileSync, existsSync } from "node:fs";
 import { createGenerationTask, walkForwardSequence } from "../packages/engine/generation/tasks.js";
 import { defaultGenerationBaselines } from "../packages/engine/generation/baselines.js";
-import { decayedBelief, priorAugmented, regimeBelief } from "../packages/engine/generation/candidates.js";
+import { decayedBelief, priorAugmented, regimeBelief, decayedRegimeBelief } from "../packages/engine/generation/candidates.js";
 import { runGeneration } from "../packages/engine/generation/run.js";
 import { stripContainer } from "../packages/engine/perceiver/text/spans.js";
 
@@ -68,6 +68,10 @@ const baselines = defaultGenerationBaselines({ order: ORDER, alpha: ALPHA, horiz
 const candidates = [
   decayedBelief({ order: ORDER, alpha: ALPHA, gamma: GAMMA }),
   regimeBelief({ order: ORDER, alpha: ALPHA, window: WINDOW, draws: DRAWS, tolerance: TOLERANCE, seed: SEED }),
+  // Experimental: fading AND resets at once — see the doc comment on
+  // decayedRegimeBelief in generation/candidates.js. Not a minimal contrast;
+  // read against the two isolated candidates above.
+  decayedRegimeBelief({ order: ORDER, alpha: ALPHA, gamma: GAMMA, window: WINDOW, draws: DRAWS, tolerance: TOLERANCE, seed: SEED }),
 ];
 if (priors.length) candidates.push(priorAugmented({ order: ORDER, alpha: ALPHA, priors }));
 

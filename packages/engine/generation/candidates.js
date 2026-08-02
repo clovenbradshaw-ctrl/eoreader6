@@ -164,9 +164,15 @@ export const abstracted = ({ order, alpha, gamma = 1, abstraction }) => {
  * atmosphere a number that had already seen the arrival it is supposed to be
  * surprised by — leakage into the boundary placement, invisible to every seal
  * downstream because it happens before any commitment exists.
+ *
+ * `gamma` defaults to 1 (no fading) so every existing caller of
+ * `regimeBelief` is unaffected — see `decayedRegimeBelief` below for the
+ * gamma < 1 variant, kept as a separate export for the same reason
+ * `decayedBelief` throws rather than silently accepting gamma = 1: a
+ * candidate that can silently become its own control must not.
  */
-export const regimeBelief = ({ order, alpha, window, draws, tolerance, seed = 0 }) => {
-  const belief = plainBelief({ order, alpha });
+export const regimeBelief = ({ order, alpha, gamma = 1, window, draws, tolerance, seed = 0 }) => {
+  const belief = plainBelief({ order, alpha, gamma });
   const tracker = createRegimeTracker({ window, draws, tolerance, seed });
   const seen = [];
   let resets = 0;
@@ -198,7 +204,7 @@ export const regimeBelief = ({ order, alpha, window, draws, tolerance, seed = 0 
   };
 
   return {
-    id: "candidate:regime-belief",
+    id: gamma === 1 ? "candidate:regime-belief" : `candidate:decayed-regime-belief-g${gamma}`,
     belief,
     prime(tokens) {
       for (const t of tokens) consume(t);
@@ -213,6 +219,25 @@ export const regimeBelief = ({ order, alpha, window, draws, tolerance, seed = 0 
     },
     state: () => ({ observations: seen.length, resets, resetAt: [...resetAt] }),
   };
+};
+
+/**
+ * Fading AND regime resets at once — mutumorphism-shaped: two processes
+ * folding the SAME count structure, each seeing what the other left behind
+ * (a reset clears the counts gamma decays; a decayed count is what gets
+ * cleared). NOT a minimal contrast against anything, exactly like
+ * `decayedPriorAugmented` below — included only so the combined result can be
+ * read against `candidate:decayed-belief-g*` and `candidate:regime-belief` in
+ * isolation: if it beats both, fading and resetting carry independent
+ * information about this material; if it beats neither, one of them was
+ * doing nothing the other was not.
+ */
+export const decayedRegimeBelief = ({ order, alpha, gamma, window, draws, tolerance, seed = 0 }) => {
+  if (!(gamma < 1))
+    throw new RangeError(
+      "candidates: decayed-regime-belief needs gamma < 1 — at gamma = 1 it IS candidate:regime-belief and the contrast is empty",
+    );
+  return regimeBelief({ order, alpha, gamma, window, draws, tolerance, seed });
 };
 
 /**

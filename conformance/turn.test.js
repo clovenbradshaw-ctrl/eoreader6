@@ -170,6 +170,32 @@ test("regions carry the vital sign and which failure ended them", () => {
   for (const r of turn.regions.slice(0, -1)) assert.ok(r.clearedBy === "surfeit" || r.clearedBy === "moved");
 });
 
+test("ANANDA FLOWS — a region opens with exactly the warmth the last region closed with", () => {
+  // The reading's own settled past is RECEIVED by its present (belief.js
+  // WORLDS.this: "the giver is this reader at an earlier here"; SEED.md #1).
+  // Encounter is judged against accumulated warmth — by identity, not by
+  // resemblance — so `opened` (close > the warmth the region OPENED with)
+  // means genuinely widened-from-what-was-carried. The only region that opens
+  // cold is the first one: firstness is received, never derived.
+  const turn = runTurn({ material: threeRegimes(3), ...SPEC });
+  assert.ok(turn.regions.length >= 2);
+  for (let k = 1; k < turn.regions.length; k++) {
+    assert.equal(
+      turn.regions[k].anandaOpen,
+      turn.regions[k - 1].anandaClose,
+      `region ${k} must open with exactly the warmth region ${k - 1} closed with`,
+    );
+  }
+  // The SIGN follows the flow: opened is close-vs-carried, and never a gate.
+  for (let k = 1; k < turn.regions.length; k++) {
+    const r = turn.regions[k];
+    if (r.anandaClose != null)
+      assert.equal(r.opened, r.anandaClose > turn.regions[k - 1].anandaClose);
+  }
+  // Not a gate: the flow changes nothing about how regions close.
+  assert.ok(turn.clearings >= 1);
+});
+
 test("the field is established before anything is interpreted in it, and covers the whole extent", () => {
   const material = homogeneous(9);
   const turn = runTurn({ material, ...SPEC, hop: 1 });
@@ -238,3 +264,64 @@ test("burstiness's chronic below-rate is not calibratable — measured, matching
   }
   assert.ok(fired / trials > 0.3, `expected burstiness to over-fire on iid noise, got ${fired}/${trials}`);
 });
+
+// ── the register: the reader's own settled past crosses the turn boundary ────
+
+test("A LATER TURN OPENS WITH EXACTLY THE WARMTH THE EARLIER TURN CLOSED WITH", () => {
+  // Continuity is the same act inside a turn and across it: a region closes
+  // with its warmth and the next present opens with that SAME warmth. The
+  // register is the form that warmth takes across the turn boundary — one
+  // closing scalar, never a rollup of the trail.
+  const material = threeRegimes(3);
+  const t1 = runTurn({ material, ...SPEC });
+  assert.ok(!isGap(t1));
+
+  const lastClose = t1.regions[t1.regions.length - 1].anandaClose;
+  assert.equal(t1.register.giver, "reader");
+  assert.equal(t1.register.close, lastClose, "the register carries the last closing warmth — one scalar, never a rollup");
+  assert.equal(t1.register.perturbation, "shuffle");
+  assert.equal(t1.close, lastClose);
+
+  const t2 = runTurn({ material, ...SPEC, register: t1.register });
+  assert.ok(!isGap(t2));
+  assert.equal(
+    t2.regions[0].anandaOpen,
+    lastClose,
+    "the first region of the later turn opens with the earlier turn's closing warmth",
+  );
+  assert.equal(t2.regions[0].openedFrom, "carried");
+  assert.equal(t1.regions[0].openedFrom, "own", "the first turn received nothing — firstness is received, never derived");
+
+  const t3 = runTurn({ material, ...SPEC, register: t2.register });
+  assert.ok(!isGap(t3));
+  assert.equal(t3.regions[0].anandaOpen, t2.regions[t2.regions.length - 1].anandaClose, "the register chains — a third turn receives the second's close");
+});
+
+test("firstness is never derived — a turn with no register says own, never first", () => {
+  const material = threeRegimes(3);
+  const t = runTurn({ material, ...SPEC });
+  assert.ok(!isGap(t));
+  assert.equal(t.regions[0].openedFrom, "own", "received nothing, so the engine says own — firstness is the caller's to declare");
+  for (const r of t.regions.slice(1)) {
+    assert.equal(r.openedFrom, "carried", "every later region opens with the past the last region settled into");
+  }
+  // The register is typed, and a typed gap is a result, not a silent default.
+  assert.equal(runTurn({ material, ...SPEC, register: {} }).gap, "unreceived_origin", "a carried past must name whose past it is (SEED.md #1)");
+  assert.equal(runTurn({ material, ...SPEC, register: { giver: "reader", close: "warm" } }).gap, "unknown_spec", "the carried warmth is one closing volume, not a string");
+});
+
+test("a past built on a different perturbation is refused, not mixed", () => {
+  // SEED.md #6 puts all judgement in the choice of perturbation, and Amendment
+  // I makes sensitivity a property of the (statistic, perturbation) pair. A
+  // register from a differently-perturbed reading cannot open this present —
+  // receiving it would be an averaging of grounds.
+  const material = threeRegimes(3);
+  const t1 = runTurn({ material, ...SPEC });
+  assert.ok(!isGap(t1));
+  const foreign = { ...t1.register, perturbation: "fisher-yates" };
+  const g = runTurn({ material, ...SPEC, register: foreign });
+  assert.equal(g.gap, "unknown_spec");
+  assert.equal(g.carried, "fisher-yates");
+  assert.equal(g.here, "shuffle");
+});
+

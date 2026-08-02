@@ -21,3 +21,5 @@ export {
 } from "./corpus.js";
 
 export { executePrompt } from "./surfer.js";
+
+export { createSinger, singPass, singRun, anandaSeries, sing } from "./sing.js";

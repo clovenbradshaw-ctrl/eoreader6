@@ -82,6 +82,7 @@
 
 import { ground, volume, isGap } from "../../../nul/index.js";
 import { createRegimeTracker, PLACEMENT } from "../loops/atmosphere.js";
+import { existenceDependencyTest, possibilityConstraintTest, holonLevelRelation } from "../../../holon_level/index.js";
 import { gaussianOrPoint } from "./baselines.js";
 
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
@@ -148,6 +149,113 @@ export const regimeMean = ({ window, draws, tolerance, seed = 0, statistic = "bu
     },
     observe: (x) => tracker.push(x),
     state: () => ({ regimeStart: tracker.regimeStart, rezeroCount: tracker.rezeroCount }),
+  };
+};
+
+/**
+ * MEASURED DEAD END, 2026-08-01 — atmosphere's re-zero boundaries, filtered by
+ * holon_level's own growth-rule test before being trusted: a proposed reset is
+ * adopted only when the regime it would close returns `above` from
+ * `existenceDependencyTest` + `possibilityConstraintTest` (holon_level/index.js
+ * verbatim, not reimplemented), the same two Born-null gates the growth rule
+ * runs on every organ. Minimal contrast against candidate:regime-mean:
+ * IDENTICAL tracker, estimator, fallback, seed — the only difference is this
+ * gate on the reset decision.
+ *
+ * MEASURED: on the full control battery (predictive-competency.mjs) this
+ * candidate never once returned `above` — 0 accepted resets across level-shift,
+ * ar1, trend, noise, AND real Frankenstein prose, including the CONSTRUCTED
+ * positive control where a real level shift exists by design. On Frankenstein
+ * it turned candidate:regime-mean's BEATS ALL (gain +1,530,054 vs
+ * moving-mean-6) into a loss (-304,221) — using the ever-widening rejected
+ * history in place of the narrower one regime-mean would have adopted.
+ *
+ * DIAGNOSED, not guessed — direct inspection of the real Frankenstein resets
+ * (6 of them) showed why: `existence` fired true in 2/6, so existence-
+ * dependency is at least sometimes live on this material. `constrains` fired
+ * true in 0/6. `possibilityConstraintTest`'s statistic is a raw mean of values
+ * inside vs. outside the regime, and causal surprisal is heavy-tailed — a
+ * single huge spike anywhere in "outside" swamps its mean regardless of
+ * whether the regime is genuinely distinct (observed insideMean/outsideMean
+ * both ~7-8M against a null threshold over 1M, an order of magnitude above
+ * the actual shift). `holonLevelRelation` requires BOTH gates to agree before
+ * returning `above`, so with `constrains` structurally stuck at false the
+ * combinator can never clear the bar here — capped at peer/unstable no matter
+ * how real the existence-dependency signal is. This is Amendment I's own
+ * warning (SEED.md): a statistic licensed for one perturbation/material shape
+ * carries no warrant for another. possibilityConstraintTest was licensed on
+ * holon_level's own short, roughly-symmetric calibration fixtures
+ * (conformance/holon_level.test.js), never on a heavy-tailed causal-surprisal
+ * series at document scale.
+ *
+ * NOT RETRIED without rescoping the constraint gate's statistic to something
+ * robust to heavy tails (a rank/quantile-shift rather than a raw mean) or
+ * testing the regime against its own local neighborhood rather than the whole
+ * causal history. Kept here, out of defaultCandidates, for reproducibility —
+ * see the git history for the wiring used to produce the numbers above.
+ */
+export const holonGatedRegimeMean = ({ window, draws, tolerance, reseeds, seed = 0 }) => {
+  if (!Number.isInteger(reseeds) || reseeds < 2)
+    throw new TypeError("holon-gated-regime-mean: reseeds is the resolution of the level gate's null and is never a default");
+  const tracker = createRegimeTracker({ window, draws, tolerance, seed });
+  const seen = [];
+  let trustedStart = 0;
+  let rejectedResets = 0;
+  let gateGaps = 0;
+
+  const evaluateProposedReset = () => {
+    const regime = { start: trustedStart, end: tracker.regimeStart };
+    if (regime.end - regime.start < window + 2) {
+      // Too little material in the closed regime to gate at all — atmosphere
+      // itself would refuse a ground this short (groundFrom's own floor), so
+      // there is nothing here for the level test to weigh in on either way.
+      trustedStart = tracker.regimeStart;
+      return;
+    }
+    const existence = existenceDependencyTest(seen, regime, { draws, window, reseeds });
+    const constraint = possibilityConstraintTest(seen, regime, { reseeds });
+    if (isGap(existence) || isGap(constraint)) {
+      // The gate itself could not be built (e.g. no non-overlapping placement
+      // for the null) — a typed gap, not a license to guess. Trust atmosphere's
+      // own proposal rather than silently discarding it on an ungrounded gate.
+      gateGaps++;
+      trustedStart = tracker.regimeStart;
+      return;
+    }
+    if (holonLevelRelation(existence, constraint) === "above") {
+      trustedStart = tracker.regimeStart;
+    } else {
+      rejectedResets++;
+      // trustedStart stays put — the wider history is kept, exactly as if
+      // atmosphere's clearing streak had never reached tolerance.
+    }
+  };
+
+  return {
+    id: "candidate:holon-gated-regime-mean",
+    prime: (warmupHistory) => {
+      for (const x of warmupHistory) {
+        seen.push(x);
+        const step = tracker.push(x);
+        if (step.rezeroed) evaluateProposedReset();
+      }
+    },
+    predict: (history) => {
+      const slice = history.slice(trustedStart);
+      if (slice.length < 2) return gaussianOrPoint(history[history.length - 1], stdev(diffs(history)));
+      return gaussianOrPoint(mean(slice), stdev(slice));
+    },
+    observe: (x) => {
+      seen.push(x);
+      const step = tracker.push(x);
+      if (step.rezeroed) evaluateProposedReset();
+    },
+    state: () => ({
+      regimeStart: trustedStart,
+      rezeroCount: tracker.rezeroCount,
+      rejectedResets,
+      gateGaps,
+    }),
   };
 };
 
@@ -363,4 +471,6 @@ export const defaultCandidates = ({ window, draws, tolerance, seed = 0 }) => [
   anandaScaled({ window, draws, seed }),
   regimeAnanda({ window, draws, tolerance, seed }),
   placementRate({ window, draws, tolerance, seed }),
+  // candidate:holon-gated-regime-mean was tried and measured out — see the
+  // dead-end note on holonGatedRegimeMean above. Not wired in.
 ];
