@@ -77,6 +77,7 @@ export const openReading = ({ consumption, draws, reseeds, tolerance, hop = 1, s
     regions: [],
     events: [],
     driftGaps: new Map(),
+    centres: [], // where each region's ground SAT, in order — see close()
     regionStart: 0,
     g: null,
     gEnd: null,
@@ -134,6 +135,7 @@ const interpret = (r, i) => {
     r.events.push({ at: i, op: "DEF", terrain: "Atmosphere", stance: "Clearing", ...failure });
     if (r.clearings >= tolerance) {
       const closing = tendVoid(r.g);
+      r.centres.push(r.g.samples[Math.floor(r.g.samples.length / 2)]);
       r.regions.push({
         start: r.regionStart, end: i, tended: r.tended,
         anandaOpen: r.anandaAtOpen, anandaClose: closing.ananda,
@@ -219,6 +221,7 @@ export const close = (r) => {
 
   const last = r.g ?? buildAt(r, r.regionStart, r.material.length);
   const lastAnanda = last ? tendVoid(last).ananda : null;
+  if (last) r.centres.push(last.samples[Math.floor(last.samples.length / 2)]);
   const regions = [
     ...r.regions,
     {
@@ -231,6 +234,49 @@ export const close = (r) => {
 
   const adjacency = tendField(r.units);
   const defs = r.events.filter((e) => e.op === "DEF");
+
+  // ── DRIFT: is this reader a clock? ────────────────────────────────────────
+  //
+  // A MONOTONE CHANNEL MAKES THIS READER A CLOCK, and that has been the single
+  // most expensive mistake in the project. Material whose scale grows with how
+  // much has been read — a running count, an accumulating total — drags the
+  // ground along under it, so the reader re-zeros on a fixed period and emits
+  // evenly spaced boundaries. Against a reference whose sections are also
+  // evenly spaced that scores beautifully and means nothing: `recalled`
+  // (r = 0.995 with position) gave 22/24 chapters, then 18/20 at 15/15
+  // precision, and every rotation of the truth did at least as well.
+  //
+  // Measured where it actually shows: WHERE EACH REGION'S GROUND SAT. If the
+  // material is stationary, successive grounds wander — consecutive steps
+  // agree in direction about half the time. If it climbs, every ground sits
+  // above the last and they agree every time. So `drift` is the share of
+  // consecutive steps moving the same way, rescaled to run 0 (a wandering
+  // ground) to ±1 (a ground marching in one direction).
+  //
+  // Threshold-free, causal, and admission-order invariant, which the first
+  // attempt at this was not: that one classified each censoring event as early
+  // or late against the material read SO FAR, so the same unit landed in a
+  // different bucket depending on whether the document arrived in one piece or
+  // fifty. A diagnostic that reads its own input schedule is the very thing
+  // this module exists to refuse. It also measured nothing, because grounds
+  // are rebuilt per region and a per-region ground follows a global ramp.
+  //
+  // A reported vital sign, like ananda. It gates nothing, and the moment it
+  // does it becomes a number to tune.
+  let agree = 0;
+  let steps = 0;
+  let up = 0;
+  for (let k = 2; k < r.centres.length; k++) {
+    const a = r.centres[k - 1] - r.centres[k - 2];
+    const b = r.centres[k] - r.centres[k - 1];
+    if (a === 0 || b === 0) continue;
+    steps++;
+    if (a > 0 === b > 0) agree++;
+    if (b > 0) up++;
+  }
+  const monotone = steps > 0 ? (agree / steps - 0.5) * 2 : 0;
+  const drift = steps > 0 ? monotone * (up >= steps - up ? 1 : -1) : 0;
+
   r.closed = true;
   r.result = {
     grain: "Ground",
@@ -246,6 +292,13 @@ export const close = (r) => {
       moved: defs.filter((e) => e.mode === "moved").length,
     },
     driftGaps: Object.fromEntries(r.driftGaps),
+    // The vital sign for non-stationarity. |drift| near 1 means the material
+    // climbs or falls steadily and every boundary below is suspect.
+    // |drift| near 1 means every region's ground sat further along than the
+    // last, in one direction: the material is monotone and every boundary in
+    // this reading is suspect. Near 0 means the ground wandered, which is what
+    // stationary material does.
+    stationarity: Object.freeze({ drift, steps, centres: Object.freeze([...r.centres]) }),
     rezeros: r.events.filter((e) => e.op === "REC").length,
     tendings: r.events.filter((e) => e.op === "EVA").length,
   };
