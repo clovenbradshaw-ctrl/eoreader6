@@ -42,7 +42,7 @@ import { splitSentences, stripContainer } from "../packages/engine/perceiver/tex
 import { bayesianSurprise } from "../packages/engine/emergence/surprise.js";
 import { ground, difference, pattern, disagreement, isGap } from "../nul/index.js";
 import { crossFamilyLevel } from "../packages/engine/loops/family.js";
-import { createTier, foldThrough } from "../packages/engine/emergence/tiers.js";
+import { createTierStack, foldThrough } from "../packages/engine/emergence/tiers.js";
 import { shuffleControl } from "./lib/surrogates.mjs";
 
 // ── declared, never defaulted ───────────────────────────────────────────────
@@ -52,6 +52,7 @@ const DRAWS = 128;    // resolution of testimony: finest rank sayable is 1/draws
 const RESEEDS = 16;   // resolution of pattern
 const GAMMA = 0.9;    // recency decay of the belief that produces the surprise series
 const ALPHA = 1;      // smoothing cost of a form never read
+const SEED = 0;       // the received stream; the engine holds no randomness, it receives one
 
 const FAMILIES = ["shuffle", "resample"];
 
@@ -110,9 +111,17 @@ const sd = Math.sqrt(series.reduce((a, b) => a + (b - mean) ** 2, 0) / n);
 
 // ── the full cascade, one superposition per level ───────────────────────────
 const TIER_NAMES = ["atmosphere", "lens", "paradigm"];
+// TWO SUPERPOSED STACKS, and what makes them differ is now the one thing this
+// script is actually about: the reach of the present. A fast reader and a slow
+// reader are two WINDOWS over the same material, not two hand-picked gamma
+// ladders — gamma is derived from window inside tiers.js (1 - 1/window), and
+// no tier carries a number of its own. The altitude ladder inside each stack
+// comes from the fold, not from a per-tier ramp.
+const FAST_WINDOW = 4;          // a present that reaches four observations
+const SLOW_WINDOW = WINDOW * 2; // and one that reaches twenty-four
 const makeTiers = () => [
-  [createTier({ name: "fast-atmosphere", gamma: 0.5, quantile: 0.8 }), createTier({ name: "fast-lens", gamma: 0.7, quantile: 0.8 }), createTier({ name: "fast-paradigm", gamma: 0.9, quantile: 0.8 })],
-  [createTier({ name: "slow-atmosphere", gamma: 0.85, quantile: 0.8 }), createTier({ name: "slow-lens", gamma: 0.93, quantile: 0.8 }), createTier({ name: "slow-paradigm", gamma: 0.97, quantile: 0.8 })],
+  createTierStack(["fast-atmosphere", "fast-lens", "fast-paradigm"], { window: FAST_WINDOW, draws: DRAWS, seed: SEED }),
+  createTierStack(["slow-atmosphere", "slow-lens", "slow-paradigm"], { window: SLOW_WINDOW, draws: DRAWS, seed: SEED + 100 }),
 ];
 
 const readFigures = (s) => {

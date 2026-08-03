@@ -23,7 +23,7 @@
 
 import { readFileSync } from "node:fs";
 import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
-import { extractRelations } from "../packages/engine/perceiver/text/relations.js";
+import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
 import { createGraph, readTriples, strongestEdges } from "../packages/engine/emergence/graph.js";
 import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
@@ -54,9 +54,23 @@ for (let i = 0; i < sentences.length; i += 6) {
 // Kept only when BOTH ends resolve to a referent; first-person surfaces bind
 // by SCOPE (Walton > Victor > Creature), never by string.
 const table = buildFrequencyTable(tokenize(text));
-const surfaces = extractSurfaces(sentences, { functionWords: functionWordSet(table) });
+const functionWords = functionWordSet(table);
+const surfaces = extractSurfaces(sentences, { functionWords });
 const referentEvents = discoverReferents(surfaces).events;
 const cast = projectReferents(referentEvents).filter((r) => !r.mergedInto);
+
+// ── the relation vocabulary, measured — never a hand-listed English verb
+// list. A candidate is the token found immediately after one of the surfaces
+// just discovered blind above, standing in the slot SVO order gives a verb
+// (relations.js::discoverRelationVocab). minSurfaces=1: this reader's own
+// referent-resolution already discards nearly everything the raw SVO parse
+// finds (both ends must resolve to a blind-discovered proper-noun referent,
+// and Frankenstein's objects are mostly pronouns this ladder cannot yet
+// resolve — surfaces.js's documented model-tier gap), so recall matters more
+// than a stricter recurrence bar here. MEASURED on pg84.txt: minSurfaces=2
+// leaves the graph too sparse for induceKinds to find two kinds at all;
+// minSurfaces=1 is what let a Kind actually get induced.
+const { verbs, candidates } = discoverRelationVocab(text, { surfaces, functionWords, minSurfaces: 1 });
 
 const surfaceToId = [];
 for (const r of cast) for (const s of r.surfaces) {
@@ -90,7 +104,7 @@ const graph = createGraph({ gamma: 0.9 });
 let totalTriples = 0, statedTotal = 0;
 
 for (const f of frames) {
-  const raw = extractRelations(f.text);
+  const raw = extractRelations(f.text, { verbs });
   statedTotal += raw.length;
   const triples = raw
     .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset), said: t }))
@@ -101,6 +115,7 @@ for (const f of frames) {
 }
 
 console.log(`READING ${TEXT_PATH.split("/").pop()} — ${frames.length} frames`);
+console.log(`relation vocabulary: ${verbs.size} verbs measured from the text (${candidates.length} candidates seen, minSurfaces 1) — never a hand-listed set`);
 console.log(`SVO: ${statedTotal} stated, ${totalTriples} kept (both ends resolve to a referent)`);
 console.log(`cast discovered blind: ${cast.length} referents`);
 console.log(`narrator spans: ${narratorSpans.length} resolved, ${narratorGaps.length} unresolved`);

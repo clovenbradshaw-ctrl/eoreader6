@@ -13,9 +13,10 @@
 //     rare-word weighted. A cheap sense organ may nominate; it never decides
 //     (II.8, search/index.js).
 //   · READ      — perceiver/text/relations reads the candidate into
-//     (subject, verb, object, polarity) triples. A passage that yields none
-//     moves nothing and is recorded empty_material, never fabricated into a
-//     verdict.
+//     (subject, verb, object, polarity) triples, against `verbs` — a
+//     vocabulary measured from the corpus (discoverRelationVocab), never a
+//     hand-listed English verb set. A passage that yields none moves nothing
+//     and is recorded empty_material, never fabricated into a verdict.
 //   · GATE      — search/index.js judge, the relevance gate, which never sees
 //     the query: preserve only if the candidate moves the graph beyond its
 //     own reseeding (tuple-rotate) variation; refuse is redundancy against
@@ -61,8 +62,15 @@ const previewOf = (text) => String(text ?? "").replace(/\s+/g, " ").slice(0, 96)
  * reader's forgetting, `reseeds` the gate's resolution of pattern, `seed` the
  * gate's received stream, `alpha` the graph's smoothing reserve, `limit` the
  * search's nomination budget.
+ *
+ * `verbs` is the reader's relation vocabulary — measured from the corpus by
+ * `perceiver/text/relations.js::discoverRelationVocab` before the singer is
+ * created (see `scripts/sing-book.mjs`), never a hand-listed English verb
+ * set. It is declared here for the same reason `gamma`/`reseeds`/`seed` are:
+ * a Set the caller measured or otherwise supplied, never one this file
+ * assumes on the caller's behalf.
  */
-export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit = 10 }) => {
+export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit = 10, verbs }) => {
   if (!session || !(session.spans instanceof Map)) throw new TypeError("sing: a corpus session is required");
   if (!Number.isFinite(gamma) || gamma <= 0 || gamma > 1)
     throw new TypeError("sing: gamma is the reader's forgetting, declared in (0,1], never defaulted");
@@ -71,6 +79,7 @@ export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit =
   if (!Number.isInteger(seed)) throw new TypeError("sing: seed is declared — the engine holds no randomness, it receives one");
   if (!Number.isFinite(alpha) || alpha <= 0) throw new TypeError("sing: alpha is the graph's smoothing reserve, declared and positive");
   if (!Number.isInteger(limit) || limit < 1) throw new TypeError("sing: limit is the nomination budget, declared");
+  if (!(verbs instanceof Set)) throw new TypeError("sing: verbs is the reader's measured relation vocabulary, declared — see perceiver/text/relations.js::discoverRelationVocab");
 
   const reader = createGraph({ gamma });
   return {
@@ -81,6 +90,7 @@ export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit =
     seed,
     alpha,
     limit,
+    verbs,
     readIds: new Set(),   // spans already experienced — the reader never re-reads
     preserved: [],        // passages that joined the reader (verdict preserve)
     refused: [],          // passages redundant against the reader
@@ -132,7 +142,7 @@ export const singPass = (singer) => {
   s.readIds.add(span.span_id);
 
   // READ — into triples. The candidate is experienced whether or not it moves.
-  const triples = extractRelations(span.text);
+  const triples = extractRelations(span.text, { verbs: s.verbs });
   const record = { pass: s.pass, query, span_id: span.span_id, preview: previewOf(span.text), triples: triples.length };
   if (triples.length === 0) {
     s.gaps.push(record);
