@@ -37,12 +37,16 @@ import { bayesianSurprise } from "./surprise.js";
 // Link, whole Network. Declared, checked by conformance.
 export const CELL = Object.freeze({ op: "SYN", grain: "Pattern" });
 
-const PRUNE_BELOW = 1e-4; // a relation decayed past this is forgotten, not carried as noise
-
-export const createGraph = ({ gamma }) => {
+export const createGraph = ({ gamma, pruneBelow }) => {
   if (!Number.isFinite(gamma) || gamma <= 0 || gamma > 1)
     throw new TypeError("createGraph: gamma is declared in (0,1], never defaulted — it is the rate of forgetting");
-  return { nodes: new Map(), edges: new Map(), edgeTotal: 0, gamma, tick: 0, provenance: [] };
+  // A second, silent forgetting parameter: a relation decayed past this is
+  // forgotten outright rather than carried as noise. It sat as a bare module
+  // constant while gamma, right beside it, was already required — declared
+  // and validated the same way gamma is, not defaulted.
+  if (!Number.isFinite(pruneBelow) || pruneBelow <= 0)
+    throw new TypeError("createGraph: pruneBelow is declared, never defaulted — it is the floor below which a relation is forgotten outright");
+  return { nodes: new Map(), edges: new Map(), edgeTotal: 0, gamma, pruneBelow, tick: 0, provenance: [] };
 };
 
 export const edgeKey = ({ subject, verb, object, polarity }) =>
@@ -83,7 +87,7 @@ export const readTriples = (graph, triples, { alpha = 1 } = {}) => {
     graph.edgeTotal += c;
   }
   for (const [k, w] of graph.edges) {
-    if (w < PRUNE_BELOW) { graph.edgeTotal -= w; graph.edges.delete(k); }
+    if (w < graph.pruneBelow) { graph.edgeTotal -= w; graph.edges.delete(k); }
   }
 
   for (const t of triples) {

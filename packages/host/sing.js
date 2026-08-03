@@ -59,9 +59,10 @@ const previewOf = (text) => String(text ?? "").replace(/\s+/g, " ").slice(0, 96)
 /**
  * A reader with a corpus and a graph. Declared numbers are declared, never
  * defaulted, in the same spirit every engine organ enforces: `gamma` is the
- * reader's forgetting, `reseeds` the gate's resolution of pattern, `seed` the
- * gate's received stream, `alpha` the graph's smoothing reserve, `limit` the
- * search's nomination budget.
+ * reader's forgetting, `pruneBelow` the floor below which a decayed relation
+ * is forgotten outright, `reseeds` the gate's resolution of pattern, `seed`
+ * the gate's received stream, `alpha` the graph's smoothing reserve, `limit`
+ * the search's nomination budget.
  *
  * `verbs` is the reader's relation vocabulary — measured from the corpus by
  * `perceiver/text/relations.js::discoverRelationVocab` before the singer is
@@ -70,10 +71,12 @@ const previewOf = (text) => String(text ?? "").replace(/\s+/g, " ").slice(0, 96)
  * a Set the caller measured or otherwise supplied, never one this file
  * assumes on the caller's behalf.
  */
-export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit = 10, verbs }) => {
+export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha = 1, limit = 10, verbs }) => {
   if (!session || !(session.spans instanceof Map)) throw new TypeError("sing: a corpus session is required");
   if (!Number.isFinite(gamma) || gamma <= 0 || gamma > 1)
     throw new TypeError("sing: gamma is the reader's forgetting, declared in (0,1], never defaulted");
+  if (!Number.isFinite(pruneBelow) || pruneBelow <= 0)
+    throw new TypeError("sing: pruneBelow is the graph's forgetting floor, declared and positive, never defaulted");
   if (!Number.isInteger(reseeds) || reseeds < 2)
     throw new TypeError("sing: reseeds is the gate's resolution of pattern, declared, never defaulted");
   if (!Number.isInteger(seed)) throw new TypeError("sing: seed is declared — the engine holds no randomness, it receives one");
@@ -81,7 +84,7 @@ export const createSinger = ({ session, gamma, reseeds, seed, alpha = 1, limit =
   if (!Number.isInteger(limit) || limit < 1) throw new TypeError("sing: limit is the nomination budget, declared");
   if (!(verbs instanceof Set)) throw new TypeError("sing: verbs is the reader's measured relation vocabulary, declared — see perceiver/text/relations.js::discoverRelationVocab");
 
-  const reader = createGraph({ gamma });
+  const reader = createGraph({ gamma, pruneBelow });
   return {
     session,
     reader,

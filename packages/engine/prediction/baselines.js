@@ -93,7 +93,11 @@ export const seasonalPersistence = (history, { period }) => {
  * the direct control for the regime candidate in ./candidates.js, which is the
  * same estimator differing ONLY in where it starts counting.
  */
-export const defaultNumericBaselines = ({ window = 3, seasonalPeriod } = {}) => {
+export const defaultNumericBaselines = ({ window, seasonalPeriod } = {}) => {
+  if (!Number.isInteger(window) || window < 1)
+    throw new TypeError(
+      "defaultNumericBaselines: window must be declared explicitly — it is the direct control for candidate:regime-mean, and a hidden default here can silently diverge from whatever window the candidate suite it is contrasted against declares",
+    );
   const suite = [
     { id: "baseline:last-value", predict: (h) => lastValue(h) },
     { id: "baseline:global-mean", predict: (h) => globalMean(h) },

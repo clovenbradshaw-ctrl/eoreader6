@@ -28,6 +28,14 @@ import { createLedger, recordStep, finalizeCompetency } from "../competency/ledg
 import { isGap } from "../../../nul/index.js";
 import { admissibleAsTestimony } from "./emit.js";
 
+// A cap on `samples`, the human-inspection side channel below (what was
+// imagined vs. the withheld target per draw) — not a measurement bound.
+// `scored`/`skipped`/`testimony` and every candidate's competency ledger are
+// computed over the FULL, uncapped draw set regardless of this cap; nothing
+// here gates what counts as a finding. Bounds the size of the returned
+// object for a human reading it, nothing more.
+const SAMPLE_SIDECAR_CAP = 40;
+
 const versionHash = (emitter) =>
   canonicalHashSync({
     id: emitter.id,
@@ -166,7 +174,7 @@ export const runGeneration = ({
       ledgers.set(id, recordStep(ledger, { candidate_loss: losses.get(id).loss, baseline_losses: baselineLosses, proper: losses.get(id).proper }));
     }
 
-    if (samples.length < 40)
+    if (samples.length < SAMPLE_SIDECAR_CAP)
       samples.push({
         step: draw.step,
         prefix: draw.prefix ?? null,

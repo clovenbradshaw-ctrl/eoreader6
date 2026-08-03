@@ -1,4 +1,6 @@
 import fs from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { canonicalHashSync, CORPUS_API_VERSION } from "../spec/index.js";
 import { createRegistry, register } from "../../provenance/index.js";
 import { createSession as makeDiscourseSession } from "../../discourse/index.js";
@@ -110,7 +112,14 @@ function chunkText(text, sourceId, session) {
   return chunks;
 }
 
-export function admitChunked(session, { text, sourceId }) {
+/**
+ * @param {string} [options.language] the document's language, e.g. "en" —
+ *   RECEIVED, never inferred (SEED.md #1, Amendment V): omit it and cast
+ *   discovery uses the engine's own derived abbreviation floor exactly as
+ *   before. Supplied and a matching bin/priors/lang/<language>.json exists,
+ *   that prior is used instead (see discoveredCast).
+ */
+export function admitChunked(session, { text, sourceId, language }) {
   if (!text || !sourceId) return { chunks: 0, admitted: [] };
   const chunks = chunkText(text, sourceId, session);
   const docId = sourceId;
@@ -125,8 +134,9 @@ export function admitChunked(session, { text, sourceId }) {
     // document grown in two calls was folded as if the second half did not
     // exist. The chunker's own offsets already assume one continuous text.
     info.text = (info.text || "") + text;
+    if (language) info.language = language;
   } else {
-    session.documents.set(docId, { id: docId, path: sourceId, chunks, pieces, text });
+    session.documents.set(docId, { id: docId, path: sourceId, chunks, pieces, text, language: language ?? null });
   }
   return { chunks: chunks.length, admitted: chunks };
 }
@@ -405,10 +415,20 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 // merged surface without it would report the stem's occurrences only — a
 // number belonging to one spelling of a name that now covers two, which is
 // exactly the kind of quietly-wrong figure the fold is supposed to refuse.
+//
+// Between words, an OPTIONAL period plus whitespace — not a literal single
+// space. surfaces.js strips a trailing period off every token it captures
+// (tokenisation drops non-letters), so a candidate born from an
+// abbreviation-preserved name ("Mr Darcy", from raw text "Mr. Darcy") would
+// otherwise never be found in the chunk text it was discovered in: a
+// literal-space match requires "Mr Darcy" with no period, which the raw
+// text never has. Silent under the derived fallback (which rarely produces
+// a title-preserved multi-word candidate at all) and live the moment a real
+// abbreviation prior is supplied — measured, not theoretical.
 const occurrenceMatcher = (surfaces) => {
   const alts = [...new Set(surfaces.filter(Boolean).map(String))]
     .sort((a, b) => b.length - a.length)
-    .map(escapeRe);
+    .map((s) => s.split(/\s+/).map(escapeRe).join("\\.?\\s+"));
   if (!alts.length) return null;
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts.join("|")})(?:['’]s?)?(?![\\p{L}\\p{N}])`, "giu");
 };
@@ -435,6 +455,28 @@ const countAcrossChunks = (chunks, surfaces) => {
   return { mentions, frames, firstFrame, lastFrame };
 };
 
+// bin/priors/lang/<language>.json — a received prior naming which tokens
+// this language writes with a trailing period without ending a sentence
+// (spans.js's own docstring: "a caller that has a prior should pass it").
+// Loaded here, at the host, and nowhere in the engine: the engine perceiver
+// stays language-agnostic by construction (no word list baked into spans.js
+// or surfaces.js), and loading a JSON file off disk is host-tier I/O, the
+// same division loadMorphology/loadConventions already draw. `language` is
+// RECEIVED (SEED.md #1, Amendment V) — never inferred from the text — so a
+// caller that does not know or does not declare a document's language gets
+// exactly today's behaviour: the engine's own derived, weaker fallback.
+const priorsRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "priors", "lang");
+
+const loadAbbreviationPrior = (language) => {
+  const path = join(priorsRoot, `${language}.json`);
+  if (!fs.existsSync(path)) return null;
+  const raw = JSON.parse(fs.readFileSync(path, "utf8"));
+  if (raw.schema !== "AbbreviationPrior@1")
+    throw new TypeError(`loadAbbreviationPrior: expected AbbreviationPrior@1, got ${raw.schema}`);
+  if (!raw.provenance?.source) throw new TypeError("loadAbbreviationPrior: a prior must name its giver");
+  return { language: raw.language, giver: raw.provenance.source, abbreviations: raw.abbreviations };
+};
+
 // Discovery is deterministic in the document text, so it is memoised per
 // document and invalidated by chunk count — the only way a document grows
 // here is admitChunked appending to it. /api/fold is polled by the app on
@@ -446,14 +488,35 @@ function discoveredCast(session, doc) {
 
   const source = doc.text || doc.chunks.map((c) => c.text).join("\n");
   const body = stripContainer(source).text || source;
-  // Derived once and used twice, deliberately: the same set that keeps "Cf."
-  // from ending a sentence is the set that keeps "Cf" out of the cast. Both
-  // uses rest on the one measurement — this text always writes the token with
-  // a period — so no abbreviation list is asserted anywhere.
-  const abbreviations = deriveAbbreviations(body);
-  const sentences = splitSentences(body, { abbreviations });
 
   const gaps = [];
+
+  // Derived once and used twice, deliberately: the same set that keeps "Cf."
+  // from ending a sentence is the set that keeps "Cf" out of the cast. Both
+  // uses rest on the same source. When the document names a received
+  // language AND a matching prior exists, that prior is the stronger source
+  // (spans.js's own measurement: 0 -> 249 "Mr. Darcy" occurrences on Pride
+  // and Prejudice, against 0 -> 0 from derivation alone); otherwise this
+  // falls through to the engine's own derived, weaker floor exactly as
+  // before — no language was ever asserted here without one being given.
+  let abbreviations = null;
+  let abbreviationGiver = null;
+  if (doc.language) {
+    const prior = loadAbbreviationPrior(doc.language);
+    if (prior) {
+      abbreviations = prior.abbreviations;
+      abbreviationGiver = prior.giver;
+    } else {
+      gaps.push({
+        reason: "no_abbreviation_prior_for_language",
+        tier: "witness",
+        detail: `document declared language "${doc.language}" but bin/priors/lang/${doc.language}.json does not exist — falling back to the engine's own derived abbreviation floor`,
+      });
+    }
+  }
+  if (!abbreviations) abbreviations = deriveAbbreviations(body);
+  const sentences = splitSentences(body, { abbreviations });
+
   let referents = [];
 
   if (!sentences.length) {
@@ -497,7 +560,7 @@ function discoveredCast(session, doc) {
     }
   }
 
-  const value = { referents, gaps };
+  const value = { referents, gaps, abbreviationGiver };
   if (!session._cast) session._cast = new Map();
   session._cast.set(doc.id, { chunks: doc.chunks.length, value });
   return value;
