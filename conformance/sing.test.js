@@ -38,6 +38,14 @@ const S1 = "The creature hated victor.";
 const S2 = "The creature hated victor.";
 const S3 = "Victor defeated the creature.";
 
+// The reader's relation vocabulary. In production this is measured from a
+// real corpus (perceiver/text/relations.js::discoverRelationVocab — never a
+// hand-listed English verb set); this fixture's corpus is three hand-built
+// sentences with no statistics to measure it from, so the vocabulary this
+// suite exercises the gate/graph with is hand-declared test data, exactly as
+// S1/S2/S3 themselves are.
+const VERBS = new Set(["hated", "defeated"]);
+
 const makeSession = () => {
   const session = createSession();
   const spans = [
@@ -50,7 +58,7 @@ const makeSession = () => {
 };
 
 test("pass 1 RECEIVES — no query, the first ground is received, never derived", () => {
-  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
   const r = singPass(singer);
 
   assert.equal(isGap(r), false);
@@ -65,7 +73,7 @@ test("pass 1 RECEIVES — no query, the first ground is received, never derived"
 });
 
 test("pass 2 seeks what it kept — and the gate refuses its token-identical twin", () => {
-  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
   singPass(singer);
 
   const nodesBefore = singer.reader.nodes.size;
@@ -85,7 +93,7 @@ test("pass 2 seeks what it kept — and the gate refuses its token-identical twi
 });
 
 test("pass 3 preserves the new relation the twin could not", () => {
-  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
   singPass(singer);
   singPass(singer);
 
@@ -99,7 +107,7 @@ test("pass 3 preserves the new relation the twin could not", () => {
 });
 
 test("the run ends with a typed gap when the reader's own search runs dry", () => {
-  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
   const run = singRun(singer, { passes: 20 });
 
   assert.equal(run.ended, "no_candidate", "the ending is a typed gap, never a silent empty list");
@@ -114,7 +122,7 @@ test("the run ends with a typed gap when the reader's own search runs dry", () =
 test("empty material is a typed gap, and a relation-less candidate is never fabricated into a verdict", () => {
   const session = createSession();
   session.spans.set("span:noise", { span_id: "span:noise", source_id: "test:noise", text: "A red lamp beside the window." });
-  const singer = createSinger({ session, gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session, gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
 
   const r = singPass(singer);
   assert.equal(isGap(r), true);
@@ -124,8 +132,8 @@ test("empty material is a typed gap, and a relation-less candidate is never fabr
 });
 
 test("the pass sequence is deterministic in its declared seed", () => {
-  const a = singRun(createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA }), { passes: 10 });
-  const b = singRun(createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA }), { passes: 10 });
+  const a = singRun(createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS }), { passes: 10 });
+  const b = singRun(createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS }), { passes: 10 });
   assert.deepEqual(
     a.records.map((r) => ({ span: r.span_id, verdict: r.verdict })),
     b.records.map((r) => ({ span: r.span_id, verdict: r.verdict })),
@@ -145,7 +153,7 @@ test("ananda is the volume of the ground the movements have built — null befor
 });
 
 test("SING — the reading speaks from where it stands, stamped imagined", () => {
-  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA });
+  const singer = createSinger({ session: makeSession(), gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, verbs: VERBS });
   const run = singRun(singer, { passes: 10 });
 
   // The material the reader actually kept, in experience order.

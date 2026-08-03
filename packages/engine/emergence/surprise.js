@@ -38,6 +38,11 @@
 
 const LOG2 = Math.LN2;
 
+// Reserved prefix for the synthetic never-before-seen forms `novelRate`
+// injects into a continuation. Same reservation discipline as
+// generation/belief.js::UNSEEN — a real form key cannot begin with it.
+const NOVEL_SENTINEL = "\u0000novel:";
+
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // EVA · Lens · Binding — the two lanes kept apart: novelty and bayesian
 // surprise. Declared, checked by conformance.
@@ -108,10 +113,37 @@ export const bayesianSurprise = (prior, priorTotal, arrival, arrivalTotal, { gam
  * Returns the null KLs, sorted. The caller ranks the real observation against
  * them; a run of exceedances IS a window of surprise, discovered rather than
  * declared.
+ *
+ * `novelRate` — THE STRAWMAN THIS NULL HAS WHEN THE MATERIAL IS SPARSE.
+ *
+ * A continuation drawn from the prior can only ever contain forms the prior
+ * ALREADY HOLDS. Over word-forms that is nearly harmless: by the time a reader
+ * has a prior worth the name, most words in the next sentence are words it has
+ * seen. Over sparse forms it is fatal. MEASURED on War and Peace with the tier
+ * stack reading graph EDGES (emergence/tiers.js): 264 nodes and 98 live
+ * relations across 532 observations, so most frames carry an edge the prior has
+ * never held — the real arrival then beats every null draw *by construction*,
+ * and the gate fired on 233 of 532 observations, in unbroken runs. That is not
+ * a gate, and a null that the observation clears by construction is SEED.md #3
+ * at the level of the perturbation: "it would clear anything put in front of
+ * it."
+ *
+ * So the null may be told how novel a continuation should EXPECT to be. Each
+ * token is, with probability `novelRate`, a form the prior has never held
+ * (distinct per token, the way genuinely new forms arrive) rather than a draw
+ * from the prior's mass. The question becomes the honest one — "did this move
+ * belief further than a continuation AS NOVEL AS USUAL would have" — instead of
+ * "did anything new happen at all."
+ *
+ * `novelRate` is MEASURED by the caller from its own history, never declared;
+ * the default of 0 is exactly the previous behaviour, so existing callers
+ * (scripts/read-frankenstein.mjs, conformance/surprise.test.js) are unchanged.
  */
-export const priorContinuationNull = (prior, priorTotal, arrivalTotal, { gamma, alpha = 1, draws, seed = 0 }) => {
+export const priorContinuationNull = (prior, priorTotal, arrivalTotal, { gamma, alpha = 1, draws, seed = 0, novelRate = 0 }) => {
   if (!Number.isInteger(draws) || draws < 2)
     throw new TypeError("priorContinuationNull: draws is declared, never defaulted");
+  if (!Number.isFinite(novelRate) || novelRate < 0 || novelRate > 1)
+    throw new TypeError("priorContinuationNull: novelRate is a measured share in [0,1]");
 
   const formList = [...prior.keys()];
   if (formList.length === 0 || priorTotal <= 0) return null;
@@ -133,6 +165,14 @@ export const priorContinuationNull = (prior, priorTotal, arrivalTotal, { gamma, 
   for (let d = 0; d < draws; d++) {
     const synthetic = new Map();
     for (let k = 0; k < arrivalTotal; k++) {
+      if (novelRate > 0 && next() < novelRate) {
+        // A form the prior has never held. Distinct per token: genuinely new
+        // forms arrive as separate things, not as repeats of one new thing.
+        // NOVEL_SENTINEL is reserved the way generation/belief.js reserves
+        // UNSEEN, so a synthetic novel form can never collide with a real key.
+        synthetic.set(`${NOVEL_SENTINEL}${d}:${k}`, 1);
+        continue;
+      }
       const r = next() * acc;
       let lo = 0, hi = cum.length - 1;
       while (lo < hi) { const mid = (lo + hi) >> 1; if (cum[mid] < r) lo = mid + 1; else hi = mid; }

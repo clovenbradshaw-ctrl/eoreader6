@@ -19,8 +19,11 @@ const SELECTION = "mode"; // the song's choice of next form
 
 import { readFileSync } from "node:fs";
 import { createSession, admitChunked } from "../packages/host/corpus.js";
-import { stripContainer } from "../packages/engine/perceiver/text/spans.js";
+import { stripContainer, splitSentences } from "../packages/engine/perceiver/text/spans.js";
 import { createSinger, singRun, anandaSeries, sing } from "../packages/host/sing.js";
+import { extractSurfaces } from "../packages/engine/perceiver/text/surfaces.js";
+import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
+import { discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
 import { isGap } from "../nul/index.js";
 
 const DEFAULT_PATH = "/Users/mlacy/Documents/Default Project/pg84.txt";
@@ -30,9 +33,18 @@ const session = createSession();
 const { text } = stripContainer(readFileSync(path, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 const { chunks } = admitChunked(session, { text, sourceId: `source:${path}` });
 console.log(`ingested ${chunks} chunks from ${path.split("/").pop()}`);
+
+// The reader's relation vocabulary, measured from this book's own surfaces
+// and closed class — never a hand-listed English verb set. See
+// perceiver/text/relations.js::discoverRelationVocab.
+const table = buildFrequencyTable(tokenize(text));
+const functionWords = functionWordSet(table);
+const surfaces = extractSurfaces(splitSentences(text), { functionWords });
+const { verbs } = discoverRelationVocab(text, { surfaces, functionWords, minSurfaces: 1 });
+console.log(`relation vocabulary: ${verbs.size} verbs measured from the text — never a hand-listed set`);
 console.log("");
 
-const singer = createSinger({ session, gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, limit: LIMIT });
+const singer = createSinger({ session, gamma: GAMMA, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, limit: LIMIT, verbs });
 const run = singRun(singer, { passes: PASSES });
 
 const ceiling = run.pass >= PASSES ? ` (reached the declared ${PASSES}-pass ceiling)` : "";
