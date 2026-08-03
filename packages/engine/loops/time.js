@@ -17,7 +17,16 @@ export const CELL = Object.freeze({ op: "EVA", grain: "Pattern" });
 // a real bug found and fixed this session (see git history).
 const SEED_STEP = 104729;
 
-export const timeLoop = ({ reduce, units, passes = 8, window = 12, draws = 200, reseeds = 5 }) => {
+export const timeLoop = ({ reduce, units, passes, window, draws, reseeds }) => {
+  if (!Number.isInteger(passes) || passes < 1)
+    throw new TypeError("timeLoop: passes is declared, never defaulted — how many growing-fraction reads to take is counted, not chosen");
+  if (!Number.isInteger(window) || window < 2)
+    throw new TypeError("timeLoop: window is the reach of the present — declared, never derived from material length");
+  if (!Number.isInteger(draws) || draws < 2)
+    throw new TypeError("timeLoop: draws is the resolution of testimony — the finest rank sayable is 1/draws");
+  if (!Number.isInteger(reseeds) || reseeds < 2)
+    throw new TypeError("timeLoop: reseeds is the resolution of pattern — declared, never defaulted");
+
   const results = [];
   let prevGround = null;
   // The PREVIOUS pass's material, retained because pattern()'s null is

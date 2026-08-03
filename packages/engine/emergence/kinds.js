@@ -135,7 +135,7 @@ export const partitionNull = ({ samples, observed, quantile = 0.95, seed = 0 }) 
 
 // ── SIG · differentiate attribute signals from the population ───────────────
 
-const labelShuffleNull = (records, fieldId, permutations, seed) => {
+const labelShuffleNull = (records, fieldId, permutations, quantile, seed) => {
   const n = records.length;
   const hasField = records.map((r) => (r.attributes ?? []).some((a) => a.field_id === fieldId));
   const observed = hasField.filter(Boolean).length / n;
@@ -147,7 +147,7 @@ const labelShuffleNull = (records, fieldId, permutations, seed) => {
     for (let i = 0; i < n; i++) if (hasField[perm[i]]) hits++;
     samples.push(hits / n);
   }
-  return partitionNull({ samples, observed, seed: seed + 1 });
+  return partitionNull({ samples, observed, quantile, seed: seed + 1 });
 };
 
 export const sig = (records, { minPrevalence, permutations, quantile, seed }) => {
@@ -174,7 +174,7 @@ export const sig = (records, { minPrevalence, permutations, quantile, seed }) =>
       prevalence,
       ids: [...entry.ids],
       totalCount: entry.totalCount,
-      null: labelShuffleNull(records, entry.field_id, permutations, seed),
+      null: labelShuffleNull(records, entry.field_id, permutations, quantile, seed),
     });
   }
   return params.sort((a, b) => b.prevalence - a.prevalence || b.totalCount - a.totalCount);
@@ -239,9 +239,22 @@ const meanPairwiseSimOf = (indices, sim) => {
 };
 
 /** The clustering threshold is DERIVED from the material, never declared: random
- * subsets of the population set the bar the way they are. */
+ * subsets of the population set the bar the way they are.
+ *
+ * count < 3 is refused BEFORE the permutation loop runs — not a tuning floor,
+ * a structural one (SEED.md #7: "never spend a measurement on what the
+ * algebra catches"). At count <= 2, k = Math.max(2, Math.floor(count/2))
+ * always equals count, so the "random subset" is the whole population on
+ * every draw and every sample is identical by construction — the same
+ * zero-width null `partitionNull` itself already refuses as
+ * `degenerate_ground` once the loop runs, just refused earlier here to skip
+ * wasting `permutations` draws on a result that is certain in advance. */
 export const deriveCohesionThreshold = ({ sim, count, permutations, quantile, seed }) => {
-  if (count < 4) return 0.25;
+  if (count < 3)
+    return gap("degenerate_ground", {
+      reason: `population of ${count} admits only one possible subset — the null has zero width by construction`,
+      count,
+    });
   const k = Math.max(2, Math.floor(count / 2));
   const rnd = prng(seed ^ 0xc0ffee);
   const samples = [];
@@ -249,7 +262,7 @@ export const deriveCohesionThreshold = ({ sim, count, permutations, quantile, se
     samples.push(meanPairwiseSimOf(randomSubset(count, k, rnd), sim));
   }
   const result = partitionNull({ samples, observed: 0, quantile, seed: seed + 1 });
-  return isGap(result) ? 0.25 : result.threshold;
+  return isGap(result) ? result : result.threshold;
 };
 
 const meanBetween = (a, b, sim, idxOf) => {
@@ -291,6 +304,7 @@ const conCluster = (profiles, sim, idxOf, threshold, minKindSize) => {
 
 export const con = (profiles, sim, idxOf, { minKindSize, permutations, quantile, seed }) => {
   const threshold = deriveCohesionThreshold({ sim, count: profiles.size, permutations, quantile, seed });
+  if (isGap(threshold)) return threshold;
   return { clusters: conCluster(profiles, sim, idxOf, threshold, minKindSize), threshold };
 };
 
@@ -513,8 +527,9 @@ const searchCohesions = (records, params, keys, scales, { minKindSize, permutati
     const { profiles } = parameterProfiles(permuted, params);
     if (profiles.size < minKindSize) continue;
     const { sim, idxOf } = valuedSimilarity(profiles, permuted, keys, scales);
-    const { clusters } = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
-    for (const c of clusters) samples.push(meanPairwiseSim(c, sim, idxOf));
+    const conResult = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
+    if (isGap(conResult)) continue; // this reseed's permuted population was too small to cohere against — not a finding, just skipped
+    for (const c of conResult.clusters) samples.push(meanPairwiseSim(c, sim, idxOf));
   }
   return samples;
 };
@@ -551,7 +566,13 @@ export const induceKinds = (records, opts = {}) => {
   const scales = fieldScales(records);
   const valued = readsValues(keys, scales);
   const { sim, idxOf } = valuedSimilarity(profiles, records, keys, scales);
-  const { clusters, threshold } = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed });
+  const conResult = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed });
+  // Same standing as the profiles.size < minKindSize refusal a few lines up:
+  // a population too small to admit a non-degenerate cohesion null cannot
+  // certify any kind, so the honest result is no kinds — never a silently
+  // substituted threshold.
+  if (isGap(conResult)) return [];
+  const { clusters, threshold } = conResult;
 
   // Valued induction searches a continuous space and must be nulled against its
   // own search (`searchCohesions` above). Presence-only induction does not

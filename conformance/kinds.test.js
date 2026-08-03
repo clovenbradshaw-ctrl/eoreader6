@@ -24,6 +24,9 @@ import {
   buildVocabulary,
   pairHeight,
   partitionNull,
+  deriveCohesionThreshold,
+  parameterProfiles,
+  conSimilarity,
 } from "../packages/engine/emergence/kinds.js";
 import {
   OPERATORS,
@@ -135,6 +138,46 @@ test("degenerate nulls are gaps, not numbers", () => {
   const result = partitionNull({ samples: [5, 5, 5, 5], observed: 6, quantile: 0.95, seed: 1 });
   assert.ok(isGap(result));
   assert.equal(result.gap, "degenerate_ground");
+});
+
+test("deriveCohesionThreshold: count <= 2 is a typed gap, never the old silent 0.25", () => {
+  const r1 = deriveCohesionThreshold({ sim: new Map(), count: 0, permutations: 200, quantile: 0.95, seed: 1 });
+  const r2 = deriveCohesionThreshold({ sim: new Map(), count: 1, permutations: 200, quantile: 0.95, seed: 1 });
+  const r3 = deriveCohesionThreshold({ sim: new Map(), count: 2, permutations: 200, quantile: 0.95, seed: 1 });
+  for (const r of [r1, r2, r3]) {
+    assert.ok(isGap(r));
+    assert.equal(r.gap, "degenerate_ground");
+    assert.notEqual(r, 0.25);
+  }
+});
+
+test("deriveCohesionThreshold: count === 3 runs the real permutation null, not the old count < 4 fallback", () => {
+  // Three profiles with genuinely different pairwise Jaccard similarity
+  // (2/3, 1/5, 2/5) — non-degenerate on purpose, so the permutation loop
+  // below actually samples a mix rather than one repeated value.
+  const params = [{ field_id: "p" }, { field_id: "q" }, { field_id: "r" }, { field_id: "s" }, { field_id: "t" }];
+  const records = [
+    { id: "A", attributes: [{ field_id: "p" }, { field_id: "q" }] },
+    { id: "B", attributes: [{ field_id: "p" }, { field_id: "q" }, { field_id: "r" }] },
+    { id: "C", attributes: [{ field_id: "q" }, { field_id: "r" }, { field_id: "s" }, { field_id: "t" }] },
+  ];
+  const { profiles } = parameterProfiles(records, params);
+  const { sim } = conSimilarity(profiles);
+  const threshold = deriveCohesionThreshold({ sim, count: 3, permutations: 200, quantile: 0.95, seed: 7 });
+  assert.equal(typeof threshold, "number");
+  // The point is that this is a REAL derived number from this material's own
+  // similarity structure, not the retired hand-picked 0.25 — not that it
+  // equals any particular value.
+  assert.notEqual(threshold, 0.25);
+});
+
+test("induceKinds: a population too small for a non-degenerate cohesion null returns no kinds, not a crash", () => {
+  const tiny = [
+    { id: "a", attributes: [A("x")] },
+    { id: "b", attributes: [A("x")] },
+  ];
+  const kinds = induceKinds(tiny, { ...OPTS, minKindSize: 2 });
+  assert.deepEqual(kinds, []);
 });
 
 test("buildVocabulary synthesizes the kinds and their members", () => {

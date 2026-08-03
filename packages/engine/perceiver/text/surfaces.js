@@ -48,6 +48,30 @@ export const namesCorefer = (a, b) => {
 const CAP_TOKEN = /^[\p{Lu}][\p{L}'’]*$/u;
 const LOWER_TOKEN = /^[\p{Ll}][\p{L}'’]*$/u;
 
+// A one-sided 95% significance resolution — declared, the same standing as
+// this codebase's other Born-gate quantiles (e.g. nul-adjacent 0.95
+// thresholds elsewhere): a stated resolution for a statistical test, not a
+// hand-picked bridge between unrelated scales (SEED.md's actual complaint).
+const CAP_SIG_Z = 1.645;
+
+/**
+ * Is this candidate's non-initial capitalisation rate significant against
+ * the null that capitalisation is a fair coin flip (p=0.5) unrelated to
+ * namehood — normal approximation to the binomial, evaluated at THIS
+ * candidate's own (cap, lower) counts. Replaces a single fixed ratio band
+ * shared by every word (formerly [0.8, 2.0], applied uniformly regardless
+ * of how much evidence a given candidate actually carried) with a bound
+ * that widens for a word seen only a handful of times and tightens for one
+ * seen thousands: two occurrences split evenly can never clear it (not
+ * enough evidence either way), where the same split at high volume would.
+ */
+const capitalisationIsSignificant = (cap, lower) => {
+  const n = cap + lower;
+  const pHat = cap / n;
+  const bound = 0.5 + CAP_SIG_Z * Math.sqrt(0.25 / n);
+  return pHat > bound;
+};
+
 // ---------------------------------------------------------------------------
 // ORTHOGRAPHIC NORMALISATION AND REJECTION.
 //
@@ -186,17 +210,25 @@ export const extractSurfaces = (sentences, { functionWords = null, abbreviations
 
   // The physics filter (eoreader5, measured): a NAME essentially never appears
   // lowercased, while a sentence/dialogue opener ("Well", "Why") constantly
-  // does. Ratio outside [0.8, 2.0] rejects both common words and
-  // dialogue-only openers. Multi-word runs skip the ratio (a lowercase form
-  // of "Victor Frankenstein" does not occur to compare against).
-  // A pronoun that is capitalised by orthographic convention rather than by
-  // namehood ("I" in English) survives the ratio filter, because it has no
-  // lowercase form to compare against — it was the single largest false
-  // positive here (2152 "mentions" in Frankenstein). The fix reuses the
-  // Zipf-derived closed-class detector from material.js rather than naming
-  // any language's pronouns: `functionWords` is a Set the caller derives
-  // from this same text's own frequency distribution. Optional — omit it and
-  // the filter simply doesn't run.
+  // does. A pronoun that is capitalised by orthographic convention rather
+  // than by namehood ("I" in English) survives this filter regardless,
+  // because it has no lowercase form to compare against — it was the single
+  // largest false positive here (2152 "mentions" in Frankenstein). The fix
+  // reuses the Zipf-derived closed-class detector from material.js rather
+  // than naming any language's pronouns: `functionWords` is a Set the
+  // caller derives from this same text's own frequency distribution.
+  // Optional — omit it and the filter simply doesn't run.
+  //
+  // Multi-word runs skip this filter (a lowercase form of "Victor
+  // Frankenstein" does not occur to compare against), and so does any
+  // single word never seen lowercase at all (lower === 0) — the strongest
+  // possible evidence for namehood, nothing left to test against.
+  //
+  // What remains is genuinely ambiguous: a word seen written BOTH ways.
+  // capitalisationIsSignificant asks a binomial question of it — is this
+  // word's own capitalised share (cap / (cap + lower)) further above a fair
+  // coin than chance alone would produce AT THIS WORD'S OWN SAMPLE SIZE —
+  // derived per candidate from its own two counts, not a fixed shared band.
   const surfaces = [];
   for (const [surface, cap] of capCounts) {
     const words = surface.split(/\s+/);
@@ -207,10 +239,7 @@ export const extractSurfaces = (sentences, { functionWords = null, abbreviations
       if (abbrev && abbrev.has(surface)) continue;
       if (functionWords && functionWords.has(diaNorm(surface))) continue;
       const lower = lowerCounts.get(diaNorm(surface)) ?? 0;
-      if (lower > 0) {
-        const ratio = cap / lower;
-        if (ratio < 0.8 || ratio > 2.0) continue;
-      }
+      if (lower > 0 && !capitalisationIsSignificant(cap, lower)) continue;
     }
     surfaces.push({ surface, mentions: cap, sentences: sentenceIndex.get(surface).size });
   }
@@ -241,7 +270,41 @@ export const extractSurfaces = (sentences, { functionWords = null, abbreviations
  * record as measured ("a multi-word seed must strip single-word
  * nameSurfaces first, or it absorbs every OTHER prince's bare 'Prince'").
  */
-export const genericTokens = (surfaces, { minPartners = 3 } = {}) => {
+const quantileOf = (sorted, q) => {
+  const i = (sorted.length - 1) * q;
+  const lo = Math.floor(i);
+  const hi = Math.ceil(i);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (i - lo);
+};
+
+/**
+ * A partner-count fence derived from THIS document's own co-occurrence
+ * structure, not a fixed absolute count. The interquartile range is already
+ * this codebase's own measure of a distribution's ordinary spread (nul's
+ * `volume`, "ananda") — a token whose partner-set size sits more than one
+ * IQR above the 75th percentile of this document's own partner-count
+ * distribution is exceeding what ordinary co-occurrence breadth looks like
+ * HERE, a Tukey-style upper fence rather than a percentile chosen by hand.
+ * Degrades safely rather than gapping: too little multi-word structure to
+ * have a fence at all (empty or uniform partner counts, IQR 0) means nothing
+ * exceeds it, so `genericTokens` correctly finds nothing generic — the right
+ * answer when the material can't support the distinction, not a special case.
+ */
+const deriveMinPartners = (partners) => {
+  const counts = [...partners.values()].map((s) => s.size).sort((a, b) => a - b);
+  if (counts.length === 0) return Infinity;
+  const q1 = quantileOf(counts, 0.25);
+  const q3 = quantileOf(counts, 0.75);
+  return q3 + (q3 - q1);
+};
+
+/**
+ * @param {object} [options.minPartners] override the derived fence — omit to
+ *   derive it from `surfaces`'s own co-occurrence structure (see
+ *   `deriveMinPartners`). Compares by EXCEEDS (`>`), matching the derived
+ *   fence's own "outside the ordinary spread" convention.
+ */
+export const genericTokens = (surfaces, { minPartners } = {}) => {
   const partners = new Map(); // token -> Set(other tokens it co-occurs with in a surface)
   for (const { surface } of surfaces) {
     const toks = diaNorm(surface).split(/\s+/).filter((t) => t.length > 2);
@@ -251,15 +314,55 @@ export const genericTokens = (surfaces, { minPartners = 3 } = {}) => {
       for (const u of toks) if (u !== t) partners.get(t).add(u);
     }
   }
+  const fence = minPartners ?? deriveMinPartners(partners);
   const generic = new Set();
-  for (const [tok, set] of partners) if (set.size >= minPartners) generic.add(tok);
+  for (const [tok, set] of partners) if (set.size > fence) generic.add(tok);
   return generic;
 };
 
-export const discoverReferents = (surfaces, { minSentences = 3, minPartners = 3 } = {}) => {
+/**
+ * A recurrence floor derived from THIS document's own candidate-surface
+ * pool: a candidate must recur across MORE distinct sentences than the
+ * bottom quarter of the pool does. Most candidate surfaces in any real text
+ * are Zipfian one-off capitalisations (the 25th percentile is often exactly
+ * 1), so this weeds out that long tail while scaling with how
+ * recurrence-rich the material actually is, rather than a fixed absolute
+ * sentence count.
+ *
+ * The 25th percentile, not the median: a TINY or heavily-tied pool (a short
+ * document, or one dominated by a couple of names) can put the median AT
+ * the pool's own maximum, and "exceeds the median" then rejects everything,
+ * including the most-recurring candidates — measured, on a 3-candidate
+ * pool tied 4/4/2, where a median-based floor of 4 admitted nothing. The
+ * 25th percentile targets the LOW tail specifically and does not collide
+ * with the top the same way.
+ *
+ * Degrades safely rather than rejecting everyone: a pool small or uniform
+ * enough that its OWN 25th percentile sits at or above every member's own
+ * count (a single surviving candidate is the extreme case — its own
+ * percentile always equals itself) means the pool cannot support the
+ * distinction, so nothing is filtered — the same "the material can't
+ * support it, so don't fabricate an answer" standing `deriveMinPartners`
+ * already takes above, not a special case.
+ */
+const deriveMinSentences = (surfaces) => {
+  const counts = surfaces.map((s) => s.sentences).sort((a, b) => a - b);
+  if (counts.length === 0) return 0;
+  const floor = quantileOf(counts, 0.25);
+  return counts.every((c) => c <= floor) ? 0 : floor;
+};
+
+/**
+ * @param {object} [options.minSentences] override the derived recurrence
+ *   floor — omit to derive it from `surfaces` (see `deriveMinSentences`).
+ *   Compares by EXCEEDS (`>`), matching `minPartners`'s convention.
+ * @param {object} [options.minPartners] forwarded to `genericTokens`.
+ */
+export const discoverReferents = (surfaces, { minSentences, minPartners } = {}) => {
   const events = [];
   const assigned = new Map(); // surface -> referent_id
   const generic = genericTokens(surfaces, { minPartners });
+  const sentencesFloor = minSentences ?? deriveMinSentences(surfaces);
 
   // Two surfaces corefer only on evidence a GENERIC token didn't supply:
   // strip titles/family names from both and require the remainder to still
@@ -282,7 +385,7 @@ export const discoverReferents = (surfaces, { minSentences = 3, minPartners = 3 
   };
 
   for (const { surface, sentences } of surfaces) {
-    if (sentences < minSentences) continue;
+    if (sentences <= sentencesFloor) continue;
 
     let referentId = null;
     for (const [existing, id] of assigned) {

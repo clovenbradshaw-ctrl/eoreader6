@@ -109,7 +109,8 @@ const resolve = (phrase, offset) => {
 // restated within the present fades. Derived from WINDOW by the same identity
 // the tiers use (1 - 1/window), so this script declares no forgetting rate of
 // its own either.
-const graph = createGraph({ gamma: gammaFor(WINDOW) });
+const PRUNE_BELOW = 1e-4; // the floor below which a decayed relation is forgotten outright, not carried as noise
+const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
 const tiers = createTierStack(TIER_NAMES, { window: WINDOW, draws: DRAWS, seed: TIER_SEED });
 const reached = [];
 // Why each tier answered as it did. "shifted 0" is a different finding when

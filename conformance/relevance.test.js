@@ -20,18 +20,19 @@ import { ORGANS } from "../packages/engine/operators.js";
 
 const T = (subject, verb, object, polarity = "+") => ({ subject, verb, object, polarity });
 const GAMMA = 0.95;
+const PRUNE_BELOW = 1e-4;
 const RESEEDS = 60;
 
 /** A reader who has read a while and believes one relation strongly. */
 const readerWhoBelievesCreatureHatesVictor = () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 8; i++) readTriples(g, [T("creature", "hates", "victor")]);
   return g;
 };
 
 /** Two separate neighbourhoods, no bridge — the two-islands fixture. */
 const readerWithTwoIslands = () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 12; i++) {
     readTriples(g, [T("victor", "studies", "science"), T("victor", "leaves", "geneva"), T("elizabeth", "writes", "letters")]);
     readTriples(g, [T("creature", "roams", "mountains"), T("creature", "reads", "books")]);
@@ -41,7 +42,7 @@ const readerWithTwoIslands = () => {
 
 /** A reader whose own edges can be rewired into new pairings. */
 const readerWhoseGroundCanVary = () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 8; i++) {
     readTriples(g, [
       T("a", "meets", "p1"), T("a", "meets", "p2"), T("b", "meets", "q1"), T("b", "meets", "q2"),
@@ -87,7 +88,7 @@ test("a first clause of a never-seen subject against the empty ground is preserv
   // The empty graph is the zero-width ground: its own reseeding variation is
   // the nothing. A being introduced against the nothing is the founding
   // movement (SEED: "the only next available is the ground").
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   const r = judge(g, [T("walton", "sails", "archangel")], { reseeds: RESEEDS, seed: 3 });
 
   assert.equal(r.verdict, "preserve");
@@ -184,7 +185,7 @@ test("the measurement is deterministic in its declared seed", () => {
 test("modality-agnostic: a leitmotif meets the same gate as a narrative clause", () => {
   // The same measurement, fed triples from an audio perceiver: a figure that
   // answers the ground is preserved, one that merely restates it is refused.
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 8; i++) readTriples(g, [T("motif_a", "answers", "motif_b")]);
 
   const fresh = judge(g, [T("motif_a", "quotes", "motif_c")], { reseeds: RESEEDS, seed: 9 });

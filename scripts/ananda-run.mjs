@@ -18,6 +18,17 @@ import * as csv from "../packages/engine/perceiver/csv/material.js";
 
 const PERCEIVERS = { text, audio, video, image, csv };
 
+// SEED.md's three declared numbers, plus `passes` (this loop's own — how
+// many growing-fraction reads to take). Declared once, here, rather than as
+// JS defaults duplicated on `anandaRun`'s own signature and `timeLoop`'s
+// underneath it: a number SEED.md says must never be a default was, until
+// now, defaulted twice, one layer apart, and the CLI below only ever let a
+// caller override `passes` — window/draws/reseeds ran on hidden values no
+// invocation ever declared.
+const WINDOW = 12;   // the reach of the present
+const DRAWS = 200;   // the resolution of testimony — finest rank sayable is 1/draws
+const RESEEDS = 5;   // the resolution of pattern
+
 const EXT_KIND = {
   txt: "text", md: "text",
   mp3: "audio", m4a: "audio", wav: "audio", flac: "audio", aac: "audio",
@@ -28,7 +39,7 @@ const EXT_KIND = {
 
 export const inferKind = (path) => EXT_KIND[path.split(".").pop().toLowerCase()];
 
-export const anandaRun = async (path, { kind, passes = 8, window = 12, draws = 200, reseeds = 5, ...perceiverOpts } = {}) => {
+export const anandaRun = async (path, { kind, passes, window, draws, reseeds, ...perceiverOpts } = {}) => {
   const k = kind || inferKind(path);
   const perceiver = PERCEIVERS[k];
   if (!perceiver) throw new Error(`no perceiver for kind "${k}" (path: ${path})`);
@@ -62,6 +73,12 @@ if (process.argv[1] && process.argv[1].endsWith("ananda-run.mjs")) {
     console.error("usage: node scripts/ananda-run.mjs <path> [kind] [passes]");
     process.exit(1);
   }
-  const run = await anandaRun(path, { kind: kindArg || undefined, passes: passesArg ? parseInt(passesArg, 10) : 8 });
+  const run = await anandaRun(path, {
+    kind: kindArg || undefined,
+    passes: passesArg ? parseInt(passesArg, 10) : 8,
+    window: WINDOW,
+    draws: DRAWS,
+    reseeds: RESEEDS,
+  });
   console.log(summarize(run));
 }

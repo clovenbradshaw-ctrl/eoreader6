@@ -25,6 +25,7 @@ import { readFileSync } from "node:fs";
 import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
 import { createGraph, readTriples, strongestEdges } from "../packages/engine/emergence/graph.js";
+import { gammaFor } from "../packages/engine/emergence/tiers.js";
 import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
 import { projectReferents } from "../packages/engine/referents/index.js";
@@ -41,12 +42,20 @@ const READER_VERSION = "eo-2026-07";
 // Declared, never defaulted — the same numbers the kinds organ enforces.
 const OPTS = { minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42, reseeds: 24 };
 
+const SENTENCES_PER_FRAME = 6; // matches read-tiered.mjs's own framing of the same material
+// The reach of the present, in frames — same declared number read-tiered.mjs
+// uses for this material's tier stack. This script builds no tier stack, but
+// the graph below forgets at the reach WINDOW derives (gammaFor), so it is
+// declared here rather than left as a bare gamma nobody re-derived.
+const WINDOW = 12;
+const PRUNE_BELOW = 1e-4; // the floor below which a decayed relation is forgotten outright, not carried as noise
+
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 
 const sentences = splitSentences(text);
 const frames = [];
-for (let i = 0; i < sentences.length; i += 6) {
-  const g = sentences.slice(i, i + 6);
+for (let i = 0; i < sentences.length; i += SENTENCES_PER_FRAME) {
+  const g = sentences.slice(i, i + SENTENCES_PER_FRAME);
   if (g.length) frames.push({ order: frames.length, offset: g[0].offset, text: g.map((s) => s.text).join(" ") });
 }
 
@@ -100,7 +109,13 @@ const resolve = (phrase, offset) => {
   return null;
 };
 
-const graph = createGraph({ gamma: 0.9 });
+// The graph forgets at the same reach as everything else here: a relation not
+// restated within the present fades. Derived from WINDOW by the same identity
+// read-tiered.mjs's tier stack uses (1 - 1/window), so this script declares
+// no forgetting rate of its own either — this used to be a bare
+// createGraph({ gamma: 0.9 }), the one hand-pick commit 7ca94e5 fixed in
+// read-tiered.mjs but missed here.
+const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
 let totalTriples = 0, statedTotal = 0;
 
 for (const f of frames) {

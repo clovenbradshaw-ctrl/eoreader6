@@ -15,11 +15,12 @@ import { ORGANS } from "../packages/engine/operators.js";
 
 const T = (subject, verb, object, polarity) => ({ subject, verb, object, polarity });
 const GAMMA = 0.95;
+const PRUNE_BELOW = 1e-4;
 const DRAWS = 60;
 
 /** A reader who has read a while: two separate neighbourhoods, no bridge. */
 const readerWithTwoIslands = () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 12; i++) {
     readTriples(g, [T("victor", "studies", "science"), T("victor", "leaves", "geneva"), T("elizabeth", "writes", "letters")]);
     readTriples(g, [T("creature", "roams", "mountains"), T("creature", "reads", "books")]);
@@ -41,7 +42,7 @@ test("the caller's belief is never mutated by measuring — the copy is load-bea
 });
 
 test("a revision is not committed until it is committed, and then it is graph.js's advance", () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   readTriples(g, [T("a", "knows", "b")]);
   const r = revise(g, [T("a", "knows", "c")], { draws: DRAWS, seed: 2 });
   assert.equal(r.committed, false);
@@ -128,7 +129,7 @@ test("durability and productivity are owed, and say so rather than defaulting to
 });
 
 test("DEF: a contrary arrival refuses a believed relation, and the refusal is retained", () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 8; i++) readTriples(g, [T("creature", "hates", "victor")]);
 
   const r = revise(g, [T("creature", "hates", "victor", "-")], { draws: DRAWS, seed: 7 });
@@ -141,7 +142,7 @@ test("DEF: a contrary arrival refuses a believed relation, and the refusal is re
 });
 
 test("a long-standing contradiction is not re-filed as fresh news every turn", () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 6; i++) readTriples(g, [T("creature", "hates", "victor"), T("creature", "hates", "victor", "-")]);
 
   // Both polarities are believed. An unrelated arrival must report no refusal.
@@ -174,13 +175,13 @@ test("SEG and SYN are read from connectivity, and cannot both fire", () => {
 });
 
 test("depth is a coordinate, not a score — the deepest domain any operator fired in", () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 8; i++) readTriples(g, [T("creature", "hates", "victor")]);
 
   const refusal = revise(g, [T("creature", "hates", "victor", "-")], { draws: DRAWS, seed: 11 });
   assert.equal(refusal.depth, "Interpretation", "a refusal acts in the interpretation domain");
 
-  const g2 = createGraph({ gamma: GAMMA });
+  const g2 = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   readTriples(g2, [T("a", "knows", "b")]);
   const plain = revise(g2, [T("c", "knows", "d")], { draws: DRAWS, seed: 12 });
   assert.equal(plain.depth, "Existence", "bringing new referents into being acts in the existence domain");
@@ -233,7 +234,7 @@ test("MEASURED DEAD END: the continuation null cannot place the generative opera
 });
 
 test("a first arrival has nothing to revise, and says so instead of scoring", () => {
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   const r = revise(g, [T("a", "knows", "b")], { draws: DRAWS, seed: 15 });
   assert.equal(r.nullDraws, 0);
   for (const op of MEASURED) assert.equal(r.vector[op].gap, "undeclared");
@@ -259,7 +260,7 @@ test("the measurement is deterministic in its declared seed", () => {
 test("modality-agnostic: nothing here reads a word, a sentence, or a surface", () => {
   // The same call with actor-action-target from a video perceiver, or
   // voice-gesture-voice from an audio one, is the same measurement.
-  const g = createGraph({ gamma: GAMMA });
+  const g = createGraph({ gamma: GAMMA, pruneBelow: PRUNE_BELOW });
   for (let i = 0; i < 10; i++) {
     readTriples(g, [T("motif_a", "answers", "motif_b")]);
     readTriples(g, [T("motif_c", "inverts", "motif_d")]);

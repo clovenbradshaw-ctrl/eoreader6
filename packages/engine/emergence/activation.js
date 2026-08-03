@@ -82,6 +82,29 @@ export const tokens = (t) => String(t ?? "").toLowerCase().match(WORD_RE) ?? [];
 
 const bump = (map, key, amount) => map.set(key, (map.get(key) ?? 0) + amount);
 
+// Declared once, shared between codeOf and readForward rather than
+// redeclared as two independent literals that could silently drift.
+//
+// IDF_FLOOR is scale-free (see the file header: log(t/df) >= floor is the
+// same statement as the RATE df/t <= e^-floor, which does not drift as t
+// grows) — an honest declared resolution, checked rather than assumed.
+//
+// MIN_LEN is NOT yet earned, and forcing a derivation for it here would be
+// the thing this file's own growth rule warns against. Measured directly:
+// on Frankenstein, of every (word, frame) pair clearing IDF_FLOOR, ~6% are
+// words under 4 characters — and that pool is a genuine MIX, not a clean
+// noise class: real function words ("any", "us", "did", "nor", "her") sit
+// alongside real content words this arctic-and-nature-heavy text needs
+// ("ice", "sun", "sea", "joy"). A length cutoff cannot separate those two —
+// they are the same length. What WOULD separate them is the same kind of
+// Zipf-derived closed-class test `material.js::functionWordSet` already
+// uses elsewhere in this codebase, but that requires a retrieval-quality
+// golden to validate any replacement against (does the swap help or hurt
+// recall?), which does not exist yet and is not built here. Left declared,
+// on the same terms as `completion`/`topEdges`/`edgeSlots` below.
+const IDF_FLOOR = 2.0;
+const MIN_LEN = 4;
+
 /**
  * The sparse code of one frame, against the tables AS THEY STAND. Nothing here
  * looks at a frame that has not been read.
@@ -92,7 +115,7 @@ const bump = (map, key, amount) => map.set(key, (map.get(key) ?? 0) + amount);
  * distinctive unigram, and trigrams recur only in adjacent frames, so the code
  * bridged locally and never at range.
  */
-export const codeOf = (ws, state, { minLen = 4, idfFloor = 2.0 } = {}) => {
+export const codeOf = (ws, state, { minLen = MIN_LEN, idfFloor = IDF_FLOOR } = {}) => {
   const { df, gramDf, read } = state;
   // An unseen form is maximally distinctive, which is right: the first time you
   // meet a strange word it is the most separable thing on the page.
@@ -288,7 +311,7 @@ const recall = (code, state, { completion, topEdges, selfOrder }) => {
  * growth rule an unwired organ is refuted rather than early. It is built to
  * the shape the measurement will need and makes no claim until it has one.
  */
-export const readForward = (frames, { idfFloor = 2.0, minLen = 4, completion = 0.5, topEdges = 6, edgeSlots = 24, embed = null } = {}) => {
+export const readForward = (frames, { idfFloor = IDF_FLOOR, minLen = MIN_LEN, completion = 0.5, topEdges = 6, edgeSlots = 24, embed = null } = {}) => {
   const state = {
     df: new Map(),
     gramDf: new Map(),
