@@ -169,6 +169,17 @@ Stated so it is not mistaken for done:
   `openedFrom: "own"`. What remains unearned is that a genuinely *first* ground
   is a *received* one: whether the caller read nothing before is the host's to
   declare, because the host owns the sequence of turns (Amendment IX).
+- **Self-emergent organs beyond proposing from an existing repertoire** —
+  Amendment XIV automates *which untried (statistic, perturbation) pair to
+  test next*, from the four statistics and three perturbations `nul` already
+  has. It does not draft a new statistic or a new perturbation from a
+  recurring gap-shape, and it holds no archive a later reading could consult
+  before re-earning something a previous one already earned. Both are the
+  actual content of "an organ develops itself and publishes it" and neither is
+  built. What is earned is narrower and stated so the narrower claim is not
+  mistaken for the wider one: proposal from a known repertoire can be
+  automated, gated by the unchanged growth rule and a mandatory negative
+  control, without reopening #1's wall.
 
 ### Earned since, and recorded so the list stays honest
 
@@ -695,6 +706,75 @@ uses. Three declared numbers still.
 
 Evidence: `conformance/binding.test.js` "A5: graph seam" tests,
 `packages/host/sing.js` commit step.
+
+### XIV — Proposing a candidate is not inventing one, and the growth rule's own test needs the null it already has
+
+*2026-08-04. Extends #1; extends the growth rule.*
+
+The question behind this amendment was what it would mean for the engine to
+grow an organ from encountering material its current repertoire cannot place,
+and publish that organ for a later reading to use without re-earning it. Two
+things have to stay distinct for that question to be askable at all without
+reopening #1's wall:
+
+> **A prior is content. It names a giver, decays, and earns standing by
+> lowering surprise (Amendment IV). An organ is mechanism — a perturbation, a
+> statistic, a gap-shape — validated only by the growth rule.** Deriving a
+> prior from the material is the wall #1 already names, at r ≈ 0.974, three
+> times. A "self-emergent organ" that blurs the line is that wall wearing the
+> growth rule's clothes.
+
+What is built here is deliberately the narrow half. `scripts/turbulence-
+candidate-license.mjs` proposes a candidate by enumerating `nul`'s own
+`STATISTICS x PERTURBATIONS` against the `LICENSED` registry and testing
+whatever is missing — the system nominates *which untried pair to test next*,
+and invents neither a new statistic nor a new perturbation to test it with.
+Nothing about the repertoire is self-emergent; only the choice of what to try
+against it is. A mandatory negative control runs first, on IID noise, and the
+script halts before touching real material if any candidate manufactures an
+`above` verdict where none should exist — the same discipline `level()`'s own
+docstring already applies to itself, made a precondition rather than an
+afterthought.
+
+**The control caught something real on its first run**, and it was not in the
+candidate logic. `level(observed, own, core)` called without `material` or
+`reseeds` falls back to `floor = 2/draws` — a resolution floor, not a null,
+exactly the defect `level()`'s own docstring names at length ("for a long time
+it was asked to be both"). Several candidates manufactured `above` on a
+majority of pure-noise lines under the floor alone. Corrected to supply
+`material` and a declared `reseeds` (12), the control passed clean, and the
+run against real turbulence (`goldens/turbulence/isotropic1024coarse-x-
+lines.npy`, 32 lines) refused all seven candidates on a majority at every
+tested window: `burstiness/resample`, `burstiness/phase`,
+`windowMean/resample`, `windowMean/phase`, `permutationEntropy/resample`,
+`permutationEntropy/phase`, `irreversibility/resample`. Refused, not early —
+the same standing `cascade` already holds. `LICENSED` gains nothing from this
+run.
+
+**The defect was not only in the new script.** `scripts/turbulence-growth-
+rule.mjs` — the hand-run script that put `irreversibility/phase` in
+`LICENSED` in the first place — makes the identical uncorrected call. That
+license was therefore rechecked directly rather than left standing on the
+strength of a method just shown to manufacture false positives elsewhere:
+floor-only gives `above` on 84/96 lines (reproducing the original figure
+exactly); a proper reseeding null gives `above` on 77/96, mean displacement
++0.384 against the original +0.361. **The license holds.** It was not a floor
+artefact. Evidence: `scripts/turbulence-recheck-phase-license.mjs`.
+
+So the growth rule's own clause — "an organ joins only when the level test
+returns `above` against the core" — is settled to mean the reseeded test,
+never the bare floor, as a binding reading rather than a convention a script
+can forget. No existing license moves. One methodological gap closes.
+
+**What this does not do.** It does not add anything to `LICENSED`. It does
+not draft a new statistic or perturbation, and it holds no archive — a later
+reading gains nothing from this run that a human did not already write down
+here. Whether the wider claim in "Not yet earned" — an organ drafted from a
+recurring gap-shape, published so a later reading need not re-earn it — can
+itself clear a growth rule is untried and unresolved.
+
+Evidence: `scripts/turbulence-candidate-license.mjs`,
+`scripts/turbulence-recheck-phase-license.mjs`.
 
 ## The instrument
 
