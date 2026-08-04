@@ -35,12 +35,20 @@ import { splitSentences, stripContainer } from "../packages/engine/perceiver/tex
 import { bayesianSurprise, priorContinuationNull } from "../packages/engine/emergence/surprise.js";
 import { received, difference, isGap } from "../nul/index.js";
 import { readForward } from "../packages/engine/emergence/activation.js";
+import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
+import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
+import { projectReferents } from "../packages/engine/referents/index.js";
+import { readLinks, bindingTriples } from "../packages/engine/emergence/binding.js";
 
 // ── declared, never defaulted ───────────────────────────────────────────────
 const WINDOW = 12;   // reach of the present: sentences feeding the prior
 const DRAWS = 200;   // resolution of testimony: finest rank sayable is 1/draws
 const GAMMA = 0.9;   // recency decay: posterior = GAMMA*prior + arrival
 const ALPHA = 1;     // smoothing: the cost a form never read still carries
+
+// ── binding declared numbers ────────────────────────────────────────────────
+const BINDING_WINDOW = 2;    // co-arrival window: how close in sentence index
+const BINDING_DRAWS = 199;   // null draws for displacement, reversal, reseed
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 const words = (t) => String(t ?? "").toLowerCase().match(WORD_RE) ?? [];
@@ -53,6 +61,23 @@ const countsOf = (ws) => {
 const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 const sentences = splitSentences(text);
+
+// ── entity tracking for binding (received measurement) ──────────────────────
+const table = buildFrequencyTable(tokenize(text));
+const functionWords = functionWordSet(table);
+const allSurfaces = extractSurfaces(sentences, { functionWords });
+const cast = projectReferents(discoverReferents(allSurfaces).events).filter((r) => !r.mergedInto);
+
+// Build a surface→referent lookup (diaNorm, same as read-ladder.mjs)
+const surfaceToReferent = [];
+for (const r of cast) for (const s of r.surfaces) {
+  const n = diaNorm(s);
+  if (n.length < 2) continue;
+  surfaceToReferent.push([n, new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u"), r.id]);
+}
+surfaceToReferent.sort((a, b) => b[0].length - a[0].length);
+
+const referentArrivals = new Map(); // referentId -> [sentenceIndex, ...]
 
 const windowArrivals = [];
 let prior = new Map();
@@ -78,6 +103,15 @@ for (let i = 0; i < sentences.length; i++) {
   const ws = words(s.text);
   if (ws.length === 0) continue;
   const arrival = countsOf(ws);
+
+  // ── entity tracking: which referents appear in this sentence ───────────
+  for (const [surface, re, refId] of surfaceToReferent) {
+    if (re.test(s.text)) {
+      const arr = referentArrivals.get(refId);
+      if (!arr) referentArrivals.set(refId, [i]);
+      else if (arr[arr.length - 1] !== i) arr.push(i);
+    }
+  }
 
   if (priorTotal === 0) { advance(arrival); continue; } // nothing measured against a first ground
 
@@ -105,6 +139,23 @@ for (const o of observations) {
 }
 if (run) windows.push(run);
 
+// ── binding: modality-blind Link over entity arrivals ───────────────────────
+const entityRegister = [...referentArrivals.entries()]
+  .filter(([, arr]) => arr.length >= 2)
+  .map(([id, arrivals]) => ({ id, arrivals: arrivals.sort((a, b) => a - b) }));
+
+let bindingLinks = [];
+let witnessedLinks = [];
+if (entityRegister.length >= 2) {
+  bindingLinks = readLinks(entityRegister, {
+    window: BINDING_WINDOW,
+    draws: BINDING_DRAWS,
+    seed: 42,
+    totalUnits: sentences.length,
+  });
+  witnessedLinks = bindingLinks.filter((l) => l.direction !== null);
+}
+
 // ── the associative-memory channel, same sentences, no future ───────────────
 const { records } = readForward(sentences.map((s, i) => ({ order: i, offset: s.offset, text: s.text })));
 const recalledAt = new Map(records.map((r) => [r.order, r.recalled]));
@@ -113,7 +164,8 @@ const windowRecall = (w) => Math.max(...w.map((o) => recalledAt.get(o.order) ?? 
 const exceeds = observations.filter((o) => o.exceeded).length;
 console.log(`READING ${TEXT_PATH.split("/").pop()} — ${sentences.length} sentences, ${observations.length} measured against belief`);
 console.log(`declared: window ${WINDOW} sentences, gamma ${GAMMA}, draws ${DRAWS}, alpha ${ALPHA}`);
-console.log(`${exceeds} exceedances in ${windows.length} discovered windows (no stratum, no frame, no floor)\n`);
+console.log(`${exceeds} exceedances in ${windows.length} discovered windows (no stratum, no frame, no floor)`);
+console.log(`binding: ${entityRegister.length} entities, ${bindingLinks.length} pairs tested, ${witnessedLinks.length} witnessed (window ${BINDING_WINDOW}, draws ${BINDING_DRAWS})\n`);
 
 for (const w of windows) {
   const peak = w.reduce((a, b) => (b.kl > a.kl ? b : a));
@@ -122,4 +174,13 @@ for (const w of windows) {
   const shown = peak.text.length > 200 ? peak.text.replace(/\s+/g, " ").slice(0, 200).replace(/\s+\S*$/, "") + "…" : peak.text.replace(/\s+/g, " ");
   console.log(`── ${fromPct}%–${toPct}%  run of ${w.length}  peak KL ${peak.kl.toFixed(3)}  recalled ${windowRecall(w)} prior passages`);
   console.log(`   ${shown}\n`);
+}
+
+if (witnessedLinks.length > 0) {
+  console.log(`═══ WITNESSED LINKS ═══`);
+  for (const l of witnessedLinks.slice(0, 10)) {
+    const from = l.direction === "a→b" ? l.a.id : l.b.id;
+    const to = l.direction === "a→b" ? l.b.id : l.a.id;
+    console.log(`  ${from} → ${to}  polarity=${l.polarity}  strength=${l.strength.toFixed(4)}  disp=${l.nulls.displacement.pValue.toFixed(3)} rev=${l.nulls.reversal.pValue.toFixed(3)} reseed=${l.nulls.reseed.pValue.toFixed(3)}`);
+  }
 }

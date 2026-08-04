@@ -49,6 +49,7 @@ import { extractRelations } from "../engine/perceiver/text/relations.js";
 import { tokenize } from "../engine/perceiver/text/material.js";
 import { judge } from "../engine/search/index.js";
 import { createGraph, readTriples, strongestEdges } from "../engine/emergence/graph.js";
+import { readLinks, bindingTriples } from "../engine/emergence/binding.js";
 import { ground, volume, isGap, gap } from "../../nul/index.js";
 import { createLayer } from "../engine/generation/belief.js";
 import { settleGround } from "../engine/generation/settled.js";
@@ -70,8 +71,13 @@ const previewOf = (text) => String(text ?? "").replace(/\s+/g, " ").slice(0, 96)
  * set. It is declared here for the same reason `gamma`/`reseeds`/`seed` are:
  * a Set the caller measured or otherwise supplied, never one this file
  * assumes on the caller's behalf.
+ *
+ * `entities` is an optional entity register from carryEntities — when
+ * provided, binding-derived links are fed to the graph alongside text-derived
+ * triples. The graph gains structural edges (a|polarity|b) that capture
+ * co-occurrence patterns text triples miss.
  */
-export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha = 1, limit = 10, verbs }) => {
+export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha = 1, limit = 10, verbs, entities, bindingSpec }) => {
   if (!session || !(session.spans instanceof Map)) throw new TypeError("sing: a corpus session is required");
   if (!Number.isFinite(gamma) || gamma <= 0 || gamma > 1)
     throw new TypeError("sing: gamma is the reader's forgetting, declared in (0,1], never defaulted");
@@ -94,6 +100,8 @@ export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha 
     alpha,
     limit,
     verbs,
+    entities: entities ?? null,
+    bindingSpec: bindingSpec ?? null,
     readIds: new Set(),   // spans already experienced — the reader never re-reads
     preserved: [],        // passages that joined the reader (verdict preserve)
     refused: [],          // passages redundant against the reader
@@ -168,6 +176,19 @@ export const singPass = (singer) => {
     record.movement = committed.belief;
     record.newEdges = committed.newEdges;
     record.newNodes = committed.newNodes;
+
+    // BINDING — when an entity register is available, feed co-arrival links.
+    // Structural edges (a|polarity|b) capture relations text triples miss.
+    if (s.entities && s.bindingSpec) {
+      const links = readLinks(s.entities, s.bindingSpec);
+      const linkTriples = bindingTriples(links);
+      if (linkTriples.length > 0) {
+        const bindingResult = readTriples(s.reader, linkTriples, { alpha: s.alpha, structural: true });
+        record.bindingEdges = bindingResult.newEdges;
+        record.bindingNodes = bindingResult.newNodes;
+      }
+    }
+
     s.preserved.push(record);
     s.moves.push(committed.belief);
     s.lastPreserved = span;

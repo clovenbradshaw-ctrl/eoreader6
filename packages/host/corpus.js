@@ -147,6 +147,68 @@ export function ingestFile(session, filePath) {
   return admitChunked(session, { text, sourceId });
 }
 
+// ── n-gram signal, shared with the surfer (surfer.js's contentAddress) ───────
+// Re-earned from specs/mechanical-retrieval-theory.md: eoreader5 beat ColBERT
+// on surface-form robustness with character-trigram profiles, and its typo
+// arithmetic is calibrated at n=3 ("a typo changes at most 3 trigrams per
+// character"; >50% retention keeps the rank). A wider range was measured and
+// reverted: {2..4}, {2..5}, and {4..4} change no outcome on the 11 content-path
+// golden cases, the three War-and-Peace paragraph snips, or their single-typo
+// variants. The trigram is sufficient, so the anchor is kept. Both sides get
+// the same transform, so a query and a span that share a phrase share its
+// grams even when one has a wrong letter or a dropped accent.
+export const nGramProfile = (text, { minN = 3, maxN = 3 } = {}) => {
+  const t = String(text ?? "").toLowerCase();
+  const counts = new Map();
+  for (let n = minN; n <= maxN; n++) {
+    for (let i = 0; i + n <= t.length; i++) {
+      const key = `${n}:${t.slice(i, i + n)}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return counts;
+};
+
+// Query containment: the span's grams restricted to the query's support, each
+// capped at the query's own count, cosine against the query. This asks "how
+// much of what I asked for is in the span" and is immune to both span length
+// and repetition: a span that contains the phrase verbatim scores ~1 no matter
+// how long it is, a span with only half the query's grams scores proportionally,
+// and a span that repeats a common letter pattern does not get extra credit.
+export const queryContainment = (query, span) => {
+  let dot = 0;
+  let nq = 0;
+  let nl = 0;
+  for (const [k, qv] of query) {
+    nq += qv * qv;
+    const sv = span.get(k);
+    if (!sv) continue;
+    const capped = Math.min(sv, qv);
+    dot += qv * capped;
+    nl += capped * capped;
+  }
+  return nq && nl ? dot / (Math.sqrt(nq) * Math.sqrt(nl)) : 0;
+};
+
+// The longest contiguous run of query tokens appearing in a span's token
+// sequence, as a fraction of the query's token count — the strongest evidence
+// short of an exact span, and the same evidence the surfer's phrase term reads
+// off a line: when the reader's words appear in order and unbroken, the span
+// contains the thing asked for. Runs of length one are not evidence (every
+// matched span contains the query's words singly).
+const contiguousPhrase = (tokens, queryTokens) => {
+  for (let len = queryTokens.length; len >= 2; len--) {
+    for (let s = 0; s + len <= queryTokens.length; s++) {
+      const win = queryTokens.slice(s, s + len);
+      outer: for (let i = 0; i + len <= tokens.length; i++) {
+        for (let j = 0; j < len; j++) if (tokens[i + j] !== win[j]) continue outer;
+        return len / queryTokens.length;
+      }
+    }
+  }
+  return 0;
+};
+
 export function searchSpans(session, { query, limit = 10 }) {
   if (!query || !query.trim()) return { spans: [], gaps: null };
   const phraseWords = tokenize(query);
@@ -184,11 +246,12 @@ export function searchSpans(session, { query, limit = 10 }) {
   const df = new Map(phraseWords.map((w) => [w, 0]));
   for (const span of session.spans.values()) {
     if (!span.text) continue;
-    const words = new Set(tokenize(span.text));
+    const tokens = tokenize(span.text);
+    const words = new Set(tokens);
     const present = phraseWords.filter((w) => words.has(w));
     if (present.length === 0) continue;
     for (const w of present) df.set(w, df.get(w) + 1);
-    hits.push({ span, present });
+    hits.push({ span, present, tokens });
   }
   if (hits.length === 0) return { spans: [], gaps: null };
 
@@ -196,17 +259,48 @@ export function searchSpans(session, { query, limit = 10 }) {
   const weight = (w) => Math.log(1 + n / (1 + (df.get(w) ?? 0)));
   const weights = new Map(phraseWords.map((w) => [w, weight(w)]));
   const totalW = phraseWords.reduce((s, w) => s + weights.get(w), 0);
+  const queryGrams = nGramProfile(query);
 
+  // A span's report is PRESENCE, and nothing else. The three terms a weighted
+  // blend used to mix were measured against a full corpus and one of them is
+  // not a signal at all: character-trigram containment between a sentence
+  // query and a ~2000-char span is a near-constant (measured 0.88–0.98 across
+  // every span of a real 220-span corpus), because the query's trigram mass is
+  // overwhelmingly common English letters ("th", "he", "and") that any span
+  // carries. Folded into the score it added a flat +0.13 to EVERY span — a
+  // floor-bypass: below-threshold noise stopped being noise, which is exactly
+  // the failure MIN_RELEVANCE_SCORE exists to close. It is kept on the span as
+  // a trace and still serves the surfer's content address; it does not order
+  // search. So no blend: the sense organ reports what is present, and order is
+  // declared evidence — presence first, then, at equal presence, the span that
+  // contains the reader's words contiguously in order (the surfer's "strongest
+  // evidence short of an exact span"), then the earlier span (determinism over
+  // noise). None of this is a weighted combination of what is present (the
+  // constitution's II.8); the scalar stays the calibrated report the host's
+  // floor was measured against.
   const matches = [];
-  for (const { span, present } of hits) {
+  for (const { span, present, tokens } of hits) {
     const matchedW = present.reduce((s, w) => s + weights.get(w), 0);
     const coverage = totalW > 0 ? matchedW / totalW : 0;
+    const phrase = contiguousPhrase(tokens, phraseWords);
+    const ngram = queryContainment(queryGrams, nGramProfile(span.text));
     span.score = coverage;
     span.coverage = coverage;
+    span.phrase_score = phrase;
+    span.ngram = ngram;
     span.phrase = query;
     matches.push(span);
   }
-  matches.sort((a, b) => (b.score || 0) - (a.score || 0));
+  // Deterministic: presence desc, then the contiguous phrase desc, then earlier
+  // in the document wins — the same tie-break the surfer uses ("the earlier
+  // line wins — determinism over noise"), never the order the spans happened
+  // to be admitted in.
+  matches.sort(
+    (a, b) =>
+      (b.score || 0) - (a.score || 0) ||
+      (b.phrase_score || 0) - (a.phrase_score || 0) ||
+      a.byte_start - b.byte_start,
+  );
   return { spans: matches.slice(0, limit), gaps: null };
 }
 

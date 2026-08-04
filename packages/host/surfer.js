@@ -59,7 +59,7 @@
 import { OPERATORS } from "../engine/operators.js";
 import { headingsMatch } from "../engine/perceiver/text/segments.js";
 import { diaNorm } from "../engine/perceiver/text/surfaces.js";
-import { sessionSegments, snipSegment, snipRange } from "./corpus.js";
+import { sessionSegments, snipSegment, snipRange, nGramProfile, queryContainment } from "./corpus.js";
 
 // The cell this host organ occupies on the operator grid (engine/operators.js):
 // SEG · Field · Clearing — the addressed reach-unit cut out of the arena, the
@@ -81,52 +81,9 @@ const CONTENT_SHORTLIST_CAP = 40;
 // gap until a segmentation prior lands.
 const tokenize = (s) => diaNorm(s).match(/[\p{L}\p{N}]{4,}/gu) ?? [];
 
-// ── n-gram signal, re-earned from specs/mechanical-retrieval-theory.md ──────
-// eoreader5 beat ColBERT on surface-form robustness with character-trigram
-// profiles, and its typo arithmetic is calibrated at n=3 ("a typo changes at
-// most 3 trigrams per character"; >50% retention keeps the rank). A wider
-// range was measured and reverted: {2..4}, {2..5}, and {4..4} change no
-// outcome on the 11 content-path golden cases, the three War-and-Peace
-// paragraph snips, or their single-typo variants (a dropped letter in a short
-// word like "sappy" still lands under pure trigrams) — the trigram is
-// sufficient, so the anchor is kept. Both sides get the same transform, so a
-// query and a line that share a phrase share its grams even when one has a
-// wrong letter or a dropped accent.
-const nGramProfile = (text, { minN = 3, maxN = 3 } = {}) => {
-  const t = String(text ?? "").toLowerCase();
-  const counts = new Map();
-  for (let n = minN; n <= maxN; n++) {
-    for (let i = 0; i + n <= t.length; i++) {
-      const key = `${n}:${t.slice(i, i + n)}`;
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-  }
-  return counts;
-};
-
-// Query containment: the line's grams restricted to the query's support,
-// each capped at the query's own count, cosine against the query. This asks
-// "how much of what I asked for is in the line" and is immune to both line
-// length and repetition: a line that contains the phrase verbatim scores ~1
-// no matter how long it is, a line with only half the query's grams scores
-// proportionally, and a line that repeats a common letter pattern ("th", "he")
-// does not get extra credit for it. A plain whole-line cosine would be
-// diluted by a long line's unrelated content and would hand the tie to the
-// shorter line (measured: "the regression analysis" flipping to "3. Results").
-const queryContainment = (query, line) => {
-  let dot = 0;
-  let nq = 0;
-  let nl = 0;
-  for (const [k, qv] of query) {
-    nq += qv * qv;
-    const lv = line.get(k);
-    if (!lv) continue;
-    const capped = Math.min(lv, qv);
-    dot += qv * capped;
-    nl += capped * capped;
-  }
-  return nq && nl ? dot / (Math.sqrt(nq) * Math.sqrt(nl)) : 0;
-};
+// The n-gram signal (nGramProfile/queryContainment) lives in corpus.js, where
+// searchSpans reads it too — both sides get the same transform (see
+// corpus.js's note re-earned from specs/mechanical-retrieval-theory.md).
 
 const baseName = (id) =>
   String(id ?? "")

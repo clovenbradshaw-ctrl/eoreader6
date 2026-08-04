@@ -29,6 +29,14 @@
 // it resolved referent ids and it builds a referent graph. The graph does not
 // resolve identity and must not — that is coref's job, upstream, and the seam
 // is deliberate: it is where an injected eoPriors coref prior wires in.
+//
+// A5: STRUCTURAL EDGEKEY. Binding-derived links carry polarity but no verb
+// — the "co-occur" verb is the machinery's own name, not content. The
+// structural key `a|polarity|b` (no verb) runs alongside the verb-inclusive
+// key so that both text-derived and binding-derived relations coexist in the
+// same Network. The structural key is behind the `structural` flag; when
+// reading Link records, both keyings run. `promote` decides using the
+// structural key.
 
 import { bayesianSurprise } from "./surprise.js";
 
@@ -50,17 +58,55 @@ export const createGraph = ({ gamma, pruneBelow }) => {
 };
 
 export const edgeKey = ({ subject, verb, object, polarity }) =>
-  `${String(subject).toLowerCase()}|${polarity === "-" ? "!" : ""}${verb}|${String(object).toLowerCase()}`;
+  `${String(subject).toLowerCase()}|${polarity === "−" || polarity === "-" ? "!" : ""}${verb}|${String(object).toLowerCase()}`;
+
+/**
+ * Structural edge key: `a|polarity|b` — no verb. Binding-derived links
+ * carry polarity but the verb ("co-occur") is the machinery's own name,
+ * not content. This key runs alongside the verb-inclusive key so that
+ * both text-derived and binding-derived relations coexist in the same
+ * Network.
+ */
+export const structuralKey = ({ subject, polarity, object }) =>
+  `${String(subject).toLowerCase()}|${polarity === "−" || polarity === "-" ? "!" : ""}|${String(object).toLowerCase()}`;
+
+/**
+ * Extract triples from a Link record (from emergence/binding.js).
+ * The link's direction determines subject/object; polarity is carried
+ * through. Returns an array of triple-shaped objects.
+ */
+const linkToTriples = (link) => {
+  if (!link.direction) return [];
+  const subject = link.direction === "a→b" ? link.a.id : link.b.id;
+  const object = link.direction === "a→b" ? link.b.id : link.a.id;
+  return [{ subject, verb: "co-occur", object, polarity: link.polarity }];
+};
 
 /**
  * Read one frame's triples. Returns the belief movement BEFORE advancing —
  * the frame is never part of the prior it is measured against.
+ *
+ * Accepts either bare triples (subject, verb, object, polarity) or Link
+ * records from binding.js. Link records are converted to triples internally;
+ * both the verb-inclusive key and the structural key run when `structural`
+ * is true.
  */
-export const readTriples = (graph, triples, { alpha = 1 } = {}) => {
+export const readTriples = (graph, triples, { alpha = 1, structural = false } = {}) => {
   const arrival = new Map();
+  const structuralArrival = structural ? new Map() : null;
+
   for (const t of triples) {
-    const k = edgeKey(t);
-    arrival.set(k, (arrival.get(k) ?? 0) + 1);
+    // Link records: extract triples first. Skip undirected links.
+    if (t.a && t.b && !t.direction) continue;
+    const ts = t.direction ? linkToTriples(t) : [t];
+    for (const triple of ts) {
+      const k = edgeKey(triple);
+      arrival.set(k, (arrival.get(k) ?? 0) + 1);
+      if (structuralArrival) {
+        const sk = structuralKey(triple);
+        structuralArrival.set(sk, (structuralArrival.get(sk) ?? 0) + 1);
+      }
+    }
   }
   const arrivalTotal = triples.length;
 
@@ -90,12 +136,24 @@ export const readTriples = (graph, triples, { alpha = 1 } = {}) => {
     if (w < graph.pruneBelow) { graph.edgeTotal -= w; graph.edges.delete(k); }
   }
 
+  // Structural edges: advance alongside verb-inclusive edges.
+  if (structuralArrival) {
+    for (const [k, c] of structuralArrival) {
+      graph.edges.set(k, (graph.edges.get(k) ?? 0) + c);
+      graph.edgeTotal += c;
+    }
+  }
+
   for (const t of triples) {
-    for (const side of [t.subject, t.object]) {
-      const id = String(side).toLowerCase();
-      if (!graph.nodes.has(id)) { graph.nodes.set(id, { id, mentions: 0, firstSeen: graph.tick }); newNodes++; }
-      graph.nodes.get(id).mentions++;
-      graph.nodes.get(id).lastSeen = graph.tick;
+    if (t.a && t.b && !t.direction) continue;
+    const ts = t.direction ? linkToTriples(t) : [t];
+    for (const triple of ts) {
+      for (const side of [triple.subject, triple.object]) {
+        const id = String(side).toLowerCase();
+        if (!graph.nodes.has(id)) { graph.nodes.set(id, { id, mentions: 0, firstSeen: graph.tick }); newNodes++; }
+        graph.nodes.get(id).mentions++;
+        graph.nodes.get(id).lastSeen = graph.tick;
+      }
     }
   }
 

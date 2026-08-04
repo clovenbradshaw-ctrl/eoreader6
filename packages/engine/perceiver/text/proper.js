@@ -33,10 +33,9 @@
 //
 // Pure: no clock, no randomness, no I/O.
 
-const WORD = /[\p{L}\p{N}']+/gu;
+import { NEVER_A_NAME } from "./priors.js";
 
-// Forms whose capitalisation carries no naming information in English.
-const NEVER_A_NAME = new Set(["i", "i'm", "i'll", "i'd", "i've"]);
+const WORD = /[\p{L}\p{N}']+/gu;
 
 /**
  * Forms this text marks as names, as a lowercase Set.

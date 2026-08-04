@@ -166,8 +166,8 @@ export const stripContainer = (text) => {
   return { text: s, offset, front: Object.freeze(front), looks_like_material: looksLikeMaterial(s) };
 };
 
-const SENTENCE_TERMINATORS = new Set([".", "!", "?", "…"]);
-const CLOSING_QUOTES = new Set(['"', "'", "”", "’"]);
+import { SENTENCE_TERMINATORS, CLOSING_QUOTES } from "./priors.js";
+
 const PARAGRAPH_BREAK = /\n\s*\n+/g;
 
 // The guard this file used to rely on — "a terminator not followed by

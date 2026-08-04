@@ -18,7 +18,7 @@
 // William to Victor is exactly the failure `def/attribution.js` exists to
 // catch, and it is one silent fallback away.
 
-const FIRST_PERSON = /^(i|me|my|mine|myself|we|us|our|ours)$/i;
+import { FIRST_PERSON } from "./priors.js";
 
 /** Collapse whitespace, keeping a map back to raw offsets. */
 const collapse = (text) => {

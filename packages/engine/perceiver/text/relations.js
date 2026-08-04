@@ -76,6 +76,7 @@
 // no triple is emitted without a literal verb match in the clause.
 
 import { diaNorm } from "./surfaces.js";
+import { NEGATION_WORDS } from "./priors.js";
 
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // CON · Link · Binding — subject · verb · object triples; the graph's
@@ -87,8 +88,7 @@ export const CELL = Object.freeze({ op: "CON", grain: "Figure" });
 // narrator.js's FIRST_PERSON or surfaces.js's Roman-numeral grammar). Held
 // as a Set so discoverRelationVocab can refuse to admit "never" as a verb —
 // measured on Frankenstein at minSurfaces=1: it followed a surface once and
-// nothing here knew to say no.
-const NEGATION_WORDS = new Set(["not", "never", "hardly", "scarcely", "neither", "nor", "didn't", "don't", "doesn't", "wouldn't", "couldn't", "shouldn't", "won't", "can't", "cannot"]);
+// nothing here knew to say no. Migrated to the prior register (priors.js).
 const NEGATION_BEFORE_VERB = new RegExp(`\\b(?:${[...NEGATION_WORDS].join("|")}|no longer)\\s+(?:\\w+\\s+){0,2}$`, "i");
 
 // Unicode-aware: translated prose is full of accented names (Natásha, Hélène)
@@ -133,6 +133,10 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
  * at least one surface, ranked by how many distinct surfaces it followed,
  * kept so a caller can inspect what the gate let through and what it
  * refused — a gap is a result, and so is the sorted list around a threshold.
+ * Each candidate also carries `surfaceForms` — the distinct surfaces it
+ * followed — so a causal reader can accumulate admission frame by frame
+ * (LOSS-LESS-LADDER.md L3: a verb is admitted once it has ALREADY followed
+ * minSurfaces distinct surfaces, never on the strength of the whole text).
  */
 export const discoverRelationVocab = (text, { surfaces, functionWords = null, minSurfaces } = {}) => {
   if (!Number.isInteger(minSurfaces) || minSurfaces < 1)
@@ -173,7 +177,7 @@ export const discoverRelationVocab = (text, { surfaces, functionWords = null, mi
   const verbs = new Set();
   const candidates = [];
   for (const [token, seenAfter] of surfacesByToken) {
-    candidates.push({ verb: token, surfaces: seenAfter.size });
+    candidates.push({ verb: token, surfaces: seenAfter.size, surfaceForms: Array.from(seenAfter) });
     if (seenAfter.size >= minSurfaces) verbs.add(token);
   }
   candidates.sort((x, y) => y.surfaces - x.surfaces);

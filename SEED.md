@@ -202,6 +202,14 @@ Stated so it is not mistaken for done:
   perceive through it (`anchor_ground`), the same shape as `kept_ground`, so
   the anchor cannot become a second attention by accident. Evidence:
   `conformance/turn-flow.test.js`.
+- **The modality-blind Link** — `emergence/binding.js`, CON · Figure, the
+  Structure tier's mouth alongside `perceiver/text/relations`. Reads entity
+  arrival indices (never surfaces, never words), detects co-arrivals, tests
+  three nulls (displacement, reversal, reseed), emits directed Links with
+  polarity. Structural edge key (`a|polarity|b`, no verb) feeds the graph
+  alongside verb-inclusive text triples. Evidence:
+  `conformance/binding.test.js` (38 tests), `packages/host/sing.js` commit
+  step.
 
 ## Amendments
 
@@ -598,6 +606,95 @@ grounds built to different specs were never comparable (#5).
 the ananda flow already carried across regions; the register's perturbation is
 the measurement owning a choice, not a resolution. Three declared numbers
 still.
+
+### X — Co-occurrence is structure, not content
+
+*2026-08-04. Extends #1.*
+
+The binding organ (`emergence/binding.js`) reads an entity register — arrival
+indices of beings already admitted through the witness gate — and measures
+whether pairs co-occur above chance. It is modality-blind by construction: it
+reads arrival positions, never surfaces, never words, never a language. The
+measured links are Structure-tier relations (Figure cell on the operator grid),
+not Interpretation-tier claims about what the co-occurrence *means*. Meaning,
+when it comes, is earned by higher organs.
+
+The organ occupies the same cell as `perceiver/text/relations` — CON · Figure
+— with no English in it. Two mouths of the same jaw: one reads the material's
+own vocabulary, the other reads arrival indices. Both feed the same graph.
+
+### XI — Polarity is the sign of asymmetry
+
+*2026-08-04. Extends #4.*
+
+Polarity is not a lexical marker. It is the sign of predictive asymmetry
+measured by transfer entropy over binary indicator series of two entities'
+arrival positions. Forward TE (A→B) exceeds reverse TE → polarity is `+` (A
+drives B). Reverse exceeds forward → polarity is `−` (B drives A). Neither
+direction clears the reversal null → no link emitted.
+
+The `−` polarity is real structure — an entity whose presence suppresses
+another's occurrence, an anticorrelation, a "never married" whose sign is
+genuinely negative. It is never folded into `+` by fiat. A system that
+dropped negative polarity would be blind to suppression, which is exactly the
+kind of blind spot Amendment II named: the other pole names a finding of its
+own.
+
+### XII — Three nulls, one witness gate
+
+*2026-08-04. Extends #3, #4, #6.*
+
+A Link pair must survive three independent nulls to be witnessed. Each tests a
+different question, and all three must pass — the same plural-gate structure
+#6 requires for grounds:
+
+1. **Displacement null** (A2): holds A's arrivals fixed, shuffles B's within
+   the pair's shared extent. Asks: would this pair co-occur this often if one
+   entity were placed randomly? Same spec as every other displacement null in
+   this repo (Amendment I): permutation destroys alignment, preserves marginal
+   counts.
+
+2. **Reversal null** (A3): holds A's arrivals fixed, shuffles B's within the
+   full reading extent, computes TE(A→B) and TE(B→A) for each draw. Asks: is
+   the predictive asymmetry greater than chance? The null distribution is the
+   set of |fwd − rev| values under shuffling; the p-value is the fraction of
+   draws where the null's asymmetry exceeds the observed asymmetry.
+
+3. **Reseed null** (A4): shuffles *both* A's and B's arrivals independently
+   within the full reading extent, then counts overlap. Asks: would these two
+   entities co-occur this often if *both* were placed at random? This is the
+   strictest test — it holds nothing fixed, which is the correct counterfactual
+   for a pair whose joint placement is the question (#3: a null of zero width
+   is refused; the reseed null's width is the full reading extent).
+
+Labels on a Link record are provenance only — they record which relation
+vocabulary contributed, never admission-gate. A Link with no label is not
+weaker. Output labels never participate in admission.
+
+Evidence: `conformance/binding.test.js` (38 tests, all green).
+
+### XIII — Binding feeds the graph through the structural edge key
+
+*2026-08-04. Extends XII.*
+
+When an entity register is available, binding-derived links are fed to the
+graph alongside text-derived triples via `readLinks` → `bindingTriples` →
+`readTriples(graph, linkTriples, { structural: true })`.
+
+The structural edge key (`a|polarity|b`, no verb) runs alongside the
+verb-inclusive key so that both text-derived and binding-derived relations
+coexist in the same Network. The verb ("co-occur") is the machinery's own name
+for its own output — identity, never content — and is therefore excluded from
+the structural key. The structural key is the one `promote` decides on (in
+`loops/level`), because it captures the pair and its direction without
+committing to a lexical relation.
+
+**No new declared number.** The binding pipeline's parameters (`window`,
+`draws`, `seed`) are the same declared numbers the rest of the engine already
+uses. Three declared numbers still.
+
+Evidence: `conformance/binding.test.js` "A5: graph seam" tests,
+`packages/host/sing.js` commit step.
 
 ## The instrument
 
