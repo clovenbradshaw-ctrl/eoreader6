@@ -171,6 +171,12 @@ export const ORGANS = Object.freeze([
   { id: "emergence/coverage", module: "packages/engine/emergence/coverage.js", fn: "coverageReport", op: "EVA", grain: "Ground", verb: "evaluate", what: "the instrument's own occupancy: which cells are earned, which are open questions; measured, never classified" },
   { id: "emergence/people", module: "packages/engine/emergence/people.js", fn: "understand", op: "EVA", grain: "Pattern", verb: "evaluate", what: "does this population already have a kind — the check, addressed and mechanical; a missing prior is the typed gap missing_kind_prior, never a silently wrong number" },
   { id: "emergence/people/invent", module: "packages/engine/emergence/people.js", fn: "inventKind", op: "SYN", grain: "Pattern", verb: "compile", what: "the kind the reader had no prior for, induced from the material's own structural facts — the same SIG→CON→EVA→DEF→INS→SYN chain, stamped invented" },
+  { id: "emergence/kind-void/nul", module: "packages/engine/emergence/kind-void.js", fn: "kindVoid", op: "NUL", grain: "Pattern", verb: "receive", what: "the nothing a kind is seen against — attribute distribution shuffled as null" },
+  { id: "emergence/kind-void/sig", module: "packages/engine/emergence/kind-void.js", fn: "kindCoOccurrence", op: "SIG", grain: "Pattern", verb: "scout", what: "kind co-occurrence signals — which kinds appear together, tested against permutation null" },
+  { id: "emergence/segment/fig", module: "packages/engine/emergence/segment.js", fn: "connectedComponents", op: "SEG", grain: "Figure", verb: "segment", what: "connected components in the graph — the natural partition at Link grain" },
+  { id: "emergence/segment/pat", module: "packages/engine/emergence/segment.js", fn: "communityDetection", op: "SEG", grain: "Pattern", verb: "segment", what: "community detection by label propagation — subgraphs internally dense, externally sparse" },
+  { id: "emergence/segment/con", module: "packages/engine/emergence/segment.js", fn: "detectCoOccurrences", op: "CON", grain: "Ground", verb: "bind", what: "initial co-occurrence relating — which raw units appear together in the same frame" },
+  { id: "emergence/segment/syn", module: "packages/engine/emergence/segment.js", fn: "composeTransitive", op: "SYN", grain: "Figure", verb: "compile", what: "composing new links from existing ones — transitive inference, one hop, not a flood" },
 ]);
 
 export const organsByOp = (op) => ORGANS.filter((o) => o.op === op);
