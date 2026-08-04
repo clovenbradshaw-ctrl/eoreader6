@@ -177,6 +177,9 @@ export const ORGANS = Object.freeze([
   { id: "emergence/segment/pat", module: "packages/engine/emergence/segment.js", fn: "communityDetection", op: "SEG", grain: "Pattern", verb: "segment", what: "community detection by label propagation — subgraphs internally dense, externally sparse" },
   { id: "emergence/segment/con", module: "packages/engine/emergence/segment.js", fn: "detectCoOccurrences", op: "CON", grain: "Ground", verb: "bind", what: "initial co-occurrence relating — which raw units appear together in the same frame" },
   { id: "emergence/segment/syn", module: "packages/engine/emergence/segment.js", fn: "composeTransitive", op: "SYN", grain: "Figure", verb: "compile", what: "composing new links from existing ones — transitive inference, one hop, not a flood" },
+  { id: "emergence/paradigm/def", module: "packages/engine/emergence/paradigm.js", fn: "refuseParadigm", op: "DEF", grain: "Pattern", verb: "refuse", what: "paradigm unraveling — coherent received material with zero placement against the paradigm's cores is a frame refusal, never a lowered threshold; a paradigm that can no longer speak, unravelled by the measured exact conjunction" },
+  { id: "emergence/paradigm/rec", module: "packages/engine/emergence/paradigm.js", fn: "rezeroParadigm", op: "REC", grain: "Pattern", verb: "rezero", what: "paradigm composing — re-induce over the accumulated material only after the unravel was measured; the new paradigm must hold the loss or it concedes nothing" },
+  { id: "emergence/field/syn", module: "packages/engine/emergence/field.js", fn: "composeField", op: "SYN", grain: "Ground", verb: "compile", what: "the arena as one extent — the whole field composed from its addressed parts, byte-exact and contiguous; a missing part is a typed gap, never a silent fill" },
 ]);
 
 export const organsByOp = (op) => ORGANS.filter((o) => o.op === op);

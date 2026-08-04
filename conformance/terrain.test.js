@@ -316,7 +316,7 @@ test("SIG·Pattern: handles empty assignments", () => {
 
 // ── declared numbers: all enforced ───────────────────────────────────────────
 
-test("every new organ enforces declared numbers — none is defaulted", () => {
+ test("every new organ enforces declared numbers — none is defaulted", () => {
   // kindVoid
   assert.throws(() => kindVoid([], []), /draws/);
   // kindCoOccurrence
@@ -325,4 +325,240 @@ test("every new organ enforces declared numbers — none is defaulted", () => {
   // connectedComponents — no declared numbers (pure graph operation)
   // communityDetection — maxIterations is optional with a sensible default
   // detectCoOccurrences — no declared numbers (pure data operation)
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TERRAIN TESTS — the last three cells: DEF·Pattern, REC·Pattern, SYN·Ground.
+//
+// DEF·Pattern unravels a paradigm; REC·Pattern composes the next one; SYN·Ground
+// returns the arena as one extent from its parts. Same discipline: meaningful
+// on structured material, refused on random data, declared numbers never
+// defaulted.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import { induceKinds } from "../packages/engine/emergence/kinds.js";
+import { refuseParadigm, rezeroParadigm } from "../packages/engine/emergence/paradigm.js";
+
+const ATTR = (field_id, count = 1) => ({ field_id, count });
+const PARADIGM_OPTS = { population: "test-pop", minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42 };
+
+// A paradigm coherent on the family frame: two "above" cores, anchor and subject.
+const FAMILY_POPULATION = [
+  { id: "sister", attributes: [ATTR("anchor_shared", 3)] },
+  { id: "brother", attributes: [ATTR("anchor_shared", 2)] },
+  { id: "daughter", attributes: [ATTR("anchor_shared")] },
+  { id: "father", attributes: [ATTR("anchor_shared")] },
+  { id: "mother", attributes: [ATTR("anchor_shared")] },
+  { id: "wife", attributes: [ATTR("anchor_shared")] },
+  { id: "husband", attributes: [ATTR("anchor_shared")] },
+  { id: "sister-in-law", attributes: [ATTR("anchor_shared"), ATTR("stem_shared")] },
+  { id: "in-love-with", attributes: [ATTR("subject_shared", 2)] },
+  { id: "violent-love", attributes: [ATTR("subject_shared")] },
+  { id: "pretended-love", attributes: [ATTR("subject_shared")] },
+  { id: "falling-in-love", attributes: [ATTR("subject_shared")] },
+  { id: "love-at-first-sight", attributes: [ATTR("subject_shared")] },
+  { id: "not-in-love", attributes: [ATTR("subject_shared")] },
+];
+
+// A coherent population on a different frame: disjoint cores, root and mode.
+const MUSIC_POPULATION = [
+  { id: "bass", attributes: [ATTR("root_shared", 3)] },
+  { id: "tenor", attributes: [ATTR("root_shared", 2)] },
+  { id: "baritone", attributes: [ATTR("root_shared")] },
+  { id: "soprano", attributes: [ATTR("root_shared")] },
+  { id: "chant", attributes: [ATTR("root_shared")] },
+  { id: "dirge", attributes: [ATTR("root_shared")] },
+  { id: "coda", attributes: [ATTR("root_shared"), ATTR("theme_shared")] },
+  { id: "refrain", attributes: [ATTR("mode_shared", 2)] },
+  { id: "bridge", attributes: [ATTR("mode_shared")] },
+  { id: "chorus", attributes: [ATTR("mode_shared")] },
+  { id: "verse", attributes: [ATTR("mode_shared")] },
+  { id: "prelude", attributes: [ATTR("mode_shared")] },
+];
+
+test("DEF·Pattern: coherent material with disjoint cores unravels the paradigm", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const result = refuseParadigm(kinds, MUSIC_POPULATION, PARADIGM_OPTS);
+  assert.equal(result.gap, "paradigm_unraveled");
+  assert.equal(result.placement, 0, "no record placed against the paradigm cores");
+  assert.ok(result.coherent, "the received material is itself coherent");
+  assert.deepEqual(result.received_coherence, ["root_shared", "mode_shared"], "the foreign frame names itself");
+});
+
+test("DEF·Pattern: more of the same frame does NOT unravel", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const moreFamily = [
+    { id: "cousin", attributes: [ATTR("anchor_shared")] },
+    { id: "aunt", attributes: [ATTR("anchor_shared")] },
+    { id: "uncle", attributes: [ATTR("anchor_shared")] },
+    { id: "nephew", attributes: [ATTR("anchor_shared")] },
+    { id: "stepmother", attributes: [ATTR("anchor_shared"), ATTR("stem_shared")] },
+    { id: "fiance", attributes: [ATTR("subject_shared")] },
+    { id: "lover", attributes: [ATTR("subject_shared")] },
+    { id: "crush", attributes: [ATTR("subject_shared")] },
+  ];
+  const result = refuseParadigm(kinds, moreFamily, PARADIGM_OPTS);
+  assert.equal(result.refused, false, "same-frame material is placed, not unravelled");
+  assert.ok(result.placement > 0, "records carry paradigm cores");
+});
+
+test("DEF·Pattern: random noise does NOT unravel — coherence is the precondition", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const noise = [
+    { id: "n1", attributes: [ATTR("x1")] },
+    { id: "n2", attributes: [ATTR("x2")] },
+    { id: "n3", attributes: [ATTR("x3")] },
+    { id: "n4", attributes: [ATTR("x4")] },
+    { id: "n5", attributes: [ATTR("x5")] },
+    { id: "n6", attributes: [ATTR("x6")] },
+  ];
+  const result = refuseParadigm(kinds, noise, PARADIGM_OPTS);
+  assert.equal(result.gap, undefined, "incoherent material is not an unravel, and no gap is claimed");
+  assert.equal(result.refused, false);
+  assert.equal(result.coherent, false, "no 'above' kind in the received material");
+  assert.equal(result.placement, 0, "noise places nothing either — and still does not unravel");
+});
+
+test("DEF·Pattern: refused by a paradigm with no cores", () => {
+  const result = refuseParadigm([], MUSIC_POPULATION, PARADIGM_OPTS);
+  assert.equal(result.gap, "empty_paradigm");
+});
+
+test("DEF·Pattern: declared numbers are declared, never defaulted", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  assert.throws(() => refuseParadigm(kinds, MUSIC_POPULATION, { minPrevalence: 0.25 }), /population/);
+  assert.throws(() => refuseParadigm(kinds, MUSIC_POPULATION, { population: "p" }), /minPrevalence/);
+});
+
+test("REC·Pattern: re-zero is never a default — it needs a measured unravel", () => {
+  assert.equal(rezeroParadigm(MUSIC_POPULATION, PARADIGM_OPTS).gap, "no_rezero_trigger");
+  assert.equal(
+    rezeroParadigm(MUSIC_POPULATION, PARADIGM_OPTS, { prior: { gap: "no_ground" } }).gap,
+    "no_rezero_trigger",
+    "a prior that did not unravel is not a trigger",
+  );
+});
+
+test("REC·Pattern: after a measured unravel, the arriving population re-zeros", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const unravel = refuseParadigm(kinds, MUSIC_POPULATION, PARADIGM_OPTS);
+  assert.equal(unravel.gap, "paradigm_unraveled");
+
+  const result = rezeroParadigm(MUSIC_POPULATION, PARADIGM_OPTS, { prior: unravel });
+  assert.equal(result.rezeroed, true);
+  assert.equal(result.held_records, MUSIC_POPULATION.length, "the new paradigm holds the arriving material");
+  assert.deepEqual(result.paradigm, ["root_shared", "mode_shared"], "a new ambient ground begins");
+  assert.equal(result.trigger, "paradigm_unraveled");
+});
+
+test("REC·Pattern: a re-zero that concedes nothing is refused", () => {
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const unravel = refuseParadigm(kinds, MUSIC_POPULATION, PARADIGM_OPTS);
+  // The union is genuinely two paradigms — re-inducing over it cannot hold the
+  // old loss, so the re-zero must refuse rather than pretend.
+  const result = rezeroParadigm([...FAMILY_POPULATION, ...MUSIC_POPULATION], PARADIGM_OPTS, { prior: unravel });
+  assert.equal(result.gap, "not_earned");
+  assert.ok(result.still_unheld > 0);
+});
+
+test("REC·Pattern: declared numbers are declared, never defaulted", () => {
+  assert.throws(() => rezeroParadigm(MUSIC_POPULATION, { minPrevalence: 0.25 }, { prior: { gap: "paradigm_unraveled", paradigm: ["x"] } }), /population/);
+});
+
+// ── SYN·Ground: the arena as one extent ─────────────────────────────────────
+import { composeField } from "../packages/engine/emergence/field.js";
+
+const FRANKENSTEIN_OPENING = "Letter 1\n\nTo Mrs. Saville, England.\n\nSt. Petersburgh, Dec. 11th, 17——.";
+
+test("SYN·Ground: contiguous parts compose to the exact original extent", () => {
+  const text = FRANKENSTEIN_OPENING;
+  const bytes = Buffer.byteLength(text);
+  const byteOfChar = (i) => Buffer.byteLength(text.slice(0, i));
+  const cutChars = [0, 7, 21, 40, 58, text.length];
+  const parts = [];
+  for (let i = 0; i + 1 < cutChars.length; i++) {
+    const startChar = cutChars[i];
+    const endChar = cutChars[i + 1];
+    parts.push({ source: "letter1", byteStart: byteOfChar(startChar), byteEnd: byteOfChar(endChar), text: text.slice(startChar, endChar) });
+  }
+  const result = composeField(parts);
+  assert.equal(result.contiguous, true);
+  assert.equal(result.bytes, bytes, "the composed extent is byte-exact");
+  assert.equal(result.field.length, 1, "one source, one extent");
+  assert.equal(result.field[0].text, text, "a quote is a slice, never a reconstruction");
+});
+
+test("SYN·Ground: a missing part is a typed gap, never a silent fill", () => {
+  const text = FRANKENSTEIN_OPENING;
+  const tail = text.slice(7);
+  const p1 = { source: "letter1", byteStart: 0, byteEnd: 7, text: text.slice(0, 7) };
+  const pGap = { source: "letter1", byteStart: 11, byteEnd: 11 + Buffer.byteLength(tail), text: tail };
+  const result = composeField([p1, pGap]);
+  assert.equal(result.gap, "gap_between_parts");
+  assert.equal(result.missing, 4, "the missing span is measured, not guessed");
+});
+
+test("SYN·Ground: overlapping claims are a contradiction, refused by type", () => {
+  const text = FRANKENSTEIN_OPENING;
+  const tail = text.slice(7);
+  const p1 = { source: "letter1", byteStart: 0, byteEnd: 7, text: text.slice(0, 7) };
+  const pOverlap = { source: "letter1", byteStart: 3, byteEnd: 3 + Buffer.byteLength(tail), text: tail };
+  assert.equal(composeField([p1, pOverlap]).gap, "overlapping_parts");
+});
+
+test("SYN·Ground: a lying byte address is refused — the text must fill its own extent", () => {
+  const result = composeField([{ source: "letter1", byteStart: 0, byteEnd: 100, text: "short" }]);
+  assert.equal(result.gap, "byte_mismatch");
+  assert.equal(result.declared, 100);
+  assert.equal(result.actual, 5);
+});
+
+test("SYN·Ground: random addresses produce refusals, never a plausible field", () => {
+  // Random byte-accurate parts over the same source: whatever else happens,
+  // the composition must refuse — a random field is not a field. Byte-accurate
+  // (piece's own length fills its declared extent) so the refusal can only be
+  // a real address fault: a gap or an overlap, never a lying byte count.
+  const text = FRANKENSTEIN_OPENING;
+  const bytes = Buffer.byteLength(text);
+  const charOf = (b) => { let acc = 0; for (let i = 0; i <= text.length; i++) { if (Buffer.byteLength(text.slice(0, i)) >= b) return i; } return text.length; };
+  const byteOf = (c) => Buffer.byteLength(text.slice(0, c));
+  const byteAccurate = (startChar, endChar) => {
+    const piece = text.slice(startChar, endChar);
+    return { source: "letter1", byteStart: byteOf(startChar), byteEnd: byteOf(startChar) + Buffer.byteLength(piece), text: piece };
+  };
+  let refusals = 0;
+  for (let i = 0; i < 20; i++) {
+    const a = charOf(Math.floor(Math.random() * bytes));
+    const b = charOf(Math.floor(Math.random() * bytes));
+    const lo = Math.min(a, b);
+    const hi = Math.max(a, b);
+    const part = byteAccurate(lo, hi);
+    // A second part sharing this source but not contiguous with the first.
+    const c = charOf(Math.floor(Math.random() * bytes));
+    const second = byteAccurate(Math.min(c, text.length), Math.max(c, text.length));
+    const result = composeField([part, second]);
+    if (result.gap === "gap_between_parts" || result.gap === "overlapping_parts" || result.gap === "byte_mismatch") refusals++;
+  }
+  assert.ok(refusals > 0, "randomly addressed parts do not compose silently");
+});
+
+test("SYN·Ground: empty input is an empty field", () => {
+  assert.equal(composeField([]).gap, "empty_field");
+  assert.equal(composeField().gap, "empty_field");
+});
+
+test("SYN·Ground: multiple sources compose one extent each", () => {
+  const a = FRANKENSTEIN_OPENING;
+  const b = "To Be Or Not To Be";
+  const ha = Math.floor(a.length / 2);
+  const a1 = { source: "srcA", byteStart: 0, byteEnd: Buffer.byteLength(a.slice(0, ha)), text: a.slice(0, ha) };
+  const a2 = { source: "srcA", byteStart: Buffer.byteLength(a.slice(0, ha)), byteEnd: Buffer.byteLength(a), text: a.slice(ha) };
+  const b1 = { source: "srcB", byteStart: 0, byteEnd: Buffer.byteLength(b), text: b };
+  const result = composeField([b1, a1, a2]);
+  assert.equal(result.field.length, 2, "one extent per source");
+  assert.equal(result.bytes, Buffer.byteLength(a) + Buffer.byteLength(b));
+  const aField = result.field.find((f) => f.source === "srcA");
+  const bField = result.field.find((f) => f.source === "srcB");
+  assert.equal(aField.text, a);
+  assert.equal(bField.text, b);
 });

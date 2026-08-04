@@ -53,6 +53,14 @@ export const GAP_TYPES = Object.freeze([
   "anchor_ground", // asked to perceive through a ground held only to be tended, never judged through (SEED.md §7's ambient ground)
   "no_candidate", // host/sing: the reader's own search found nothing it has not already met — the run is over, and the ending is a result (SEED #8)
   "self_referential", // frame: an act that reads the trail's own trail is the watcher's regress — refused at the gate, never a number
+  "paradigm_unraveled", // emergence/paradigm: coherent material arrived that no received core could place — a frame refusal, a paradigm can no longer speak
+  "empty_paradigm", // emergence/paradigm: refusal asked to be read through a paradigm with no cores
+  "no_rezero_trigger", // emergence/paradigm: REC asked to re-zero without having measured an unravel — REC is never a default
+  "not_earned", // emergence/paradigm: the re-zero conceded nothing — the new paradigm still cannot hold the old loss
+  "empty_field", // emergence/field: SYN·Ground received no parts to compose
+  "byte_mismatch", // emergence/field: a part declares a byte extent its own text does not fill — a lying address
+  "overlapping_parts", // emergence/field: two parts of one source claim the same bytes
+  "gap_between_parts", // emergence/field: a part begins before/after its predecessor ended — a missing part
 ]);
 
 export const gap = (type, detail = {}) => {
