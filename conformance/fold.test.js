@@ -41,18 +41,18 @@ test("the declared numbers are never defaulted, and a standpoint is required", (
 });
 
 test("a standpoint with nothing settled behind it refuses — the first ground is received, never derived (SEED.md #1)", () => {
-  const material = iid(2, 60);
-  const g = fold({ material, here: 3 * W - 1, window: W, draws: D });
+  const material = iid(2, 100);
+  const g = fold({ material, here: 10 * W - 1, window: W, draws: D });
   assert.ok(isGap(g));
   assert.equal(g.gap, "no_ground");
-  assert.equal(g.need, 3 * W);
-  const ok = fold({ material, here: 3 * W, window: W, draws: D });
+  assert.equal(g.need, 10 * W);
+  const ok = fold({ material, here: 10 * W, window: W, draws: D });
   assert.ok(!isGap(ok), "the floor itself must be viable, not merely refused right below it");
 });
 
 test("every projected row carries a relation and a placement, and the standpoint's own extent is `past`", () => {
-  const material = iid(3, 80);
-  const here = 40;
+  const material = iid(3, 120);
+  const here = 60;
   const f = fold({ material, here, window: W, draws: D, seed: 1 });
   assert.ok(!isGap(f));
   assert.equal(f.projection.length, material.length - W + 1);
@@ -75,15 +75,15 @@ test("standing is Whitehead's trichotomy and is exhaustive", () => {
 });
 
 test("alternatives refuses folds not built to one spec over one material", () => {
-  const material = iid(4, 80);
-  const a = fold({ material, here: 30, window: W, draws: D, seed: 1 });
-  const b = fold({ material, here: 40, window: W + 1, draws: D, seed: 1 });
+  const material = iid(4, 130);
+  const a = fold({ material, here: 70, window: W, draws: D, seed: 1 });
+  const b = fold({ material, here: 80, window: W + 1, draws: D, seed: 1 });
   assert.ok(!isGap(a) && !isGap(b));
   const alt = alternatives([a, b]);
   assert.ok(isGap(alt));
   assert.equal(alt.gap, "unknown_spec");
 
-  const c = fold({ material, here: 50, window: W, draws: D, seed: 2 });
+  const c = fold({ material, here: 90, window: W, draws: D, seed: 2 });
   const same = alternatives([a, c]);
   assert.ok(!isGap(same));
   assert.equal(same.n, a.projection.length);
@@ -109,9 +109,15 @@ test("CALIBRATION: on iid noise, fold's ground no longer manufactures spurious s
   // draws=256, 200 trials) and 26.5% (window=6, draws=96, 200 trials) of
   // iid-noise trials — comparable to atmosphere.js's own worst-case range
   // (12.5-27.5%), since this organ shares the same difference()-driven
-  // mechanism, not the milder pattern()-only case. At `3 * window` (the fix)
-  // it falls to 1.5%/1.5% — inside the 15% bar conformance/atmosphere.test.js's
-  // own CALIBRATION test already holds itself to.
+  // mechanism, not the milder pattern()-only case. At `3 * window` it fell
+  // to 1.5%/1.5% — inside the 15% bar conformance/atmosphere.test.js's own
+  // CALIBRATION test already holds itself to.
+  //
+  // `MIN_GROUND` was later raised again to `10 * window` (see its own header)
+  // for a real-text content-dependent reason iid noise cannot exercise
+  // (MEASURED: scripts/turn-fold-formation-min-ground-real-text-calibration.mjs
+  // §2). This test stays on iid noise to confirm the wider floor costs
+  // nothing here either.
   const paramSets = [
     { window: 5, draws: 256 },
     { window: 6, draws: 96 },
@@ -121,7 +127,7 @@ test("CALIBRATION: on iid noise, fold's ground no longer manufactures spurious s
     let beyond = 0;
     let total = 0;
     for (let t = 0; t < trials; t++) {
-      const here = 3 * window; // the shipped floor
+      const here = 10 * window; // the shipped floor
       const material = iid(9000 + t, here + window + 5);
       const f = fold({ material, here, window, draws, seed: t });
       assert.ok(!isGap(f), isGap(f) ? f.gap : "");

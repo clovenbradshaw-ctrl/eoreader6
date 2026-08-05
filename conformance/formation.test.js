@@ -35,18 +35,22 @@ const D = 256;
 const W = 5;
 const quiet = [1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 2];
 const bursty = [...quiet.slice(0, 10), 9, 9, 9, 9, 9, ...quiet.slice(5)];
+// `quiet` tiled out past `collapse`'s own MINIMUM VIABLE GROUND floor
+// (10 * W = 50, see formation/index.js's `collapse`) — same 20-element
+// pattern, just repeated far enough that a settled prefix built from it can
+// clear the floor.
+const repeatQuiet = (n) => Array.from({ length: n }, (_, i) => quiet[i % quiet.length]);
 
-// A settled prefix of 15 (3 * W, `collapse`'s own MINIMUM VIABLE GROUND floor
-// — see formation/index.js's `collapse`) followed by the same burst, for the
-// tests below that DERIVE a ground rather than receive one: the material
-// behind wherever the regime starts must be genuinely quiet, or the ground
-// itself would be built over the burst it is meant to catch.
-const burstyDerived = [...quiet.slice(0, 15), 9, 9, 9, 9, 9, ...quiet.slice(10)];
-// Same idea for the below-censoring case: a settled prefix of 20 (past the
+// A settled prefix of 50 (10 * W, the shipped floor) followed by the same
+// burst, for the tests below that DERIVE a ground rather than receive one:
+// the material behind wherever the regime starts must be genuinely quiet, or
+// the ground itself would be built over the burst it is meant to catch.
+const burstyDerived = [...repeatQuiet(50), 9, 9, 9, 9, 9, ...repeatQuiet(10)];
+// Same idea for the below-censoring case: a settled prefix of 50 (past the
 // floor) whose ground has no width below 1, and a later window (a repeat of
 // quiet's own opening five) whose mean genuinely sits under that — measured,
 // not assumed (see the "the floor is regularity" test below).
-const quietLong = [...quiet, ...quiet.slice(0, 10)];
+const quietLong = [...repeatQuiet(50), ...quiet.slice(0, 5)];
 
 // Received grounds — gifts that name their giver. The burst's spans 3..9 and
 // places the peak; the plain's spans 0.2..2.2 and places an ordinary value.
@@ -116,7 +120,7 @@ test("a received first ground must name its giver (SEED.md #1)", () => {
 
 test("a peak beyond its own settled past is surfeit, and names the re-zero trigger", () => {
   const e = emanon({ material: burstyDerived, window: W, draws: D });
-  const c = collapse({ emanon: e, observed: 9, regime: { start: 15, end: 20 } });
+  const c = collapse({ emanon: e, observed: 9, regime: { start: 50, end: 55 } });
   assert.equal(c.gap, "exceeds_witness");
   assert.equal(c.direction, "above");
   assert.equal(c.reZero, true);
@@ -125,8 +129,8 @@ test("a peak beyond its own settled past is surfeit, and names the re-zero trigg
 
 test("the floor is regularity, not a figure", () => {
   const e = emanon({ material: quietLong, window: W, draws: D });
-  const observed = burstiness(quietLong.slice(20, 25), { window: W });
-  const c = collapse({ emanon: e, observed, regime: { start: 20, end: 25 } });
+  const observed = burstiness(quietLong.slice(50, 55), { window: W });
+  const c = collapse({ emanon: e, observed, regime: { start: 50, end: 55 } });
   assert.equal(c.gap, "exceeds_witness");
   assert.equal(c.direction, "below");
   assert.equal(c.reZero, undefined);
@@ -201,14 +205,14 @@ test("disagreeing gates are a typed gap, a result and not an error", () => {
 
 test("the full arc: diffuse, surfeit, re-zero, cut, sustain", () => {
   const e = emanon({ material: burstyDerived, window: W, draws: D });
-  const c1 = collapse({ emanon: e, observed: 9, regime: { start: 15, end: 20 } });
+  const c1 = collapse({ emanon: e, observed: 9, regime: { start: 50, end: 55 } });
   assert.equal(c1.gap, "exceeds_witness");
   assert.equal(c1.direction, "above");
 
   const g1 = reZero(c1.ground, { material: burstyDerived, seed: 1 });
   assert.ok(!isGap(g1));
   const observed = (g1.samples[0] + g1.samples[g1.samples.length - 1]) / 2;
-  const c2 = collapse({ emanon: e, observed, regime: { start: 15, end: 20 }, ground: g1 });
+  const c2 = collapse({ emanon: e, observed, regime: { start: 50, end: 55 }, ground: g1 });
   assert.equal(c2.phase, "protogon");
 
   const h = sustain({ protogon: c2, reseeds: 8 });
@@ -273,9 +277,19 @@ test("CALIBRATION: on iid noise, collapse's derived ground no longer manufacture
   // is no real surfeit to find) against a ground derived at the old
   // `window + 2` floor reported spurious surfeit on 24.5% (window=5,
   // draws=256, 200 trials) and 16.0% (window=6, draws=96, 200 trials) of
-  // trials; at `3 * window` (the fix) that fell to 2.5%/1.0% — inside the 15%
-  // bar conformance/atmosphere.test.js's own CALIBRATION test already holds
+  // trials; at `3 * window` that fell to 2.5%/1.0% — inside the 15% bar
+  // conformance/atmosphere.test.js's own CALIBRATION test already holds
   // itself to.
+  //
+  // `MIN_GROUND` was later raised again to `10 * window` (see its own header)
+  // for a real-text content-dependent reason iid noise cannot exercise
+  // (MEASURED: scripts/turn-fold-formation-min-ground-real-text-calibration.mjs
+  // §3). This test stays on iid noise to confirm the wider floor costs
+  // nothing here either. `start` MUST track the shipped floor exactly: a
+  // `start` left behind at the old `3 * window` would land below the current
+  // floor and `collapse` would refuse with `no_ground` on every trial,
+  // passing this assertion for the wrong reason without ever reaching the
+  // `exceeds_witness` path it exists to calibrate.
   const paramSets = [
     { window: 5, draws: 256 },
     { window: 6, draws: 96 },
@@ -286,7 +300,7 @@ test("CALIBRATION: on iid noise, collapse's derived ground no longer manufacture
     let total = 0;
     for (let t = 0; t < trials; t++) {
       const next = rng(8000 + t);
-      const start = 3 * window; // the shipped floor
+      const start = 10 * window; // the shipped floor
       const end = start + window;
       const material = Array.from({ length: end + 5 }, () => next() * 2);
       const e = emanon({ material, window, draws });

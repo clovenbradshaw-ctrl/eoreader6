@@ -318,8 +318,27 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   // that residual is "moved"'s OWN reseeding-null resolution floor, already
   // budgeted for by turn.test.js's "A GROWING GROUND IS NOT A MOVING ONE",
   // not a remnant of this defect.)
+  //
+  // RAISED TO `10 * window`, 2026-08-05, alongside atmosphere.js's own second
+  // fix (see its MIN_GROUND header) — `3 * window` fixed the iid near-
+  // degenerate-null artifact above but left this organ exposed to the same
+  // content-DEPENDENT one atmosphere.js's fix addresses: `buildAt` is fed real
+  // production material through this exact `difference()`-driven surfeit path
+  // (scripts/two-clearings.mjs, scripts/activation-clearings.mjs both drive
+  // `runTurn` on `causalSurprisalSeries` output over real prose). MEASURED
+  // (scripts/turn-fold-formation-min-ground-real-text-calibration.mjs §1,
+  // `clearOn: ["surfeit"]`, Book IX and cookery-recipe excerpts alone — the
+  // same real, single-topic, no-seam fixtures challenge-7 uses, gamma=0.999):
+  // at `3 * window` through `9 * window`, at least one of the two real-text
+  // negative controls falsely re-zeros on up to 20/20 seeds, purely from
+  // causal-surprisal's content-independent upward drift, not a topic shift.
+  // Only at `10 * window` do BOTH negative controls clear to 0/20 while the
+  // real seam (Book IX -> cookery) is still found on 20/20 — for both
+  // parameter sets atmosphere.js's own calibration used — and the region is a
+  // plateau through `16 * window`, not a single lucky cell.
+  const MIN_GROUND = 10 * window;
   const buildAt = (start, end, s) => {
-    if (end - start < 3 * window) return null;
+    if (end - start < MIN_GROUND) return null;
     // ① NUL · Void · Clearing
     const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start, perturbation, statistic });
     if (isGap(built)) return null;
