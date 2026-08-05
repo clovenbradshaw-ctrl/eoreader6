@@ -41,8 +41,35 @@ export const timeLoop = ({ reduce, units, passes, window, draws, reseeds }) => {
     const fraction = (p + 1) / passes;
     const material = reduce(units, { fraction });
 
-    if (material.length < window + 2) {
-      results.push({ pass: p, fraction, gap: { reason: "not enough real material read yet", have: material.length, need: window + 2 } });
+    // MINIMUM VIABLE GROUND — the same near-degenerate-null concern
+    // loops/atmosphere's `groundFrom` and loops/turn's `buildAt` carry a fix
+    // for, re-measured here rather than copied: at `window + 2` elements,
+    // `burstiness` (the default statistic) has only 3 candidate sub-window
+    // positions, so its bootstrap null comes back too narrow. There this
+    // narrowness is read directly by `difference()` against an independent
+    // next observation, which is what makes it a false REC/DEF almost by
+    // construction. This loop never calls `difference()` — its only use of a
+    // ground is `pattern()`, comparing THIS pass's ground to the previous
+    // pass's — and pattern()'s own reseeding null (mean + 3·std of
+    // reseed-displacement samples, nul/index.js) is built from the SAME
+    // narrow-ground machinery over the SAME material, so a narrow ground
+    // narrows the null right along with the signal. That mostly — not
+    // entirely — cancels the effect.
+    //
+    // MEASURED, 2026-08-05: comparing `pattern().moved` at the old floor
+    // (window+2) against a settled plateau (5*window) on iid noise, 300
+    // trials each, `window + 2` is elevated but by far less than
+    // difference()'s version of this defect: 7.3% vs 3.7% (window=5,
+    // draws=256, reseeds=16, z=1.97), 6.3% vs 2.0% (window=6, draws=96,
+    // reseeds=16, z=2.66), 6.7% vs 3.7% (window=12, draws=200, reseeds=5 —
+    // scripts/aperture-run.mjs's own production SPEC, z=1.66) — real and
+    // significant in two of three parameter sets, borderline in the third.
+    // At `3 * window` the same comparison drops to z=0.42/1.01/-0.45 (all
+    // non-significant, rates within a point of the plateau) — independently
+    // confirming the multiplier atmosphere.js and turn.js also settled on,
+    // not assuming it transfers.
+    if (material.length < 3 * window) {
+      results.push({ pass: p, fraction, gap: { reason: "not enough real material read yet", have: material.length, need: 3 * window } });
       continue;
     }
 

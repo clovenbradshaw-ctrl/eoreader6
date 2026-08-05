@@ -10,7 +10,21 @@ import assert from "node:assert/strict";
 import { timeLoop } from "../packages/engine/loops/time.js";
 import { grainWalk } from "../packages/engine/loops/grain.js";
 import { levelStep, promote } from "../packages/engine/loops/level.js";
-import { ground, isGap } from "../nul/index.js";
+import { ground, pattern, isGap } from "../nul/index.js";
+
+const rng = (seed) => {
+  let a = (seed | 0) + 0x6d2b79f5;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+};
+const iid = (seed, n) => {
+  const next = rng(seed);
+  return Array.from({ length: n }, () => next() * 2);
+};
 
 test("time loop: growing fraction produces more chunks each pass, over the SAME material", () => {
   const words = Array.from({ length: 2000 }, (_, i) => `word${i % 50}`);
@@ -25,6 +39,74 @@ test("time loop: growing fraction produces more chunks each pass, over the SAME 
   assert.ok(resolved.length >= 2, "at least some passes should resolve with real material");
   for (let i = 1; i < resolved.length; i++) {
     assert.ok(resolved[i].chunks >= resolved[i - 1].chunks, "later passes see at least as much material as earlier ones");
+  }
+});
+
+test("CALIBRATION: on iid noise, pattern().moved near the time loop's minimum ground is not elevated over the settled plateau — the same defect family atmosphere.js's MIN_GROUND fixed, measured for THIS organ's own pathway", () => {
+  // loops/atmosphere.js's `groundFrom` and loops/turn.js's `buildAt` share one
+  // closure shape and one defect at `window + 2`: burstiness has only 3
+  // candidate sub-window positions there, so the bootstrap null is too narrow,
+  // and `difference()` reads that narrowness directly against an independent
+  // next observation — a false DEF/REC almost by construction.
+  //
+  // This loop never calls difference(). Its only use of a ground is
+  // `pattern()`, comparing one pass's ground to the previous pass's, and
+  // pattern()'s own reseeding null (mean + 3·std of reseed-displacement
+  // samples, nul/index.js) is built from the SAME narrow-ground machinery over
+  // the SAME material as the signal it is judging — a narrow ground narrows
+  // the null right along with the observation, which mostly, not entirely,
+  // cancels the effect difference() shows undiluted.
+  //
+  // MEASURED, 2026-08-05 (300 trials/size): comparing pattern().moved at the
+  // OLD floor (window+2) against a settled plateau (5*window) on iid noise —
+  // 7.3% vs 3.7% (window=5, draws=256, reseeds=16, z=1.97), 6.3% vs 2.0%
+  // (window=6, draws=96, reseeds=16, z=2.66), 6.7% vs 3.7% (window=12,
+  // draws=200, reseeds=5 — scripts/aperture-run.mjs's own production SPEC,
+  // z=1.66): real and significant in two of three sets. At the fix, `3 *
+  // window`, the same comparison drops to z=0.42/1.01/-0.45 (all
+  // non-significant) — independently confirming the multiplier atmosphere.js
+  // and turn.js also settled on, not assuming it transfers. This test checks
+  // the SHIPPED floor (post-fix, `3 * window`) stays down near the plateau.
+  const paramSets = [
+    { window: 5, draws: 256, reseeds: 16 },
+    { window: 6, draws: 96, reseeds: 16 },
+    { window: 12, draws: 200, reseeds: 5 },
+  ];
+  const trials = 60;
+  const movedRateAt = (size, window, draws, reseeds) => {
+    let moved = 0, total = 0;
+    for (let t = 0; t < trials; t++) {
+      const seed = 60000 + t;
+      const materialN = iid(seed, size);
+      const materialN1 = [...materialN, iid(seed * 7 + 3, 1)[0]];
+      const before = ground({ material: materialN, draws, window, seed: seed * 13 });
+      const after = ground({ material: materialN1, draws, window, seed: seed * 13 + draws });
+      if (isGap(before) || isGap(after)) continue;
+      const p = pattern({ before, after, material: materialN, reseeds });
+      if (isGap(p)) continue;
+      total++;
+      if (p.moved) moved++;
+    }
+    return { moved, total };
+  };
+
+  for (const { window, draws, reseeds } of paramSets) {
+    const floor = movedRateAt(3 * window, window, draws, reseeds); // the shipped minimum, post-fix
+    const plateau = movedRateAt(5 * window, window, draws, reseeds);
+    assert.ok(floor.total > trials * 0.5, "most trials must resolve a real ground to mean anything");
+    // Same bound conformance/atmosphere.test.js's own CALIBRATION test holds
+    // slack_ground to: how often does a finding say yes on nothing.
+    assert.ok(
+      floor.moved / floor.total <= 0.15,
+      `moved fired on ${floor.moved}/${floor.total} at the shipped floor (window=${window}) — MIN_GROUND is too small again`,
+    );
+    // And the floor must not be dramatically hotter than the settled plateau
+    // — the signature the OLD window+2 floor left behind (roughly 2x, and
+    // statistically significant, before this fix).
+    assert.ok(
+      floor.moved / floor.total <= plateau.moved / plateau.total + 0.15,
+      `floor rate ${(100 * floor.moved / floor.total).toFixed(1)}% is far hotter than the plateau ${(100 * plateau.moved / plateau.total).toFixed(1)}% at window=${window} — the minimum ground is still reading its own narrowness`,
+    );
   }
 });
 

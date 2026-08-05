@@ -296,8 +296,30 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   let apertureReceived = null; // the flow: last region's close, carried into the next region's open
   let regionOpenCarried = false; // the open warmth's provenance: carried past or own ground
 
+  // MINIMUM VIABLE GROUND — the same defect loops/atmosphere's `groundFrom`
+  // carries a fix for, measured independently here rather than assumed: this
+  // closure is atmosphere's `groundFrom` at a different grain (`buildAt` feeds
+  // both the standing ground judged by `difference()` for surfeit AND the
+  // maintained ground `pattern()` reads for moved), so it inherits the same
+  // vulnerability at its old minimum, `window + 2`. At that size `burstiness`
+  // (max over `window`-sized sub-windows) has exactly 3 candidate positions
+  // regardless of `window`, so the bootstrap null comes back too narrow and an
+  // ordinary next window clears it almost by construction — a false DEF·surfeit,
+  // not a found one.
+  //
+  // MEASURED, 2026-08-05: isolating `clearOn: ["surfeit"]` (the exact
+  // difference()-driven mechanism atmosphere.js's fix addresses) on iid noise,
+  // hop=1, `window + 2` fires a spurious re-zero on 10-20% of trials across the
+  // same two parameter sets atmosphere.js's own calibration used (window=5/
+  // draws=256/tolerance=3 and window=6/draws=96/tolerance=2); at `3 * window`
+  // it falls to 0/40 in both — and 0/40 at hop=4 too, so the fix is not an
+  // artefact of one hop. (The shipped default, `clearOn: ["surfeit", "moved"]`,
+  // still re-zeros at a real but much lower baseline rate at `3 * window` —
+  // that residual is "moved"'s OWN reseeding-null resolution floor, already
+  // budgeted for by turn.test.js's "A GROWING GROUND IS NOT A MOVING ONE",
+  // not a remnant of this defect.)
   const buildAt = (start, end, s) => {
-    if (end - start < window + 2) return null;
+    if (end - start < 3 * window) return null;
     // ① NUL · Void · Clearing
     const built = clearVoid({ material: cultivateVoid(material, end).slice(start), draws, window, seed: s + start, perturbation, statistic });
     if (isGap(built)) return null;

@@ -125,6 +125,45 @@ test("A GROWING GROUND IS NOT A MOVING ONE — the null must not be readable as 
   }
 });
 
+test("CALIBRATION: on iid noise, buildAt's minimum ground no longer manufactures spurious surfeit re-zeros — the same defect atmosphere.js's MIN_GROUND fixed", () => {
+  // `buildAt` is atmosphere.js's `groundFrom` at this organ's own grain: the
+  // same closure shape, the same default statistic (burstiness), the same
+  // default perturbation (shuffle), gating the same `difference()`-driven
+  // DEF·surfeit/REC pair. Isolating `clearOn: ["surfeit"]` removes "moved"'s
+  // own independent (and already-calibrated) reseeding null from the
+  // picture, leaving exactly the mechanism atmosphere.js measured: at
+  // `window + 2` elements, burstiness has only 3 candidate sub-window
+  // positions no matter what `window` is, so the bootstrap null comes back
+  // too narrow and an ordinary next window clears it almost by construction.
+  //
+  // Same two parameter sets atmosphere.js's own fix was calibrated against.
+  // MEASURED, 2026-08-05: at the old `window + 2` floor this fired on 10%
+  // (window=5/draws=256/tolerance=3) and 20% (window=6/draws=96/tolerance=2)
+  // of 40 iid-noise trials, hop=1; at `3 * window` (the fix) it fell to 0/40
+  // in both, and 0/40 at hop=4 too. Modelled on conformance/atmosphere.test.js's
+  // "CALIBRATION: on iid noise..." device: how often does a finding say yes
+  // on material with nothing there.
+  const paramSets = [
+    { window: 5, draws: 256, tolerance: 3 },
+    { window: 6, draws: 96, tolerance: 2 },
+  ];
+  for (const { window, draws, tolerance } of paramSets) {
+    let fired = 0;
+    const trials = 40;
+    for (let t = 0; t < trials; t++) {
+      const next = rng(9000 + t);
+      const material = Array.from({ length: 300 }, () => next() * 2);
+      const turn = runTurn({ material, window, draws, tolerance, hop: 1, seed: t, clearOn: ["surfeit"] });
+      assert.ok(!isGap(turn), isGap(turn) ? turn.gap : "");
+      if (turn.rezeros > 0) fired++;
+    }
+    assert.ok(
+      fired / trials <= 0.15,
+      `surfeit-only re-zero fired on ${fired}/${trials} structureless trials at window=${window} — the minimum ground is too small again`,
+    );
+  }
+});
+
 test("the moved clearing finds a SPREAD shift that surfeit finds only sometimes", () => {
   // The claim here was originally stronger — "surfeit is blind to spread
   // shifts, by construction" — and it is wrong, which this test caught before
