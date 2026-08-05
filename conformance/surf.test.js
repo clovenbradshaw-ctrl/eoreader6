@@ -255,7 +255,7 @@ test("a standpoint with nothing settled behind it refuses, and names what it wou
   // mechanisms tried to derive an origin and all collapsed at r ≈ 0.974.
   const f = fold({ material: shaped, here: 0, window: W, draws: DRAWS });
   assert.equal(f.gap, "no_ground");
-  assert.equal(f.need, W + 2);
+  assert.equal(f.need, 3 * W);
   assert.equal(fold({ material: shaped, window: W, draws: DRAWS }).gap, "undeclared");
   assert.equal(fold({ material: shaped, here: { start: 60, end: 60 }, window: W, draws: DRAWS }).gap, "undeclared");
   assert.equal(fold({ material: shaped, here: 60, draws: DRAWS }).gap, "undeclared");
@@ -302,7 +302,7 @@ test("mereology: a coordinate division is foldable as an actual entity, from its
   // that opens before anything has settled behind it gets no free pass.
   const refused = fold({ material: shaped, here: early, window: W, draws: DRAWS, seed: 11 });
   assert.equal(refused.gap, "no_ground");
-  assert.equal(refused.need, W + 2);
+  assert.equal(refused.need, 3 * W);
 });
 
 test("decided conditions qualify freedom without banishing it, and the alternatives are countable", () => {
