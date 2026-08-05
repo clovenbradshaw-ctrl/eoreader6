@@ -821,3 +821,60 @@ own Atmosphere — not the mechanism itself, which remains unbuilt: nothing here
 adjusts λ, α, or which gifts are live in response to a `moved` event. It only
 establishes that the signal such a mechanism would react to is real and not
 an artefact.
+
+### Experiment 5 — the high sets the probability of the low, and where that stops
+
+`node scripts/predictor-reshape.mjs`. Experiment 4 established the signal.
+This is what a predictor-Atmosphere's REC does with it — and the design
+choice is the same one Experiment 3's slot-gated candidate was named as a
+narrow instance of: the reigning predictor's TABLES never change. Only
+`alpha` — the control parameter deciding how much a context's own evidence is
+trusted before backing off — is revised, and only on a witnessed correction:
+
+- **DEF** nominates candidate alphas (0.1, 0.3, 0.7, 1.5, 3.0) cheaply,
+  scored on the window that just triggered a `moved` event, no null.
+- **EVA** witnesses the best candidate against the *same* `reseedNull`
+  `pattern()` already computed to detect that regime change — no second null
+  invented for this.
+- **REC** applies the revision only if witnessed; otherwise the event is
+  logged as moved-but-unwitnessed and alpha holds.
+
+On the same prose → chrome splice as Experiment 4:
+
+| | prose region | chrome region | overall |
+|---|---|---|---|
+| fixed alpha=0.7 throughout | 7.996 | 9.565 | 8.719 |
+| witnessed alpha reshaping | 7.238 | 7.993 | 7.586 |
+| hard swap to a chrome-trained model | 8.146 | 5.285 | 5.663 |
+
+Four REC events fired; one was witnessed. At index 980 — inside the *prose*
+region, well before the real splice at 4000 — alpha 0.7→3 cleared its
+threshold by more than double (improvement 1.119 against a threshold of
+0.513) and was applied. The three events inside and after the chrome region
+(3530, 6380, 7130) all proposed the *same* alpha already live and were
+correctly refused as no-ops (improvement 0.000) — the mechanism does not
+manufacture activity where nothing changed.
+
+**Read this result carefully, because it is not the result it looks like at
+first.** The witnessed correction fired before the real regime change, not at
+it — what got corrected was a poorly-set starting alpha (0.7, when
+Experiment 3 already found 1.5 the better global choice on this material),
+not a chrome-specific adaptation. Every later checkpoint, including ones well
+inside chrome, found no further improvement available from this candidate set.
+So this run demonstrates the DEF/EVA/REC loop is real and correctly gated —
+it proposes, witnesses against a principled threshold, and refuses a no-op —
+but it does not yet demonstrate genuine regime-specific reshaping distinct
+from a one-time global correction. That distinction needs a design that starts
+from an already-good alpha, so any later witnessed event can only be read as
+adaptation to what changed, not cleanup of what was wrong from the start.
+
+**The comparison against the hard swap draws the boundary this mechanism
+actually has.** Reshaping alpha recovers most of the gap in the region it
+touches (9.565 → 7.993, a real 1.6 nats/form) but comes nowhere near what
+retraining on in-domain material achieves (5.285) — because alpha only
+controls how much to trust evidence the tables already hold. It cannot
+manufacture a conditional distribution the reigning predictor never counted.
+**"The high sets the probability of the low" reshapes what is already known;
+it is not a substitute for acquiring evidence the low tier never had.** That
+is a real, useful boundary on the whole architecture this and the prior
+section were built to test, not a defect in the run.
