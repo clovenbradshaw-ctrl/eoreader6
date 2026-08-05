@@ -54,8 +54,14 @@
 //
 // Declared numbers are options, never defaults (SEED.md #7): population,
 // minPrevalence, minKindSize, permutations, quantile, seed — and `reseeds`,
-// the resolution of pattern, which valued material additionally requires
-// because its search must be nulled against itself (`searchCohesions`).
+// the resolution of pattern (one of SEED.md's three), because CON's own
+// search must always be nulled against itself (`searchCohesions` for values,
+// `searchKeyCohesions` for keys) — a cluster is chosen by best-first
+// agglomeration, never drawn at random, and no single-subset null can see
+// that selection on its own. Not a valued-material-only requirement: a small
+// disjoint key pool lets the key search null resolve to `degenerate_ground`
+// and defer to the single-subset gate, same as before, but that deferral is
+// now measured every time, never assumed in advance.
 
 import { gap, isGap } from "../../../nul/index.js";
 import { CURRENT_OPERATOR_EPOCH, OPERATORS, validateChain } from "../operators.js";
@@ -505,19 +511,49 @@ export const def = ({ cluster, cohesion, existence, searched = null, warrant = n
 // subset available. "The best subset I could find" beats "a subset drawn at
 // random" whether or not there is any structure, so the gates pass on noise.
 //
-// The key-only organ was protected from this by accident: Jaccard over a
-// handful of keys takes only a few distinct values, so cohesion is quantised,
-// null samples come out all-equal, and `degenerate_ground` refused. Continuous
-// values remove that accident. Nothing was wrong before and nothing was right
-// before either — the null was never licensed for this material (Amendment I).
-//
 // So the perturbation has to destroy what the statistic actually exploits,
 // which is the search. This null RE-RUNS THE WHOLE SEARCH — same spec, same
-// material, fresh seed, values permuted within their keys so every key profile
-// survives exactly — and asks whether the real search found more cohesion than
-// the same search finds in material where the values are no longer bound to
-// the records that earned them. SEED.md's own words for the pattern null:
-// "same spec, same material, fresh seed."
+// material, fresh seed — and asks whether the real search found more cohesion
+// than the same search finds in material where what the search exploits is no
+// longer bound to the records that earned it. SEED.md's own words for the
+// pattern null: "same spec, same material, fresh seed." Two perturbations,
+// one for each channel a cluster can rest on:
+//
+//   searchCohesions      values permuted within their keys, so every key
+//                        profile survives exactly — the value channel's null.
+//   searchKeyCohesions   a fixed-margin ("curveball") swap of field
+//                        membership, so every field's own prevalence AND
+//                        every record's own degree survive exactly, but which
+//                        fields co-occur WITHIN a record does not — the key
+//                        channel's null. Its perturbation, and the measured
+//                        reason a naive independent-per-field shuffle was
+//                        rejected first, are documented at `curveballSwap`.
+//
+// SECOND MEASUREMENT (2026-08-05), THE SAME FINDING ON THE OTHER CHANNEL. A
+// moderately-sized shared vocabulary (12 admitted fields, not Emma's 2) let a
+// population of mutually-independent "peer" records — each drawing its own
+// random subset of a common convenience vocabulary, no generative link
+// between any two — get agglomerated into confabulated `above` kinds at
+// existence p = 0.0000, repeatably, across five seeds and inside a mixed
+// population alongside a genuine Kind. The key-only organ was never protected
+// by anything but accident: Jaccard over a HANDFUL of keys takes only a few
+// distinct values, so cohesion is quantised there and `degenerate_ground`
+// refuses — but a dozen admitted keys is not a handful, cohesion is no longer
+// quantised, and the same selection effect that motivated `searchCohesions`
+// for continuous values goes through uncontested on presence-only material
+// too. `searchKeyCohesions` closes it the same way: re-run the whole search
+// on material where field membership is real (every field's own prevalence
+// and every record's own degree are exactly preserved) but no longer
+// correlated within a record, and ask whether the observed cluster beats what
+// that same search finds there, at the SAME cluster size. Where the
+// vocabulary really is a handful of mutually-exclusive keys, this null is
+// itself degenerate and returns `degenerate_ground` — correctly, because
+// there is nothing here to distinguish "found by search" from "found by
+// chance," and the single-subset existence gate `eva` already runs is the
+// whole warrant exactly as it always was. Nothing that was induced by a
+// small, disjoint key pool is induced differently now; what changes is that a
+// rich shared vocabulary can no longer borrow that degeneracy's protection it
+// never earned.
 
 const searchCohesions = (records, params, keys, scales, { minKindSize, permutations, quantile, seed, reseeds }) => {
   const samples = [];
@@ -530,6 +566,122 @@ const searchCohesions = (records, params, keys, scales, { minKindSize, permutati
     const conResult = con(profiles, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
     if (isGap(conResult)) continue; // this reseed's permuted population was too small to cohere against — not a finding, just skipped
     for (const c of conResult.clusters) samples.push(meanPairwiseSim(c, sim, idxOf));
+  }
+  return samples;
+};
+
+/** FIXED-MARGIN SWAP ("curveball") — the key channel's search perturbation.
+ *  Independent per-field label shuffle (permute each column separately) was
+ *  tried first and rejected by measurement: it preserves each field's own
+ *  prevalence but not a record's own DEGREE (how many admitted fields it
+ *  carries), so on a small key vocabulary it manufactures brand-new
+ *  same-profile blocks that never existed in the real material — every
+ *  record's field COUNT was free to drift, and with few keys admitted the
+ *  discrete profile space pigeonholes: best-first search then finds a
+ *  cohesion-1 clique of SOME size in essentially every reshuffle, real
+ *  structure or none, and the search null saturates against itself,
+ *  manufacturing rejections of genuine kinds (measured on Emma's `love`
+ *  block: rejected at a stable ~15% collision rate across reseed counts from
+ *  24 to 1000 — not noise, a structural artefact of the perturbation).
+ *
+ *  The swap below is the standard null model for co-occurrence structure
+ *  (Strona et al. 2014's "curveball" algorithm; Gotelli 2000's fixed-fixed
+ *  null): pick two records, swap their DIFFERING fields between them at
+ *  random, keep their SHARED fields untouched. This preserves both margins
+ *  EXACTLY — every field's prevalence (column sum) and every record's own
+ *  degree (row sum) — so it tests exactly the question the header names,
+ *  "do fields co-occur within a record more than each field's prevalence and
+ *  each record's degree alone would predict," and nothing else. On Emma's
+ *  two mutually-exclusive keys every record's degree is fixed at 1 already,
+ *  so a swap only ever exchanges which of the two keys a record holds — the
+ *  same two blocks re-form at cohesion 1 in EVERY draw, `degenerate_ground`
+ *  correctly refuses, and induction defers to the single-subset gate exactly
+ *  as before this fix (measured: 300/300 draws at cohesion 1, zero
+ *  variance). On a richer vocabulary the swap has real room to move and the
+ *  null carries real information (measured: a twelve-key population's
+ *  swapped search settles to a broad, non-degenerate spread, mean cohesion
+ *  0.28–0.39 across cluster sizes, clearly separating a genuine exclusive
+ *  four-field core at cohesion 1 from coincidental convenience-field
+ *  overlap). */
+const curveballSwap = (rows, ids, rnd) => {
+  const n = ids.length;
+  if (n < 2) return;
+  const iA = Math.floor(rnd() * n);
+  let iB = Math.floor(rnd() * (n - 1));
+  if (iB >= iA) iB++;
+  const rowA = rows.get(ids[iA]);
+  const rowB = rows.get(ids[iB]);
+  const uniqueA = [...rowA].filter((c) => !rowB.has(c));
+  const uniqueB = [...rowB].filter((c) => !rowA.has(c));
+  if (uniqueA.length === 0 && uniqueB.length === 0) return;
+  const union = [...uniqueA, ...uniqueB];
+  const perm = fisherYates(union.length, rnd);
+  const shuffledUnion = perm.map((i) => union[i]);
+  const newUniqueA = new Set(shuffledUnion.slice(0, uniqueA.length));
+  const newUniqueB = new Set(shuffledUnion.slice(uniqueA.length));
+  const shared = [...rowA].filter((c) => rowB.has(c));
+  rows.set(ids[iA], new Set([...shared, ...newUniqueA]));
+  rows.set(ids[iB], new Set([...shared, ...newUniqueB]));
+};
+
+const profilesToRowSets = (profiles) => {
+  const rows = new Map();
+  for (const [id, vec] of profiles.entries()) {
+    const s = new Set();
+    vec.forEach((v, i) => { if (v === 1) s.add(i); });
+    rows.set(id, s);
+  }
+  return rows;
+};
+
+const rowSetsToProfiles = (rows, dim) => {
+  const out = new Map();
+  for (const [id, s] of rows.entries()) {
+    const vec = new Array(dim).fill(0);
+    for (const c of s) vec[c] = 1;
+    out.set(id, vec);
+  }
+  return out;
+};
+
+/** Swap enough times to mix: five times the number of 1-cells in the profile
+ *  matrix is the resolution the curveball paper itself measures as
+ *  sufficient for a well-mixed fixed-margin sample; DERIVED from the
+ *  material's own density, not a declared threshold — the same standing as
+ *  `k` in `deriveCohesionThreshold`. */
+export const permuteFieldSwap = (profiles, rnd) => {
+  const ids = [...profiles.keys()];
+  if (ids.length === 0) return new Map();
+  const dim = profiles.get(ids[0]).length;
+  const rows = profilesToRowSets(profiles);
+  const totalOnes = [...profiles.values()].reduce((s, v) => s + v.reduce((a, b) => a + b, 0), 0);
+  const swaps = Math.max(20, 5 * totalOnes);
+  for (let s = 0; s < swaps; s++) curveballSwap(rows, ids, rnd);
+  return rowSetsToProfiles(rows, dim);
+};
+
+/** SIZE-MATCHED: for each reseed, the fixed-margin swap's own threshold-
+ *  stopped search (the real `con()`, same as the real induction runs) is
+ *  read off ONLY where it happens to produce a cluster of exactly
+ *  `targetSize` — the candidate's own member count. Comparing across sizes
+ *  would blend distributions with genuinely different typical cohesion (a
+ *  measured fact: smaller clusters run more cohesive under this null than
+ *  larger ones, since a smaller clique has fewer chances to pick up a
+ *  disagreeing field), which is not the candidate's own question. Silently
+ *  skips a reseed whose search never produces that size; the honest result
+ *  of too few informative reseeds is a short (or empty) sample list, which
+ *  `partitionNull` already reads as `empty_material`, never a fabricated
+ *  pass or fail. */
+export const searchKeyCohesions = (profiles, targetSize, { minKindSize, permutations, quantile, seed, reseeds }) => {
+  const samples = [];
+  for (let r = 0; r < reseeds; r++) {
+    const rnd = prng((seed ^ 0x2eed1e) + r * 0x9e3779b1);
+    const permuted = permuteFieldSwap(profiles, rnd);
+    if (permuted.size < minKindSize) continue;
+    const { sim, idxOf } = conSimilarity(permuted);
+    const conResult = con(permuted, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
+    if (isGap(conResult)) continue; // this reseed's swapped population was too small to cohere against — not a finding, just skipped
+    for (const c of conResult.clusters) if (c.length === targetSize) samples.push(meanPairwiseSim(c, sim, idxOf));
   }
   return samples;
 };
@@ -574,41 +726,58 @@ export const induceKinds = (records, opts = {}) => {
   if (isGap(conResult)) return [];
   const { clusters, threshold } = conResult;
 
-  // Valued induction searches a continuous space and must be nulled against its
-  // own search (`searchCohesions` above). Presence-only induction does not
-  // declare `reseeds` and does not run it — its cohesion is quantised and the
-  // existing gates already refuse where this would.
-  let search = null;
-  if (valued) {
-    if (!Number.isInteger(reseeds) || reseeds < 2)
-      throw new TypeError("induceKinds: valued material requires a declared `reseeds` (the resolution of pattern) of at least 2 — the Born gates alone certify clusters found in noise");
-    search = searchCohesions(records, params, keys, scales, { minKindSize, permutations, quantile, seed, reseeds });
-  }
+  // EVERY con()-SELECTED CLUSTER MUST BE NULLED AGAINST ITS OWN SEARCH, valued
+  // or not (see "the search null" above — `reseeds` is one of SEED.md's three
+  // declared numbers, "the resolution of pattern," and is never scoped to one
+  // channel). A cluster was not drawn at random; it was CHOSEN by best-first
+  // agglomeration for being the most cohesive grouping the search could find,
+  // and `eva`'s single-random-subset null cannot see that selection effect on
+  // either channel — measured on both (2026-08-05, this file's history above).
+  if (!Number.isInteger(reseeds) || reseeds < 2)
+    throw new TypeError("induceKinds: a declared `reseeds` (the resolution of pattern) of at least 2 is required — the Born gates alone certify clusters found in noise, whatever the channel");
+  // Valued material's search is population-level (key profiles survive the
+  // value permutation exactly, so one re-search serves every candidate).
+  // Presence-only material's search (`searchKeyCohesions`) is SIZE-MATCHED
+  // per candidate (see its doc) and so cannot be hoisted here; it runs once
+  // per cluster, inside the loop below.
+  const search = valued
+    ? searchCohesions(records, params, keys, scales, { minKindSize, permutations, quantile, seed, reseeds })
+    : null;
 
   // PLURAL GROUNDS, AND EACH IS LICENSED FOR ONE PERTURBATION (SEED.md #6,
   // Amendment I). A cluster can rest on key structure, on value structure, or
   // on both, and the two claims have different nulls:
   //
   //   key channel    nulled by the label shuffle — which is what `eva` runs,
-  //                  over the key-only similarity.
+  //                  over the key-only similarity (single-subset, as before
+  //                  this fix — VALUED material's key-channel fallback is
+  //                  unchanged; it exists only to rescue kinds that are
+  //                  entirely key-carried, and the vulnerability this fix
+  //                  closes was measured and named on the PRESENCE-ONLY path,
+  //                  where the key channel is the only channel there is).
   //   value channel  nulled by the re-run search over within-key value
-  //                  permutation, which PRESERVES key structure exactly and so
-  //                  cannot speak to it at all.
+  //                  permutation (`searchCohesions`), which PRESERVES key
+  //                  structure exactly and so cannot speak to it at all.
   //
-  // MEASURED, and the reason this is a branch rather than one gate: on material
-  // with DISJOINT key pools the permuted search finds the same clusters at the
-  // same cohesion — correctly, because the key structure survives the
-  // permutation untouched. Gating membership on that null discarded kinds that
-  // were entirely key-carried, which is the Emma case and the case this organ
-  // was built for. The null was not wrong; it was answering "do values add
-  // anything here?" and being read as "does this kind exist?"
+  // MEASURED, and the reason valued material is a branch rather than one gate:
+  // on material with DISJOINT key pools the value-permuted search finds the
+  // same clusters at the same cohesion — correctly, because the key structure
+  // survives that permutation untouched. Gating membership on that null alone
+  // discarded kinds that were entirely key-carried, which is the Emma case and
+  // the case this organ was built for. The null was not wrong; it was
+  // answering "do values add anything here?" and being read as "does this
+  // kind exist?" So valued material needs warrant from at least ONE of its two
+  // channels — key-search when it resolves, value-search as the fallback
+  // where a shared key pool leaves key-search structurally unable to move.
   //
-  // So a kind needs warrant from at least ONE channel. Where the key channel
-  // independently supports the cluster the kind stands and the search null is
-  // reportage; where it cannot — a shared key pool leaves key-similarity
-  // degenerate and it never can — the value channel is the only warrant on
-  // offer and the search null gates.
-  const keySim = conSimilarity(profiles);
+  // Presence-only material has exactly one channel, and `searchKeyCohesions`
+  // is its search null outright, not a branch: where the vocabulary is a
+  // handful of keys the null is itself quantised (`degenerate_ground`, no
+  // information, `eva`'s single-subset existence gate — already required
+  // above — is the whole warrant, exactly as before this fix); where the
+  // vocabulary is rich enough that the null actually resolves, it must be
+  // beaten, not merely reported.
+  const keySim = valued ? conSimilarity(profiles) : null;
 
   const kinds = [];
   for (const cluster of clusters) {
@@ -616,15 +785,29 @@ export const induceKinds = (records, opts = {}) => {
     if (isGap(existence)) continue;
     if (!existence.passed) continue;
 
-    let searched = null;
+    let searched;
     let warrant = "key";
-    if (search) {
+    if (valued) {
       searched = partitionNull({ samples: search, observed: cohesion, quantile, seed: seed + 2 });
       const keyGate = eva(profiles, keySim.sim, cluster, keySim.idxOf, { permutations, quantile, seed });
       const keySupported = !isGap(keyGate.existence) && keyGate.existence.passed;
       const valueSupported = !isGap(searched) && searched.passed;
       if (!keySupported && !valueSupported) continue;
       warrant = keySupported && valueSupported ? "both" : keySupported ? "key" : "value";
+    } else {
+      const keySearch = searchKeyCohesions(profiles, cluster.length, { minKindSize, permutations, quantile, seed, reseeds });
+      // FAMILY-WISE CORRECTION ACROSS THE SIMULTANEOUS CANDIDATES. `con` hands
+      // back `clusters.length` candidates from ONE search over ONE population,
+      // each gated here independently — the identical multiple-comparisons
+      // concern the search null exists to correct for `con`'s OWN search, one
+      // level up: testing several candidates from the same population at one
+      // per-candidate alpha lets the single most extreme of them clear the bar
+      // by chance alone. Bonferroni is the standard, minimal correction, and
+      // `clusters.length` is MEASURED from this very call, never a declared or
+      // tuned number — the same status as `k` in `deriveCohesionThreshold`.
+      const familyQuantile = 1 - (1 - quantile) / clusters.length;
+      searched = partitionNull({ samples: keySearch, observed: cohesion, quantile: familyQuantile, seed: seed + 2 });
+      if (!isGap(searched) && !searched.passed) continue; // a rich-enough vocabulary that the search null resolves, and this cluster did not beat it even once the multiple candidates con() considered are corrected for: the selection effect the header names, not a kind
     }
 
     kinds.push(def({ cluster, cohesion, existence, searched, warrant, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));

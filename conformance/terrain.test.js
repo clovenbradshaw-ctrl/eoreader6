@@ -337,10 +337,10 @@ test("SIG·Pattern: handles empty assignments", () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 import { induceKinds } from "../packages/engine/emergence/kinds.js";
-import { refuseParadigm, rezeroParadigm } from "../packages/engine/emergence/paradigm.js";
+import { refuseParadigm, rezeroParadigm, sameField } from "../packages/engine/emergence/paradigm.js";
 
 const ATTR = (field_id, count = 1) => ({ field_id, count });
-const PARADIGM_OPTS = { population: "test-pop", minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42 };
+const PARADIGM_OPTS = { population: "test-pop", minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, reseeds: 24, seed: 42 };
 
 // A paradigm coherent on the family frame: two "above" cores, anchor and subject.
 const FAMILY_POPULATION = [
@@ -422,6 +422,76 @@ test("DEF·Pattern: random noise does NOT unravel — coherence is the precondit
 test("DEF·Pattern: refused by a paradigm with no cores", () => {
   const result = refuseParadigm([], MUSIC_POPULATION, PARADIGM_OPTS);
   assert.equal(result.gap, "empty_paradigm");
+});
+
+// ── cross-material verb identity: `sameField`/`sameAct` (challenge #9) ─────
+//
+// Two independently-authored documents' own SVO extraction reports whichever
+// verb inflection the sentence on the page used, never a shared citation
+// form — "departed" in one, "departs" in another, same act. Without a
+// lemmatizer this organ can only compare field_ids by raw string identity,
+// which reads that as two different cores. `opts.sameAct` is optional and
+// its absence must change nothing (first test); when supplied it must let
+// `verb:`-shaped cores hold a record spelled in a different inflection
+// (second test) while still refusing to conflate two genuinely different
+// verbs, inflected or not (third test).
+
+const sameAct = (a, b) => {
+  const stem = (w) => (w.endsWith("s") ? w.slice(0, -1) : w.endsWith("ed") ? w.slice(0, -2) : w);
+  return stem(a) === stem(b);
+};
+
+test("sameField: exact identity always holds, with or without sameAct", () => {
+  assert.equal(sameField("verb:departed", "verb:departed"), true);
+  assert.equal(sameField("verb:departed", "verb:departed", { sameAct }), true);
+  assert.equal(sameField("anchor_shared", "anchor_shared"), true);
+});
+
+test("sameField: without sameAct, two inflections of one verb are NOT the same field (default is unchanged)", () => {
+  assert.equal(sameField("verb:departed", "verb:departs"), false);
+});
+
+test("sameField: with sameAct, two inflections of the SAME verb ARE the same field, only under the verb: prefix", () => {
+  assert.equal(sameField("verb:departed", "verb:departs", { sameAct }), true, "same verb, different inflection");
+  assert.equal(sameField("verb:departed", "verb:arrived", { sameAct }), false, "different verbs stay different, inflected or not");
+  assert.equal(sameField("anchor_shared", "anchor_shares", { sameAct }), false, "sameAct is scoped to verb: fields, never applied to non-verb field_ids");
+});
+
+test("DEF·Pattern: a cross-material paradigm holds a record spelled in a different verb inflection, only when sameAct is supplied", () => {
+  const VERB_FAMILY = [
+    { id: "sister", attributes: [ATTR("verb:departed", 3)] },
+    { id: "brother", attributes: [ATTR("verb:departed", 2)] },
+    { id: "daughter", attributes: [ATTR("verb:departed")] },
+    { id: "father", attributes: [ATTR("verb:departed")] },
+    { id: "mother", attributes: [ATTR("verb:departed")] },
+    { id: "wife", attributes: [ATTR("verb:departed")] },
+    { id: "husband", attributes: [ATTR("verb:departed")] },
+    { id: "sister-in-law", attributes: [ATTR("verb:departed"), ATTR("stem_shared")] },
+    { id: "in-love-with", attributes: [ATTR("subject_shared", 2)] },
+    { id: "violent-love", attributes: [ATTR("subject_shared")] },
+    { id: "pretended-love", attributes: [ATTR("subject_shared")] },
+    { id: "falling-in-love", attributes: [ATTR("subject_shared")] },
+    { id: "love-at-first-sight", attributes: [ATTR("subject_shared")] },
+    { id: "not-in-love", attributes: [ATTR("subject_shared")] },
+  ];
+  const kinds = induceKinds(VERB_FAMILY, PARADIGM_OPTS);
+  assert.ok(kinds.some((k) => k.core?.field_id === "verb:departed"), "the paradigm's core is the raw inflection this material used");
+
+  // A different, independently-built document's records: same verb, a
+  // DIFFERENT inflection ("departs", not "departed") — the exact shape of
+  // two documents' own independent SVO extraction over the same event.
+  const otherDoc = [
+    { id: "cousin", attributes: [ATTR("verb:departs")] },
+    { id: "aunt", attributes: [ATTR("verb:departs")] },
+    { id: "uncle", attributes: [ATTR("verb:departs")] },
+  ];
+
+  const withoutLemma = refuseParadigm(kinds, otherDoc, PARADIGM_OPTS);
+  assert.equal(withoutLemma.placement, 0, "raw string identity alone cannot see across the inflection");
+
+  const withLemma = refuseParadigm(kinds, otherDoc, { ...PARADIGM_OPTS, sameAct });
+  assert.equal(withLemma.placement, 1, "sameAct recognises departs/departed as the one verb the paradigm coheres on");
+  assert.equal(withLemma.refused, false);
 });
 
 test("DEF·Pattern: declared numbers are declared, never defaulted", () => {

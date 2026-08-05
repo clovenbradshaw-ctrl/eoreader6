@@ -76,7 +76,16 @@
 // resolve is checked MECHANICALLY — the same discipline as holonic-task.js's
 // `_mechanicalCite`: does the generated text actually contain the terms the
 // payoff requires? A model that skips a payoff is caught and reported, never
-// silently marked done.
+// silently marked done — and, since the admission gate below (`admitToTape`),
+// never silently admitted to draftMd/finalMd either. Earlier versions of this
+// file made the first half of that claim true (bookkeeping: `c.resolvedAt`,
+// `checks[]`) while leaving the second half false (`texts.push(text)` ran
+// unconditionally, before the check even fired, so a failed scene's raw prose
+// still became the permanent, unmarked "novella"). A model call is a
+// contracted part: only content the mechanical check vets may re-enter the
+// tape a reader actually cites; text that fails is replaced, in place, with a
+// typed gap (nul/index.js's `payoff_not_confirmed`) rather than let stand as
+// an uncontested claim.
 //
 // ── SCALE, DECLARED ─────────────────────────────────────────────────────────
 //
@@ -93,6 +102,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { createSession, activateMotif, activeMotifs, commit, tick } from "../discourse/index.js";
 import { seamCost, perBoundary, summarize } from "./seam-cost.mjs";
+import { gap, isGap } from "../nul/index.js";
 
 // ── Declared numbers ──────────────────────────────────────────────────────
 const OLLAMA_URL = "http://localhost:11434";
@@ -177,18 +187,34 @@ const SCENES = [
 ];
 
 // ── Model call, same shape as eoreader-chat/holonic-task.js's _call ────────
+//
+// The network boundary is caught separately from an ordinary bad response.
+// "No network available" (challenge #14: fetch itself rejects — Node's own
+// undici throws a TypeError wrapping an ECONNREFUSED-shaped cause when the
+// target is unreachable) is this repo's local-first analogue of insufficient
+// basis, and every other insufficient-basis situation in this codebase
+// reports a typed gap rather than fabricating or crashing raw — this is that
+// discipline, applied to the one place a network call exists at all. A
+// response that DID arrive but carries an error status is a different,
+// already-handled failure (a real answer from a real endpoint, just not an
+// ok one) and stays a plain thrown Error, unchanged.
 async function callModel(messages, maxTokens) {
-  const resp = await fetch(`${OLLAMA_URL}/api/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: MODEL,
-      messages,
-      stream: false,
-      options: { temperature: TEMPERATURE, num_predict: maxTokens, seed: SEED },
-    }),
-    signal: AbortSignal.timeout(API_TIMEOUT_MS),
-  });
+  let resp;
+  try {
+    resp = await fetch(`${OLLAMA_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        stream: false,
+        options: { temperature: TEMPERATURE, num_predict: maxTokens, seed: SEED },
+      }),
+      signal: AbortSignal.timeout(API_TIMEOUT_MS),
+    });
+  } catch (e) {
+    return gap("model_unreachable", { url: OLLAMA_URL, cause: e?.cause?.message || e.message });
+  }
   if (!resp.ok) throw new Error(`Ollama ${resp.status}: ${await resp.text()}`);
   const data = await resp.json();
   return (data.message?.content || "").trim();
@@ -258,6 +284,60 @@ function buildRevisePrompt(prevTail, currentOpening, connectFact) {
 const checkResolved = (text, checkTerms) => checkTerms.some((t) => text.toLowerCase().includes(t.toLowerCase()));
 
 /**
+ * THE ADMISSION GATE — the tape's own boundary.
+ *
+ * `checkResolved` above is the header's "checked MECHANICALLY" claim, and
+ * until this function existed that claim was true only of bookkeeping
+ * (`c.resolvedAt`, `checks[]`, the report's prose) and never of the tape
+ * itself: `texts.push(text)` used to run unconditionally, before this check
+ * even fired, so a scene that failed the mechanical check still became six
+ * paragraphs of unmarked prose in draftMd and finalMd — the permanent
+ * artifacts a reader actually cites. A model call is a contracted part
+ * (SEED.md / the ledger's honesty condition above): only vetted content may
+ * re-enter the tape, and "vetted" has to mean the document, not a sibling
+ * report.md a reader of the novella never opens.
+ *
+ * So a scene whose text is offered as resolving a planted commitment but does
+ * not contain the required terms is refused admission, in place, at the same
+ * grain nul/index.js already refuses every other unearned claim — a typed
+ * gap (`payoff_not_confirmed`), rendered so it is legible IN the document,
+ * not just in a side channel. `texts[]` itself is left untouched: it is the
+ * pipeline's own working ledger (continuity prompts, the revise pass's raw
+ * material), never presented to a reader as citable, so it is not the tape
+ * and is not gated here. Only what is written to draftMd/finalMd is.
+ */
+const admissionGap = (scene, failedChecks) =>
+  gap("payoff_not_confirmed", {
+    scene: scene.id,
+    label: scene.label,
+    unconfirmed: failedChecks.map((c) => c.id),
+  });
+
+const renderGap = (g) =>
+  `*[quarantined — mechanical check found no citation of ${g.unconfirmed.map((id) => `"${id}"`).join(", ")} in this scene's generated text. ` +
+  `A model output that claims a payoff it does not contain is not vetted content and is withheld from this document ` +
+  `(gap: ${g.gap}). See lighthouse-novella-report.md's mechanical payoff checks for the raw finding.]*`;
+
+/** Runs the mechanical check for every commitment this scene claims to resolve. Never trusts the model's say-so. */
+const checkScene = (scene, text, commitments) =>
+  scene.resolves.map((id) => {
+    const c = commitments.get(id);
+    return { id, ok: checkResolved(text, c.checkTerms), c };
+  });
+
+/**
+ * What actually reaches the tape for one scene: the raw text if every
+ * resolve it claims is mechanically confirmed, or a typed gap in its place
+ * if any is not. This is the one place draftMd/finalMd content is decided —
+ * `texts[idx]` (the pipeline's raw ledger) is never substituted for it.
+ */
+const admitToTape = (scene, text, sceneChecks) => {
+  const failed = sceneChecks.filter((s) => !s.ok);
+  if (failed.length === 0) return text;
+  return renderGap(admissionGap(scene, failed));
+};
+
+/**
  * A matched-size REAL-PROSE control for the whole-document seam-cost verdict.
  *
  * Measured before trusting seam-cost's aggregate on the novella: genuine
@@ -290,14 +370,15 @@ function matchedProseControl(nSections, meanWords, seed) {
   return seamCost(secs.join("\n\n"), { draws: 200, seed });
 }
 
-async function main() {
+export async function main() {
   const log = (m) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${m}`);
   log(`model=${MODEL} scenes=${SCENES.length} scene_tokens=${SCENE_TOKENS}`);
 
   const session = createSession();
   const roster = [];
   const commitments = new Map(); // id -> { fact, checkTerms, plantedAt, resolvedAt: null }
-  const texts = [];
+  const texts = []; // the pipeline's own working ledger — raw model output, never presented to a reader
+  const tapeTexts = []; // what actually reaches draftMd/finalMd — gated by admitToTape
   const checks = [];
 
   for (const scene of SCENES) {
@@ -310,26 +391,27 @@ async function main() {
     const { system, prompt } = buildDraftPrompt(scene, [...roster], motifNames, openCommitments, prevTail);
     const t0 = Date.now();
     const text = await callModel([{ role: "system", content: system }, { role: "user", content: prompt }], SCENE_TOKENS);
+    if (isGap(text)) { log(`scene ${scene.id} "${scene.label}" — model unreachable (${text.cause}); stopping, not fabricating`); throw text; }
     log(`scene ${scene.id} "${scene.label}" — ${wc(text)} words in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
     texts.push(text);
 
-    for (const id of scene.resolves) {
-      const c = commitments.get(id);
-      const ok = checkResolved(text, c.checkTerms);
+    const sceneChecks = checkScene(scene, text, commitments);
+    for (const { id, ok, c } of sceneChecks) {
       checks.push({ id, plantedAt: c.plantedAt, resolvedAt: scene.id, gap: scene.id - c.plantedAt, mechanicallyConfirmed: ok });
       if (ok) c.resolvedAt = scene.id;
-      log(`  resolve "${id}" (planted scene ${c.plantedAt}, gap ${scene.id - c.plantedAt}): ${ok ? "CONFIRMED" : "NOT FOUND — model skipped the payoff"}`);
+      log(`  resolve "${id}" (planted scene ${c.plantedAt}, gap ${scene.id - c.plantedAt}): ${ok ? "CONFIRMED" : "NOT FOUND — model skipped the payoff; withheld from the tape (gap: payoff_not_confirmed)"}`);
     }
+    tapeTexts.push(admitToTape(scene, text, sceneChecks));
 
     for (const e of scene.entities) roster.push(e);
     commit(session, `scene ${scene.id}: ${scene.label}`);
     tick(session);
   }
 
-  const unresolved = [...commitments.entries()].filter(([, c]) => c.resolvedAt === null);
-  if (unresolved.length) log(`UNRESOLVED at end of draft: ${unresolved.map(([id]) => id).join(", ")}`);
+  const unresolvedAtDraft = [...commitments.entries()].filter(([, c]) => c.resolvedAt === null);
+  if (unresolvedAtDraft.length) log(`UNRESOLVED at end of draft: ${unresolvedAtDraft.map(([id]) => id).join(", ")}`);
 
-  const draftMd = SCENES.map((s, i) => `## ${s.label}\n\n${texts[i]}\n`).join("\n");
+  const draftMd = SCENES.map((s, i) => `## ${s.label}\n\n${tapeTexts[i]}\n`).join("\n");
   writeFileSync(`${OUT_DIR}/lighthouse-novella-draft.md`, `# The Compass Light\n\n${draftMd}`);
   log(`draft written: ${wc(draftMd)} words total`);
 
@@ -356,7 +438,9 @@ async function main() {
   // keep/revert decision would then be measuring a confound, not this
   // rewrite's own effect.
   const revisedTexts = [...texts]; // candidate text per revised index, for the descriptive "Revised" report section
-  const finalTexts = [...texts];
+  // Starts from tapeTexts, not texts: the un-revised baseline for any boundary
+  // this loop does not touch must already be admission-gated, never raw.
+  const finalTexts = [...tapeTexts];
   const decisions = [];
   for (const idx of [...targets].sort((a, b) => a - b)) {
     const scene = SCENES[idx];
@@ -370,28 +454,56 @@ async function main() {
     const { system, prompt } = buildRevisePrompt(prevTail, opening.trim(), connectFact);
     const t0 = Date.now();
     const newOpening = await callModel([{ role: "system", content: system }, { role: "user", content: prompt }], REVISE_TOKENS);
+    if (isGap(newOpening)) { log(`revise scene ${scene.id} — model unreachable (${newOpening.cause}); stopping, not fabricating`); throw newOpening; }
     log(`revised opening of scene ${scene.id} in ${((Date.now() - t0) / 1000).toFixed(0)}s`);
     const candidateText = `${newOpening.trim()} ${rest.trimStart()}`;
     revisedTexts[idx] = candidateText;
 
-    if (scene.resolves.length) {
-      const c = commitments.get(scene.resolves[0]);
-      const ok = checkResolved(candidateText, c.checkTerms);
-      log(`  re-check "${scene.resolves[0]}" after revision: ${ok ? "CONFIRMED" : "still not found"}`);
-    }
-
     // Pencil, then ink: judge this ONE candidate against a copy of the draft
     // with only its own boundary swapped in, per specs/surprise-as-revision.md.
+    // Always measured and logged — informative even on a citation-bearing
+    // boundary, just no longer what the KEEP/REVERT decision is made from.
     const candidateTexts = [...texts];
     candidateTexts[idx] = candidateText;
     const candidateMd = SCENES.map((s, i) => `## ${s.label}\n\n${candidateTexts[i]}\n`).join("\n");
     const candidateBoundaries = perBoundary(candidateMd);
     const before = draftBoundaries.find((b) => b.index === idx);
     const after = candidateBoundaries.find((b) => b.index === idx);
-    const helped = after.lift > before.lift;
-    decisions.push({ index: idx, label: SCENES[idx].label, beforeLift: before.lift, afterLift: after.lift, kept: helped });
-    finalTexts[idx] = helped ? candidateText : texts[idx];
-    log(`boundary ${idx} "${SCENES[idx].label}": lift ${before.lift.toFixed(3)} -> ${after.lift.toFixed(3)} — ${helped ? "KEPT" : "REVERTED"}`);
+    const liftHelped = after.lift > before.lift;
+
+    let kept, basis;
+    if (scene.resolves.length) {
+      // CITATION-BEARING BOUNDARY. checkResolved is a HARD PRECONDITION here,
+      // independent of seamCost lift — a still-fabricated revision can never
+      // be KEPT purely because its arrangement statistic looks better. This
+      // is the same admission gate `admitToTape` applies at draft time,
+      // applied again because a second model call is a second unvetted
+      // claim, not an automatic upgrade of the first.
+      const c = commitments.get(scene.resolves[0]);
+      const confirmed = checkResolved(candidateText, c.checkTerms);
+      log(`  re-check "${scene.resolves[0]}" after revision: ${confirmed ? "CONFIRMED" : "still not found — gate refuses this candidate regardless of lift"}`);
+      kept = confirmed;
+      basis = "payoff_not_confirmed gate";
+      if (confirmed && c.resolvedAt === null) {
+        // The revision is what actually earned the citation — the report and
+        // the tape must agree, so the bookkeeping the header promises
+        // ("caught and reported, never silently marked done") is updated
+        // here too, not left to contradict a now-vetted finalMd.
+        c.resolvedAt = scene.id;
+        const chk = checks.find((ch) => ch.id === scene.resolves[0]);
+        if (chk) { chk.mechanicallyConfirmed = true; chk.viaRevision = true; }
+      }
+    } else {
+      kept = liftHelped;
+      basis = "lift";
+    }
+    // tapeTexts[idx] is the correct fallback either way: the raw draft text
+    // when it already passed admission, the typed gap when it did not — never
+    // texts[idx], which would readmit exactly the fabrication this gate exists
+    // to keep off the tape.
+    finalTexts[idx] = kept ? candidateText : tapeTexts[idx];
+    decisions.push({ index: idx, label: scene.label, beforeLift: before.lift, afterLift: after.lift, kept, basis });
+    log(`boundary ${idx} "${scene.label}": lift ${before.lift.toFixed(3)} -> ${after.lift.toFixed(3)} (decision basis: ${basis}) — ${kept ? "KEPT" : "REVERTED"}`);
   }
 
   // Descriptive only: all candidates applied together, for the "Revised"
@@ -412,6 +524,11 @@ async function main() {
   const control = matchedProseControl(SCENES.length, meanWords, SEED);
   if (control) console.log(summarize(control));
 
+  // Recomputed AFTER revision: a commitment the revise pass actually earned
+  // (c.resolvedAt set above, inside the payoff_not_confirmed gate) must not
+  // still be reported UNRESOLVED — the report and the tape have to agree.
+  const unresolvedFinal = [...commitments.entries()].filter(([, c]) => c.resolvedAt === null);
+
   const report = [
     `# The Compass Light — a fluency-across-prompts report`,
     ``,
@@ -419,8 +536,8 @@ async function main() {
     ``,
     `## Mechanical payoff checks (never trusted on the model's say-so)`,
     ``,
-    ...checks.map((c) => `- **${c.id}**: planted scene ${c.plantedAt}, resolved scene ${c.resolvedAt} (gap ${c.gap} scenes) — ${c.mechanicallyConfirmed ? "CONFIRMED in draft text" : "NOT FOUND in draft text"}`),
-    unresolved.length ? `- **UNRESOLVED**: ${unresolved.map(([id]) => id).join(", ")}` : `- all planted commitments were resolved`,
+    ...checks.map((c) => `- **${c.id}**: planted scene ${c.plantedAt}, resolved scene ${c.resolvedAt} (gap ${c.gap} scenes) — ${c.mechanicallyConfirmed ? `CONFIRMED${c.viaRevision ? " (only after revision — draft text was withheld from the tape)" : " in draft text"}` : "NOT FOUND — withheld from the tape (gap: payoff_not_confirmed)"}`),
+    unresolvedFinal.length ? `- **UNRESOLVED**: ${unresolvedFinal.map(([id]) => id).join(", ")}` : `- all planted commitments were resolved`,
     ``,
     `## Arrangement (seam-cost): does the order carry meaning?`,
     ``,
@@ -449,13 +566,27 @@ async function main() {
     ``,
     `## Per-boundary revision decisions`,
     ``,
-    ...decisions.map((d) => `- boundary ${d.index} (${d.label}): lift ${d.beforeLift.toFixed(3)} → ${d.afterLift.toFixed(3)} — **${d.kept ? "KEPT" : "REVERTED"}**`),
+    ...decisions.map((d) => `- boundary ${d.index} (${d.label}): lift ${d.beforeLift.toFixed(3)} → ${d.afterLift.toFixed(3)} (decision basis: ${d.basis}) — **${d.kept ? "KEPT" : "REVERTED"}**`),
   ].join("\n");
   writeFileSync(`${OUT_DIR}/lighthouse-novella-report.md`, report);
   log("done. wrote lighthouse-novella-{draft,final,report}.md");
 }
 
-main().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+// SUPERSEDED, NEVER RUN (see this file's own header) means never run as a
+// SIDE EFFECT of being imported, either — challenge #14 found that main()
+// ran unconditionally at module scope, so importing this file for any
+// reason (a test harness included) was itself an invocation. Guarded now,
+// the same "is this process the entrypoint" check Node's own docs recommend.
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch((e) => {
+    if (isGap(e)) {
+      // Insufficient basis, not a crash — a typed stop gets its own exit
+      // code so a caller (or a test harness) can tell the two apart without
+      // parsing stderr text.
+      console.error(`[gap] ${e.gap}: ${e.cause ?? e.reason ?? "(no detail)"}`);
+      process.exit(2);
+    }
+    console.error(e);
+    process.exit(1);
+  });
+}

@@ -169,6 +169,17 @@ export const singPass = (singer) => {
   record.what = verdict.what;
   record.ground = verdict.ground;
   record.nullReseeds = verdict.nullReseeds;
+  // The operator vector judge() measured — which of the 8 MEASURED operators
+  // carried the verdict, each with its observed count and its null's support
+  // [lo,hi] (search/index.js's supportOf) — is kept on the record, not just
+  // its collapse to `verdict`/`what`. Without this, a refuse or censored span
+  // is discarded down to a hash-like summary: the verdict is stated but WHY
+  // (which operator, at what threshold) is unrecoverable from the persisted
+  // log alone, only from a live re-run. Same discipline nul/index.js already
+  // applies to its own ground objects (keep the support, not just the call).
+  record.operators = verdict.operators;
+  record.counts = verdict.counts;
+  record.decisive = verdict.decisive;
 
   if (verdict.verdict === "preserve") {
     // COMMIT — only a preserved candidate joins the reader.

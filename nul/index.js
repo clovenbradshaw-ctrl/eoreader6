@@ -63,6 +63,8 @@ export const GAP_TYPES = Object.freeze([
   "gap_between_parts", // emergence/field: a part begins before/after its predecessor ended — a missing part
   "undeclared_organ", // emergence/declaration: an act by a name that is not on the roster — an organ this engine has not earned has no acts in the record
   "undeclared_cell", // emergence/declaration: an organ acted outside the cell it declared, which is acting as something it is not
+  "payoff_not_confirmed", // model-as-contracted-part: a model's output was cited as resolving a planted commitment, but the mechanical check could not find the required terms in it — refused admission to the tape, never silently kept as if resolved
+  "model_unreachable", // scripts/write-novella.mjs: the one live/reactive network call anywhere in this repo failed — surfaced as a typed gap, never a raw, unclassified exception (challenge #14)
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -893,16 +895,74 @@ export const pattern = ({ before, after, material, reseeds }) => {
   const grewBy = after.extent - before.extent;
   const moved_by = displacement(after, before);
   const volumeBefore = volume(before);
-  let nullMax = 0;
+  const nullSamples = [];
   let volumeNull = 0;
   for (let r = 1; r <= reseeds; r++) {
     const seed = before.spec.seed + r * before.spec.draws;
     const nullMaterial = grewBy === 0 ? material : continueBy(material, grewBy, seed);
     const g = reZero(before, { material: nullMaterial, seed });
     if (isGap(g)) return g;
-    nullMax = Math.max(nullMax, displacement(g, before));
+    nullSamples.push(displacement(g, before));
     volumeNull = Math.max(volumeNull, Math.abs(volume(g) - volumeBefore));
   }
+
+  // nullMax used to be Math.max(...nullSamples): the raw sample maximum over
+  // exactly `reseeds` reseed draws. That is itself an order statistic whose
+  // OWN expected value rises with `reseeds` — a max of few draws under-
+  // estimates the true achievable reseed-noise ceiling — so `moved_by` (which
+  // does not scale with `reseeds` at all) cleared it more and more easily as
+  // a caller declared FEWER, still validly-declared (>=2), reseeds. This is
+  // the identical defect family `extremeGround` (above, "the max of n draws
+  // clears a one-draw support most of the time") and `level` (below, the
+  // 12/120/300/600-draws table) already carry corrections for, applied here
+  // to `pattern`'s own reseeding null instead of to a candidate count or a
+  // rank threshold. Fixed the same way SEED.md's "Earned since" already
+  // fixed `slackRunNull`: calibrated rather than raw — mean + 3·std of the
+  // reseed-displacement samples, not their bare maximum.
+  //
+  // MEASURED, 2026-08-05 (adversarial challenge #5, "birth-as-consequence,
+  // not appearance"). Two measurements:
+  //
+  // (1) False-positive rate on 150 trials of pure reseed noise per row
+  // (signal-free by construction — `after` is `before` extended by bootstrap
+  // draws from its own material, exactly the counterfactual this null
+  // already builds), burstiness/shuffle, draws=48, window=8:
+  //
+  //   reseeds   raw max FP    mean+3·std FP
+  //        2       34.7%           18.7%
+  //        4       24.7%           10.7%
+  //        8       17.3%            6.7%
+  //       12       10.7%            2.0%
+  //       24        4.7%            2.0%
+  //       48        1.3%            1.3%
+  //       96        1.3%            1.3%
+  //
+  // (2) On the challenge's own fixture (real production call, not synthetic
+  // noise): KESTREL is a verbatim, zero-consequence repeated line whose
+  // `moved_by` sits at 0.266–0.267 no matter how it is read. The raw maximum
+  // it needed to clear ranged from 0.19 (reseeds=12, draws=96) to 0.23
+  // (draws=48, any reseeds tried) — below 0.266, hence wrongly admitted — up
+  // to 0.47 (reseeds=24, draws=96, the one hand-tuned SPEC the original
+  // report used), where the same raw maximum correctly refused it. mean +
+  // 3·std of the SAME reseed samples clears 0.266 at every one of those
+  // (reseeds, draws) pairs — the ceiling stops being a function of how many
+  // reseeds happened to be declared. It costs precision at the margin: VOSS,
+  // the fixture's genuinely-consequential surface, had a `moved_by` of 0.309
+  // against a raw maximum of only 0.291 at the hand-tuned SPEC — a margin of
+  // 0.018, thinner than KESTREL's own false positives were riding on, and
+  // one the corrected ceiling (mean 0.121 + 3·std 0.079 = 0.359) no longer
+  // clears at that SPEC, though it still clears at others. SEED.md #3 makes
+  // that the right side to be wrong on: a null of zero width — which is what
+  // a systematically-low raw maximum amounts to — is refused, everywhere,
+  // never assumed away because the material on the other side of it happens
+  // to be the one a fixture was built to admit.
+  //
+  // Evidence: `scripts/adversarial/challenge-5-birth-as-consequence-not-
+  // appearance.mjs`.
+  const nullMean = nullSamples.reduce((s, v) => s + v, 0) / nullSamples.length;
+  const nullVariance =
+    nullSamples.reduce((s, v) => s + (v - nullMean) ** 2, 0) / Math.max(1, nullSamples.length - 1);
+  const nullMax = nullMean + 3 * Math.sqrt(nullVariance);
   if (nullMax === 0)
     return gap("degenerate_ground", {
       reason: "reseeding moves this ground not at all: a null of zero width would clear any displacement",

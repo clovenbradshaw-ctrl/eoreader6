@@ -222,6 +222,72 @@ test("the gift fills the silence and does not overwrite the ground", () => {
   );
 });
 
+// ── SEED.md #6: plural layers, and what the flat mixture discards ───────────
+// Challenge #11 (multi-scale surprise disagreement): the single flattened
+// p(form | context) provably cannot surface document/genre-scale disagreement
+// once the read layer has accumulated enough evidence to make lambda_read
+// dominate (measured on real material in
+// scripts/adversarial/challenge-11-multi-scale-surprise-disagreement.mjs).
+// `scaleDisagreement` is the new channel: it does not change what
+// `distribution`/`probabilityOf` return, it names what they were about to
+// blend away, the same way `nul::disagreement` names what plural grounds
+// disagreed about instead of reconciling them.
+
+test("scaleDisagreement reports one bits figure per layer, keyed by layer id", () => {
+  const gift = createLayer({ id: "gift", tier: "received", giver: "elsewhere", order: 2, gamma: 1, alpha: 1 });
+  gift.train("the cat vanished the cat vanished".split(" "));
+  const belief = createBelief({ layers: [readLayer(), gift] });
+  const d = belief.scaleDisagreement(["the", "cat"], "sat");
+  assert.ok(Number.isFinite(d.bits.read), "the read layer's own surprisal is reported under its id");
+  assert.ok(Number.isFinite(d.bits.gift), "the received layer's own surprisal is reported under its id");
+  assert.ok(Number.isFinite(d.spread));
+});
+
+test("scaleDisagreement has no spread to report for a lone read layer — not zero, absent", () => {
+  const d = beliefOver().scaleDisagreement(["the", "cat"], "sat");
+  assert.deepEqual(Object.keys(d.bits), ["read"]);
+  assert.equal(d.spread, null, "one layer cannot disagree with itself; null says so rather than a false 0");
+});
+
+test("scaleDisagreement surfaces a document/genre gap the flat mixture washes out", () => {
+  // DOCUMENT: a read layer soaked in "sat" as the verb after "the cat".
+  // GENRE: a received layer built from the same work but never places any
+  // mass on "sat" here — an ordinary stand-in for a genre layer that simply
+  // never met this local continuation.
+  const heavyRead = readLayer([...TOKENS, ...TOKENS, ...TOKENS, ...TOKENS, ...TOKENS]);
+  const genre = createLayer({ id: "genre", tier: "received", giver: "a disjoint excerpt of the same work", order: 2, gamma: 1, alpha: 1 });
+  genre.train("the cat vanished the cat vanished the cat vanished".split(" "));
+  const belief = createBelief({ layers: [heavyRead, genre] });
+
+  const d = belief.scaleDisagreement(["the", "cat"], "sat");
+  assert.ok(d.bits.read < d.bits.genre, "the read layer is far less surprised by its own well-worn continuation");
+  assert.ok(d.spread > 3, `the layers should disagree sharply on this form: ${JSON.stringify(d.bits)}`);
+
+  // The flat number the rest of the pipeline actually consumes collapses
+  // toward the read layer once it dominates — exactly the averaging the
+  // spread above is meant to make visible instead of silently absorbing.
+  const dist = belief.distribution(["the", "cat"]);
+  assert.ok(dist.lambda_read > 0.9, "read layer share of the flat mixture is already near-total here");
+});
+
+test("scaleDisagreement's bits use the same mass>0?mass:reserve convention witnessForm and candidates.js use", () => {
+  const gift = createLayer({ id: "gift", tier: "received", giver: "elsewhere", order: 2, gamma: 1, alpha: 1 });
+  gift.train("whale ship sea captain".split(" "));
+  const belief = createBelief({ layers: [readLayer(), gift] });
+  const ctx = ["the", "cat"];
+  const form = "mat";
+  const d = belief.scaleDisagreement(ctx, form);
+  for (const [id, layer] of [
+    ["read", readLayer()],
+    ["gift", gift],
+  ]) {
+    const { mass, reserve } = layer.massOf(ctx, form);
+    const p = mass > 0 ? mass : reserve;
+    const expected = p > 0 ? -Math.log2(p) : -Math.log2(Number.MIN_VALUE);
+    assert.ok(Math.abs(d.bits[id] - expected) < 1e-9, `${id} layer priced with a different rule than witnessForm uses`);
+  }
+});
+
 test("a received layer never observes the material under test", () => {
   const priors = [{ id: "dracula", giver: "Bram Stoker", tokens: ["the", "cat", "vanished"] }];
   const emitter = priorAugmented({ order: 2, alpha: 1, rho: 0.999, priors });

@@ -51,10 +51,35 @@
 // GENDER IS A HARD FILTER, NEVER A TIEBREAKER, AND IT IS DERIVED, NOT TYPED
 // IN. No name list, no honorific table: a referent's gender class is read
 // off which gendered pronoun co-occurs with ITS OWN named mentions (a clean
-// signal only when exactly one referent is named in that sentence — a
-// pronoun beside two co-mentioned names is not clean evidence for either).
-// A referent with no such evidence is never excluded by gender; one with
-// clear, contrary evidence always is.
+// signal only when exactly one referent is named in that sentence AND the
+// pronoun sits in the SAME CLAUSE as that naming — a pronoun beside two
+// co-mentioned names is not clean evidence for either, and neither is a
+// pronoun beside a name that is only along for the ride in a different
+// clause of the same sentence). A referent with no such evidence is never
+// excluded by gender; one with clear, contrary evidence always is.
+//
+// "SAME SENTENCE" WAS TOO WIDE A NET, MEASURED. A wire-service attribution
+// clause — "...because none of the organizations contacted by Continental
+// Newswire appeared to know who she was" — puts a narrating apparatus as
+// the sentence's only literally-named surface while "she" grammatically
+// refers to someone this sentence never names at all. Same-sentence
+// co-occurrence alone reads that as clean evidence and wrongly tags the
+// apparatus female; once tagged, it passes the hard filter below for every
+// later she/her pronoun and out-recalls a quietly-named real subject on
+// raw activation volume alone (its own name recurs in nearly every
+// sentence). Measured on a hand-authored adversarial fixture: 6/6 of a
+// quiet subject's own she/her pronouns stolen by a wire-service apparatus
+// this way (scripts/adversarial/challenge-23-apparatus-demotion-regression-npr-bug-cl.mjs).
+// Clause-locality is the same discipline every other binding decision in
+// this file already applies (one-hop recall, not whole-document lift) —
+// tightened to the syntactic domain the heuristic's own header always meant:
+// a pronoun and the name it echoes belong to the same clause, not merely
+// the same sentence. `CLAUSE_OPENER_RE` is a small CLOSED grammatical
+// class (English subordinators and relative pronouns), not a sampled
+// open-class vocabulary — the same kind of hardcoded closed set this file
+// already keeps for THIRD_PERSON_SINGULAR itself; closed classes don't grow,
+// which is exactly what made relations.js's hand verb list wrong and is
+// exactly what makes this list safe.
 
 import { tokens, codeOf, recall, encodeFrame } from "../../emergence/activation.js";
 import { THIRD_PERSON_SINGULAR } from "./priors.js";
@@ -80,17 +105,44 @@ const surfaceMatcher = (surfaces) => {
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alts})(?:['’]s?)?(?![\\p{L}\\p{N}])`, "gu");
 };
 
-const namedReferentsIn = (text, matcher, surfaceToReferent) => {
-  const found = new Set();
-  if (!matcher) return found;
+// Returns every (referent, index) a surface was matched at, not just the
+// deduplicated set — gender-evidence collection below needs the POSITION of
+// the naming, not only which referent was named, to test clause-locality
+// against a co-occurring pronoun.
+const namedMatchesIn = (text, matcher, surfaceToReferent) => {
+  const matches = [];
+  if (!matcher) return matches;
   matcher.lastIndex = 0;
   let m;
   while ((m = matcher.exec(text))) {
     const bare = m[0].replace(/['’]s?$/i, "");
     const ref = surfaceToReferent.get(bare) ?? surfaceToReferent.get(m[0]);
-    if (ref) found.add(ref);
+    if (ref) matches.push({ ref, index: m.index });
   }
-  return found;
+  return matches;
+};
+
+// A small, CLOSED grammatical class — English subordinators and relative
+// pronouns that open a new clause. Not a sampled open-class vocabulary (see
+// the section header above): this list cannot grow the way a verb list
+// would, because it is the whole closed set, not a sample of one.
+// "to" is included as the non-finite counterpart of the finite
+// complementizers above — "declined ... to make her available" opens a
+// to-infinitive clause exactly the way "declined ... that she be made
+// available" would open a finite one with "that". Same phenomenon
+// (subordinate-clause introduction), different, still-closed realization.
+const CLAUSE_OPENER_RE = /\b(?:that|which|who|whom|whose|because|although|though|while|when|whether|unless|since|before|after|until|if|to)\b/i;
+
+// True only when the stretch of TEXT strictly between two positions carries
+// no clause boundary: no comma/semicolon/colon/quotation mark, and no
+// subordinator or relative pronoun opening a new clause. Order-independent —
+// callers pass a naming index and a pronoun index in whichever order they
+// occur.
+const sameClause = (text, i, j) => {
+  const [lo, hi] = i <= j ? [i, j] : [j, i];
+  const between = text.slice(lo, hi);
+  if (/[,;:"“”]/.test(between)) return false;
+  return !CLAUSE_OPENER_RE.test(between);
 };
 
 const PRONOUN_RE = /\b(he|him|his|himself|she|her|hers|herself)\b/gi;
@@ -139,13 +191,32 @@ const DEFAULT_EDGE_SLOTS = 24;
 export const resolvePronouns = (
   sentences,
   referentSurfaces,
-  { minActivation, minMargin, idfFloor, minLen, completion = DEFAULT_COMPLETION, topEdges = DEFAULT_TOP_EDGES, edgeSlots = DEFAULT_EDGE_SLOTS } = {},
+  {
+    minActivation,
+    minMargin,
+    idfFloor,
+    minLen,
+    completion = DEFAULT_COMPLETION,
+    topEdges = DEFAULT_TOP_EDGES,
+    edgeSlots = DEFAULT_EDGE_SLOTS,
+    // Referent ids the CALLER already knows are not persons — an
+    // organisation, a narrating apparatus, anything typed outside the range
+    // a third-person-singular personal pronoun could ever legitimately
+    // point at. Never derived here (this file has no notion of
+    // individuation type); received exactly the way minActivation/minMargin
+    // are, on the same terms host/corpus.js's own comment already states
+    // for individuation generally: "the caller sees [it] and applies its
+    // own policy." Treated as a hard filter alongside gender, not a
+    // tiebreak — the same discipline gender already gets.
+    nonPersonal,
+  } = {},
 ) => {
   if (!Number.isFinite(minActivation) || minActivation < 0)
     throw new TypeError("resolvePronouns: minActivation is declared — how much recall counts as a real echo is never a default");
   if (!Number.isFinite(minMargin) || minMargin < 0 || minMargin > 1)
     throw new TypeError("resolvePronouns: minMargin is declared — how far a candidate must lead the runner-up is never a default");
 
+  const nonPersonalSet = nonPersonal instanceof Set ? nonPersonal : new Set(nonPersonal ?? []);
   const surfaceToReferent = referentSurfaces instanceof Map ? referentSurfaces : new Map(Object.entries(referentSurfaces ?? {}));
   const matcher = surfaceMatcher([...surfaceToReferent.keys()]);
 
@@ -168,7 +239,8 @@ export const resolvePronouns = (
     const ws = tokens(sentence.text);
     const { trace, cue } = codeOf(ws, state, { minLen, idfFloor });
 
-    const named = namedReferentsIn(sentence.text, matcher, surfaceToReferent);
+    const namedMatches = namedMatchesIn(sentence.text, matcher, surfaceToReferent);
+    const named = new Set(namedMatches.map((n) => n.ref));
     const pronounHits = findThirdPersonSingular(sentence.text);
 
     // Resolve only the case the original complaint names: a sentence carried
@@ -177,16 +249,34 @@ export const resolvePronouns = (
     // establishes — this file does not adjudicate between co-mentioned names.
     if (named.size === 0 && pronounHits.length > 0) {
       const activation = recall(cue, state, { completion, topEdges, selfOrder: sentence.order });
+      // BEST single hop, not a sum across every hop — the same discipline
+      // activation.js's own `recall`/rerank pairing already keeps
+      // (rerank's own `top: scored[0]`, its header: "which of them placed
+      // something the other did not," never a running total). This file's
+      // header calls the mechanism "one recurrent hop" and "one-hop
+      // activation recall," singular, for the same reason: summing a
+      // referent's credit across every frame that happens to name it lets a
+      // referent recalled from MANY weak, incidental frames (a byline
+      // stapled onto nearly every sentence) outscore one recalled from a
+      // FEW strong, specific frames — rewarding ubiquity of naming, not
+      // strength of resemblance. Measured: without this, a quiet real
+      // subject's own she/her pronouns lost 6/6 to a narrating apparatus
+      // whose name recurred in nearly every frame, even after the
+      // same-clause gender fix above closed the mistagging path
+      // (scripts/adversarial/challenge-23-apparatus-demotion-regression-npr-bug-cl.mjs).
       const referentScore = new Map();
       for (const [order, amt] of activation) {
         const refs = namedByFrame.get(order);
         if (!refs) continue;
-        for (const r of refs) referentScore.set(r, (referentScore.get(r) ?? 0) + amt);
+        for (const r of refs) {
+          if (amt > (referentScore.get(r) ?? -Infinity)) referentScore.set(r, amt);
+        }
       }
 
       for (const hit of pronounHits) {
         const offset = (sentence.offset ?? 0) + hit.index;
         const candidates = [...referentScore.entries()]
+          .filter(([r]) => !nonPersonalSet.has(r))
           .filter(([r]) => {
             const g = referentGender(r);
             return g === "unknown" || g === hit.gender;
@@ -255,13 +345,21 @@ export const resolvePronouns = (
     }
 
     // Gender evidence: only when exactly one referent is named alongside a
-    // pronoun in the SAME sentence — the one case where the signal is clean.
-    // Causal: this only ever informs LATER sentences' candidate filtering,
-    // never the one it was read from.
+    // pronoun in the SAME sentence, AND that pronoun sits in the same
+    // clause as (at least one occurrence of) the naming — the one case
+    // where the signal is actually clean. Same sentence alone is not enough
+    // (see the section header above): an attribution clause can put the
+    // sentence's only literally-named surface nowhere near the clause the
+    // pronoun's antecedent actually lives in. Causal: this only ever
+    // informs LATER sentences' candidate filtering, never the one it was
+    // read from.
     if (named.size === 1 && pronounHits.length > 0) {
       const [only] = named;
+      const spansForOnly = namedMatches.filter((n) => n.ref === only).map((n) => n.index);
       const ev = genderEvidence.get(only) ?? { m: 0, f: 0 };
-      for (const hit of pronounHits) ev[hit.gender]++;
+      for (const hit of pronounHits) {
+        if (spansForOnly.some((idx) => sameClause(sentence.text, idx, hit.index))) ev[hit.gender]++;
+      }
       genderEvidence.set(only, ev);
     }
 

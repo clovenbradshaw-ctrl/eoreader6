@@ -56,7 +56,7 @@ const TERMS = [
   { id: "term:friend", label: "friend", attributes: [] },
 ];
 
-const OPTS = { population: "emma-v1-relations", minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42 };
+const OPTS = { population: "emma-v1-relations", minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, reseeds: 24, seed: 42 };
 
 test("operators: the 9 codes are the closed 3x3", () => {
   assert.equal(Object.keys(OPERATORS).length, 9);

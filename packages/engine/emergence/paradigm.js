@@ -53,10 +53,63 @@ export const paradigmCores = (kinds) => {
   return cores;
 };
 
+// Two field_ids that are the same VERB in different inflections are one
+// field wearing two spellings, and comparing them by raw string equality
+// alone reads that as two different fields — cross-material by construction,
+// since two independently-authored documents' own SVO extraction
+// (perceiver/text/relations.js) reports whichever inflection the sentence on
+// the page actually used ("made" vs "makes" vs "making"), never a shared
+// citation form. `verb:` is the field_id convention emergence/kinds.js's own
+// header names for this ("the clause-reading harness" input shape) —
+// SIG/CON/EVA/DEF never invent it, a caller does, and this organ is where
+// the comparison of two callers' cores actually happens.
+const VERB_PREFIX = "verb:";
+
+/**
+ * Whether two field_ids name the same field. Exact identity is the only
+ * claim this organ could ALWAYS make and remains the default — nothing
+ * below changes what `placeable`/`refuseParadigm` return when `sameAct` is
+ * not supplied.
+ *
+ * When a lemmatizer's `sameAct` IS supplied (perceiver/text/morphology.js,
+ * built from a received UniMorph prior that names its giver — SEED.md #1,
+ * never invented here) and BOTH field_ids carry the `verb:` prefix, two
+ * inflections of the same verb are recognised as the same field. This is
+ * the SAME comparator generation/abstractions.js already uses for backoff,
+ * asked here as a genuine claim rather than a bucketing key — and that
+ * distinction is exactly why `sameAct` and not `lemmaAbstraction`'s
+ * representative-picking is what belongs here: `lemmaAbstraction` may only
+ * feed unclaimed backoff mass (its own header: "NOTHING DOWNSTREAM READS
+ * THE BUCKET AS A CLAIM"), while a paradigm's placement IS a claim, and
+ * `sameAct` never picks a representative — it answers exactly the one pair
+ * asked about, ambiguity preserved, same as everywhere else this repo reads
+ * `sameAct` as meaning rather than as a key.
+ *
+ * WHAT THIS DOES NOT CLOSE, and the line matters as much as the one it
+ * draws. Two DIFFERENT verbs used for the same event by two different
+ * authors ("departed" vs "set out", "reached" vs "came to") are not the
+ * same act under any morphology — that is synonymy, and every organ in this
+ * codebase that borders it (perceiver/text/presence.js,
+ * perceiver/text/pronouns.js, emergence/activation.js) already disclaims it
+ * as MODEL tier: a claim about the language that is not derivable from the
+ * text being read and needs its own received resolver naming its own
+ * giver. This closes exactly the inflectional gap — real, measured,
+ * available today from an already-shipped prior — and makes no claim
+ * beyond it.
+ */
+export const sameField = (a, b, { sameAct } = {}) => {
+  if (a === b) return true;
+  if (!sameAct) return false;
+  if (!a.startsWith(VERB_PREFIX) || !b.startsWith(VERB_PREFIX)) return false;
+  return sameAct(a.slice(VERB_PREFIX.length), b.slice(VERB_PREFIX.length));
+};
+
 /** A record is held by the paradigm iff it carries one of the paradigm's core
- *  fields. Binary and structural — a record carries a field or it does not. */
-export const placeable = (record, cores) =>
-  (record?.attributes ?? []).some((a) => cores.has(a.field_id));
+ *  fields. Binary and structural — a record carries a field or it does not.
+ *  `sameAct`, when supplied, is the sole channel by which "carries" reaches
+ *  past raw string identity — see `sameField`. */
+export const placeable = (record, cores, { sameAct } = {}) =>
+  (record?.attributes ?? []).some((a) => [...cores].some((c) => sameField(a.field_id, c, { sameAct })));
 
 /** The material's own coherence, measured by its own induction: does it form
  *  kinds that pass both Born gates (height "above")? Never assumed — induced
@@ -85,15 +138,26 @@ export const coherenceOf = (records, opts) => {
  * is not an unravel — incoherent material is not a frame. The refusal is the
  * typed gap `paradigm_unraveled`, naming the paradigm and the received
  * coherence that refuted it.
+ *
+ * `opts.sameAct`, when supplied, is `perceiver/text/morphology.js`'s
+ * `createLemmatizer(...).sameAct` — OPTIONAL, and its absence changes
+ * nothing: "carries a paradigm core" falls back to exact field_id identity
+ * exactly as before this parameter existed. Supplying it lets `verb:`-shaped
+ * cores hold a record whose own SVO extraction (perceiver/text/relations.js)
+ * happened to report a different inflection of the same verb — the one
+ * cross-material identity question this organ can answer today without
+ * inventing a resolver this codebase does not have (see `sameField`).
  */
 export const refuseParadigm = (kinds, records, opts = {}) => {
   if (!Array.isArray(kinds)) throw new TypeError("refuseParadigm: kinds is declared, never defaulted");
-  const { population, minPrevalence, minKindSize, permutations, quantile, seed } = opts;
+  const { population, minPrevalence, minKindSize, permutations, quantile, seed, sameAct } = opts;
   for (const [name, v] of [["population", population], ["minPrevalence", minPrevalence], ["minKindSize", minKindSize], ["permutations", permutations], ["quantile", quantile], ["seed", seed]]) {
     if (v === undefined) throw new TypeError(`refuseParadigm: ${name} is declared, never defaulted`);
     if ((name === "population" && typeof v !== "string") || (name !== "population" && (typeof v !== "number" || !Number.isFinite(v))))
       throw new TypeError(`refuseParadigm: ${name} must be a ${name === "population" ? "string" : "number"} (got ${v})`);
   }
+  if (sameAct !== undefined && typeof sameAct !== "function")
+    throw new TypeError("refuseParadigm: opts.sameAct, if supplied, must be a function (a, b) => boolean");
 
   if (!Array.isArray(records) || records.length === 0)
     return gap("empty_material", { reason: "no received material to refuse" });
@@ -102,7 +166,7 @@ export const refuseParadigm = (kinds, records, opts = {}) => {
   if (cores.size === 0)
     return gap("empty_paradigm", { reason: "a paradigm with no cores holds nothing and can unravel nothing" });
 
-  const held = records.filter((r) => placeable(r, cores)).length;
+  const held = records.filter((r) => placeable(r, cores, { sameAct })).length;
   const placement = held / records.length;
 
   // The received material's own coherence — its own induction, same numbers.
@@ -156,12 +220,14 @@ export const rezeroParadigm = (records, opts = {}, { prior } = {}) => {
     return gap("no_rezero_trigger", { reason: "a re-zero needs a measured unravel, not a guess (got a prior that did not unravel)" });
   const oldCores = new Set(Array.isArray(prior.cores) ? prior.cores : []);
 
-  const { population, minPrevalence, minKindSize, permutations, quantile, seed } = opts;
+  const { population, minPrevalence, minKindSize, permutations, quantile, seed, sameAct } = opts;
   for (const [name, v] of [["population", population], ["minPrevalence", minPrevalence], ["minKindSize", minKindSize], ["permutations", permutations], ["quantile", quantile], ["seed", seed]]) {
     if (v === undefined) throw new TypeError(`rezeroParadigm: ${name} is declared, never defaulted`);
     if ((name === "population" && typeof v !== "string") || (name !== "population" && (typeof v !== "number" || !Number.isFinite(v))))
       throw new TypeError(`rezeroParadigm: ${name} must be a ${name === "population" ? "string" : "number"} (got ${v})`);
   }
+  if (sameAct !== undefined && typeof sameAct !== "function")
+    throw new TypeError("rezeroParadigm: opts.sameAct, if supplied, must be a function (a, b) => boolean");
 
   if (!Array.isArray(records) || records.length === 0)
     return gap("empty_material", { reason: "nothing accumulated to re-induce over" });
@@ -173,11 +239,15 @@ export const rezeroParadigm = (records, opts = {}, { prior } = {}) => {
 
   // Hold the loss: the material the old paradigm could not place must be held
   // by the new one. The loss is measured, not remembered — the old cores come
-  // from the unravel gap itself.
+  // from the unravel gap itself. Same optional `sameAct` channel as
+  // `refuseParadigm` — see `sameField` — so a re-zero is not credited with
+  // holding a loss it only holds because the old and new cores happen to be
+  // spelled identically, nor denied credit it earned by spelling the same
+  // verb differently than the record's own SVO extraction did.
   const newCores = paradigmCores(above);
   const stillUnheld = records.filter((r) => {
-    if (placeable(r, newCores)) return false;
-    return !placeable(r, oldCores);
+    if (placeable(r, newCores, { sameAct })) return false;
+    return !placeable(r, oldCores, { sameAct });
   });
   if (stillUnheld.length > 0)
     return gap("not_earned", { reason: `${stillUnheld.length} record(s) the old paradigm could not hold remain unheld by the new — the re-zero concedes nothing`, still_unheld: stillUnheld.length });

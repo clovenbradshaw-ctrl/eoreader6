@@ -104,6 +104,16 @@ import { gap, isGap } from "../../../nul/index.js";
 /** A form the belief has never met, reserved so smoothing mass has somewhere to go. */
 export const UNSEEN = "\u0000UNSEEN";
 
+// THE WHOLE TRUST BOUNDARY. Exactly two tiers, exactly this closed: `read`
+// (perceived directly, from the material itself) and `received` (a witness's
+// gift, named giver required — SEED.md #1). `createLayer` below throws for
+// any other string, so a third tier — a "competency" or "install" tier fed
+// by a reactive, projection-time network fetch, the mechanism challenge #12
+// went looking for — cannot be bolted on by convention; the type itself
+// refuses it. This is the same guarantee this file's own header already
+// claims one line up ("no I/O, no ambient state"), stated here as the
+// concrete, closed enum that makes it true rather than merely asserted, and
+// held to the line permanently by conformance/local-first-boundary.test.js.
 export const TIERS = Object.freeze(["read", "received"]);
 
 /**
@@ -877,9 +887,64 @@ export const createBelief = ({ layers, rho, referents = null }) => {
     });
   };
 
+  /**
+   * WHAT THE MIXTURE DISCARDS ON THE WAY TO ONE NUMBER.
+   *
+   * `distribution()`/`probabilityOf()` blend every layer into a single
+   * p(form | context) by design — THE GIFT FILLS THE SILENCE, IT NEVER
+   * OVERWRITES THE GROUND, see the file header — and that blend is not
+   * reversed here. Reversing it would make a received layer audible exactly
+   * where SEED.md #1 says it must stay silent (a context the read layer
+   * already knows well), which is the load-bearing behaviour the header
+   * argues for, not a bug in it.
+   *
+   * What the blend has never had a name for is what it disagreed about
+   * BEFORE being blended. SEED.md #6: "plural grounds for one figure are
+   * legal, and their disagreement is the only self-check" — `nul::disagreement`
+   * already has exactly this shape for `pattern()`'s plural grounds
+   * (`nul/index.js`); this is the same shape for a belief's plural layers,
+   * reported rather than reconciled, same as there.
+   *
+   * Each layer's own surprisal for the form that actually arrived, in bits,
+   * priced with the SAME mass>0?mass:reserve convention `witnessForm` (above)
+   * and `candidates.js`'s regime-belief candidate already use to price an
+   * unmet form — not a second, more lenient scoring rule invented for this
+   * report. `spread` is the widest gap between any two layers' bits, the
+   * same statistic `nul::disagreement` calls `spread`, for the same reason:
+   * a number a caller can threshold or plot, not a verdict.
+   *
+   * This does not, by itself, distinguish a genre/register anomaly from an
+   * ordinary rare proper noun — both present as "the read layer knows this
+   * form here and a received layer does not." It surfaces the disagreement a
+   * flat p(form | context) cannot show; it does not classify what kind of
+   * disagreement it is. That is a real limit of this channel, not something
+   * a bigger constant would fix.
+   */
+  const scaleDisagreement = (context, form) => {
+    const ctx = Array.isArray(context) ? context : [];
+    const bitsOf = (layer) => {
+      const { mass, reserve } = layer.massOf(ctx, form);
+      const p = mass > 0 ? mass : reserve;
+      return p > 0 ? -Math.log2(p) : -Math.log2(Number.MIN_VALUE);
+    };
+    const bits = Object.freeze({
+      [readLayer.id]: bitsOf(readLayer),
+      ...Object.fromEntries(received.map((l) => [l.id, bitsOf(l)])),
+    });
+    const values = Object.values(bits);
+    return Object.freeze({
+      bits,
+      // null, not 0, when there is nothing to disagree with — a lone read
+      // layer is not "in agreement with itself", it has no peer to differ
+      // from, the same distinction `nul::disagreement` draws for one ground.
+      spread: values.length > 1 ? Math.max(...values) - Math.min(...values) : null,
+    });
+  };
+
   return Object.freeze({
     distribution,
     probabilityOf,
+    scaleDisagreement,
     witnessForm,
     relevanceReport,
     mode,
