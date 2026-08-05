@@ -224,8 +224,17 @@ const rerank = (embed, ws, activation, frames, order) => {
   });
 };
 
-/** One CA3 completion step over the store AS IT STANDS. Never more than one. */
-const recall = (code, state, { completion, topEdges, selfOrder }) => {
+/**
+ * One CA3 completion step over the store AS IT STANDS. Never more than one.
+ *
+ * Exported so a caller with its own frame notion (perceiver/text/pronouns.js
+ * binds a pronoun's frame to whichever prior frame's motifs it shares, then
+ * asks a side table which referent that frame named — same one-hop recall,
+ * a different question asked of the same activation Map) can reuse this
+ * exact mechanism rather than re-deriving a second recall function that
+ * would drift from this one.
+ */
+export const recall = (code, state, { completion, topEdges, selfOrder }) => {
   const { posting, edges } = state;
   const activation = new Map();
   const add = (order, amt) => {
@@ -250,6 +259,57 @@ const recall = (code, state, { completion, topEdges, selfOrder }) => {
     }
   }
   return activation;
+};
+
+/**
+ * ENCODE — wire one frame's trace into the posting table and the bounded
+ * Hebbian edge graph, then advance the df/gramDf tables. Always called AFTER
+ * `recall` for the same frame (never before): recalling after encoding would
+ * let a frame retrieve itself and every motif it just wired.
+ *
+ * Factored out of `readForward`'s loop so a caller with its own frame notion
+ * (perceiver/text/pronouns.js — sentence-level frames, not readForward's own
+ * chunking) advances the SAME tables the same way, rather than a second,
+ * possibly-drifting copy of this bookkeeping.
+ */
+export const encodeFrame = (state, order, ws, trace, { edgeSlots = 24 } = {}) => {
+  for (const [m, w] of trace) {
+    let p = state.posting.get(m);
+    if (!p) state.posting.set(m, (p = new Map()));
+    p.set(order, w);
+  }
+  // Bounded Hebbian: edges are O(k²), and a frame's most distinctive
+  // co-firings are the associations worth keeping. Retrievable is not the
+  // same as wired.
+  const wired = [...trace].sort((a, b) => b[1] - a[1]).slice(0, edgeSlots);
+  for (let a = 0; a < wired.length; a++) {
+    for (let b = a + 1; b < wired.length; b++) {
+      const inc = Math.min(wired[a][1], wired[b][1]);
+      let ea = state.edges.get(wired[a][0]);
+      if (!ea) state.edges.set(wired[a][0], (ea = new Map()));
+      bump(ea, wired[b][0], inc);
+      let eb = state.edges.get(wired[b][0]);
+      if (!eb) state.edges.set(wired[b][0], (eb = new Map()));
+      bump(eb, wired[a][0], inc);
+    }
+  }
+
+  // The tables advance only now, so this frame was never counted in its own
+  // idf. Off-by-one here is the difference between reading and reviewing.
+  // EVERY form counts toward df, including short ones. `minLen` is a policy
+  // about what makes a good unigram key; df is a fact about what has been
+  // read, and conflating them was a real bug: short function words never
+  // entered the table, so `df.get("the")` came back empty and the fallback
+  // scored it as maximally rare. Every filler trigram then inflated to a top
+  // key, the sparse code stopped being sparse, and recall flooded — every
+  // frame recalled every previous frame at reach 1.
+  const seenU = new Set(ws);
+  for (const w of seenU) bump(state.df, w, 1);
+  const long = ws.filter((w) => w.length >= 3);
+  const seenG = new Set();
+  for (let k = 0; k + 2 < long.length; k++) seenG.add(`${long[k]} ${long[k + 1]} ${long[k + 2]}`);
+  for (const g of seenG) bump(state.gramDf, g, 1);
+  state.read++;
 };
 
 /**
@@ -366,44 +426,8 @@ export const readForward = (frames, { idfFloor = IDF_FLOOR, minLen = MIN_LEN, co
         : NO_EMBEDDER,
     });
 
-    // ── ENCODE: wire it in, after it has been read ────────────────────────
-    for (const [m, w] of trace) {
-      let p = state.posting.get(m);
-      if (!p) state.posting.set(m, (p = new Map()));
-      p.set(order, w);
-    }
-    // Bounded Hebbian: edges are O(k²), and a frame's most distinctive
-    // co-firings are the associations worth keeping. Retrievable is not the
-    // same as wired.
-    const wired = [...trace].sort((a, b) => b[1] - a[1]).slice(0, edgeSlots);
-    for (let a = 0; a < wired.length; a++) {
-      for (let b = a + 1; b < wired.length; b++) {
-        const inc = Math.min(wired[a][1], wired[b][1]);
-        let ea = state.edges.get(wired[a][0]);
-        if (!ea) state.edges.set(wired[a][0], (ea = new Map()));
-        bump(ea, wired[b][0], inc);
-        let eb = state.edges.get(wired[b][0]);
-        if (!eb) state.edges.set(wired[b][0], (eb = new Map()));
-        bump(eb, wired[a][0], inc);
-      }
-    }
-
-    // The tables advance only now, so this frame was never counted in its own
-    // idf. Off-by-one here is the difference between reading and reviewing.
-    // EVERY form counts toward df, including short ones. `minLen` is a policy
-    // about what makes a good unigram key; df is a fact about what has been
-    // read, and conflating them was a real bug: short function words never
-    // entered the table, so `df.get("the")` came back empty and the fallback
-    // scored it as maximally rare. Every filler trigram then inflated to a top
-    // key, the sparse code stopped being sparse, and recall flooded — every
-    // frame recalled every previous frame at reach 1.
-    const seenU = new Set(ws);
-    for (const w of seenU) bump(state.df, w, 1);
-    const long = ws.filter((w) => w.length >= 3);
-    const seenG = new Set();
-    for (let k = 0; k + 2 < long.length; k++) seenG.add(`${long[k]} ${long[k + 1]} ${long[k + 2]}`);
-    for (const g of seenG) bump(state.gramDf, g, 1);
-    state.read++;
+    // ── ENCODE: wire it in, after it has been read ──────────────────────
+    encodeFrame(state, order, ws, trace, { edgeSlots });
   }
 
   return { records, state };

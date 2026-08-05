@@ -31,6 +31,26 @@ export const NEVER_A_NAME_META = Object.freeze({ giver: "lang/en", scope: null }
 export const FIRST_PERSON = /^(i|me|my|mine|myself|we|us|our|ours)$/i;
 export const FIRST_PERSON_META = Object.freeze({ giver: "lang/en", scope: null });
 
+/**
+ * Third-person SINGULAR, GENDERED pronoun forms — a small closed grammatical
+ * class, the same standing as FIRST_PERSON above, not an open semantic list.
+ * Each form maps to the gender class it grammaticalises in English, never to
+ * a referent: WHICH referent a token like "he" points at on a given occasion
+ * is exactly the model-tier gap surfaces.js names
+ * ("pronoun_and_descriptor_mentions_unresolved") and is not decided here.
+ *
+ * Number-ambiguous forms ("they", "them", "their", "theirs", "themselves")
+ * are deliberately absent: singular-or-plural is not decidable from the
+ * pronoun alone, and this register does not guess it (Amendment II's
+ * "measured, never assumed" standing, applied to a grammatical class rather
+ * than a statistic).
+ */
+export const THIRD_PERSON_SINGULAR = Object.freeze({
+  he: "m", him: "m", his: "m", himself: "m",
+  she: "f", her: "f", hers: "f", herself: "f",
+});
+export const THIRD_PERSON_SINGULAR_META = Object.freeze({ giver: "lang/en", scope: null });
+
 // ── script/latn — Latin-script typographic conventions ──────────────────────
 
 /** Sentence-ending punctuation marks. */
@@ -38,5 +58,5 @@ export const SENTENCE_TERMINATORS = Object.freeze(new Set([".", "!", "?", "…"]
 export const SENTENCE_TERMINATORS_META = Object.freeze({ giver: "script/latn", scope: null });
 
 /** Closing quote marks. */
-export const CLOSING_QUOTES = Object.freeze(new Set(['"', "'", "\u201d", "\u2019"]));
+export const CLOSING_QUOTES = Object.freeze(new Set(['"', "'", "”", "’"]));
 export const CLOSING_QUOTES_META = Object.freeze({ giver: "script/latn", scope: null });
