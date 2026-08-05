@@ -11,7 +11,7 @@
 // actually measured is worse than no location at all — it would report a
 // standpoint as being somewhere it was not measured to be.
 //
-// Video is deliberately absent. Amendment XV names it as an unattempted gap,
+// Video is deliberately absent. Amendment XVI names it as an unattempted gap,
 // not an oversight, and there is nothing to test here that would not be
 // testing an implementation that does not exist.
 

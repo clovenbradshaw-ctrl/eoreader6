@@ -163,7 +163,7 @@ export const functionWordSet = (table, { threshold = DEFAULT_RELEVANCE_THRESHOLD
 
 // ── locate: the inverse of reduce()'s chunking ──────────────────────────────
 //
-// SEED.md Amendment XV: a surf()/atmosphere() material index is a chunk index
+// SEED.md Amendment XVI: a surf()/atmosphere() material index is a chunk index
 // into WORDS, and load()/tokenize() throw the byte position away entirely —
 // there was no way back from a standpoint to real text before this.
 // Deliberately independent of tokenize()/load(): those are untouched, so
