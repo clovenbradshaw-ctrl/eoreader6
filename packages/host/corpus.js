@@ -8,6 +8,7 @@ import { lineIndex, outlineOfIndex, discoverSegment } from "../engine/perceiver/
 import { tokenize, buildFrequencyTable, functionWordSet } from "../engine/perceiver/text/material.js";
 import { splitSentences, deriveAbbreviations, stripContainer } from "../engine/perceiver/text/spans.js";
 import { extractSurfaces, discoverReferents, diaNorm } from "../engine/perceiver/text/surfaces.js";
+import { resolvePronouns } from "../engine/perceiver/text/pronouns.js";
 import { projectReferents } from "../engine/referents/index.js";
 
 // The cells this host organ occupies on the operator grid (engine/operators.js):
@@ -26,6 +27,18 @@ export { CORPUS_API_VERSION } from "../spec/index.js";
 const DEFAULT_SPAN_CAP = 2000;
 const CHUNK_SIZE = 2000;
 const MIN_CHUNK_CHARS = 20;
+
+// The operating point perceiver/text/pronouns.js::resolvePronouns is called
+// at from this host. Declared HERE, not defaulted inside the engine organ
+// (resolvePronouns throws without them, on the same standing entity.js's
+// minArrivals and kind-void.js's draws/seed already hold) — but this pair of
+// numbers is, honestly, the same standing as this file's own CHUNK_SIZE: an
+// engineering starting point, not yet validated against a retrieval-quality
+// golden. No such golden exists for pronoun binding in this repo today (the
+// same gap surfaces.js's own header names). Moving these two numbers as one
+// gets built is expected, not a regression.
+const PRONOUN_MIN_ACTIVATION = 0.05;
+const PRONOUN_MIN_MARGIN = 0.2;
 
 const utf8 = new TextEncoder();
 const utf8dec = new TextDecoder();
@@ -483,17 +496,33 @@ export function snipSegment(session, { sourceId, anchor, radius, prompt } = {}) 
 //   surfaces.js::extractSurfaces    candidate surfaces + the cap/lower filter
 //   surfaces.js::discoverReferents  name-variant coreference -> DEF.admit
 //   referents/index.js::projectReferents   the canonical event projection
+//   pronouns.js::resolvePronouns    third-person singular pronouns bound to
+//                                   the discovered cast by one-hop activation
+//                                   recall — see the header note below.
 //
 // TIER DISCIPLINE is inherited unchanged from surfaces.js and is the reason
 // this is honest rather than a regex NER: name-variant coreference is
-// ENGINE tier (derivable); descriptor synonymy and pronoun binding are MODEL
-// tier and come back as typed gaps, never as guessed numbers. A prior, when
-// one exists, outranks discovery for the surfaces it claims.
+// ENGINE tier (derivable); descriptor synonymy is MODEL tier and still comes
+// back as a typed gap, never a guessed number. A prior, when one exists,
+// outranks discovery for the surfaces it claims.
+//
+// PRONOUN BINDING IS PARTIAL, AND SAID SO. surfaces.js's own gap
+// ("pronoun_and_descriptor_mentions_unresolved") is not retired here — it is
+// narrowed. Third-person singular pronouns ("he"/"she" and their forms) in a
+// sentence with no named surface are offered to resolvePronouns, which binds
+// one only when its one-hop recall against the already-discovered cast
+// clears two declared bars (activation floor, margin over the runner-up);
+// short of either, the pronoun stays exactly the same unresolved gap it
+// always was. Resolved pronoun mentions are counted SEPARATELY from literal
+// name mentions (`pronounMentions`/`pronounFrames`, never folded into
+// `mentions`/`frames`) — merging them would let an activation-bound guess
+// masquerade as a name occurrence, and countAcrossChunks's substring
+// counting has no way to tell one pronoun's referent from another's.
 //
 // KNOWN LIMIT, declared not hidden: extractSurfaces gates on capitalisation,
 // which is a property of Latin/Greek/Cyrillic script. On Han text it returns
 // nothing (goldens/cast/README.md measured this). That is reported as a gap
-// on a document where sentences exist but no surface survives, so the caller
+// on a document where sentences exist but no surface survived, so the caller
 // sees "this detector does not apply here" rather than "this text has no
 // cast".
 // ---------------------------------------------------------------------------
@@ -612,6 +641,7 @@ function discoveredCast(session, doc) {
   const sentences = splitSentences(body, { abbreviations });
 
   let referents = [];
+  let pronounBindings = [];
 
   if (!sentences.length) {
     gaps.push({
@@ -651,10 +681,41 @@ function discoveredCast(session, doc) {
           detail: `${discovery.gaps.length} discovered referents: ${one.detail}`,
         });
       }
+
+      // Third-person singular pronouns, offered to the same cast — see the
+      // section header above. surfaceToReferent maps each admitted DEF.admit
+      // surface straight back to its referent_id; resolvePronouns adds no
+      // surfaces of its own, it only asks which already-named referent a
+      // pronoun's sentence resembles by one-hop recall.
+      const surfaceToReferent = new Map(discovery.events.map((e) => [e.surface, e.referent_id]));
+      const resolved = resolvePronouns(sentences, surfaceToReferent, {
+        minActivation: PRONOUN_MIN_ACTIVATION,
+        minMargin: PRONOUN_MIN_MARGIN,
+      });
+      pronounBindings = resolved.bindings;
+
+      // Same collapsing discipline as discovery.gaps just above: one summary
+      // fact, not one gap object per unresolved pronoun in a 690 KB novel.
+      if (resolved.bindings.length || resolved.gaps.length) {
+        gaps.push({
+          reason: "pronoun_mentions_partially_resolved",
+          tier: "model",
+          needsWitness: true,
+          pronounsResolved: resolved.bindings.length,
+          pronounsRemaining: resolved.gaps.length,
+          detail:
+            `${resolved.bindings.length} third-person singular pronoun mentions bound to a referent by ` +
+            `activation recall; ${resolved.gaps.length} remain unresolved (below the declared activation ` +
+            "or margin floor, gender-incompatible with every candidate named so far, or nothing named yet " +
+            "to recall). Descriptor synonymy is untouched by either count and remains not derivable " +
+            "(eoreader5 measured distributional coref failing twice). Supply a per-text prior to close " +
+            "what remains.",
+        });
+      }
     }
   }
 
-  const value = { referents, gaps, abbreviationGiver };
+  const value = { referents, gaps, abbreviationGiver, pronounBindings };
   if (!session._cast) session._cast = new Map();
   session._cast.set(doc.id, { chunks: doc.chunks.length, value });
   return value;
@@ -702,11 +763,18 @@ export function sessionReferents(session, { sourceId, priors = [], limit = 100 }
     // The longest surface is the fullest form of the name ("Victor
     // Frankenstein" over "Victor"), which is what a reader wants on the label.
     const display = [...r.surfaces].sort((a, b) => b.length - a.length)[0];
+    // Activation-bound pronoun mentions for THIS referent, counted separately
+    // from `counted` above (see the section header: never folded into
+    // `mentions`/`frames`, which stay literal-surface-only).
+    const pronounHits = discovery.pronounBindings.filter((b) => b.referentId === r.id);
+    const pronounFrameOrders = new Set(pronounHits.map((b) => b.sentenceOrder));
     referents.push({
       id: r.id,
       display,
       surfaces: r.surfaces,
       ...counted,
+      pronounMentions: pronounHits.length,
+      pronounFrames: pronounFrameOrders.size,
       // Individuation is NOT decided here. Which kind of being a referent is
       // (holon / emanon / protogon / field / apparatus) is a typed judgement;
       // discovery only establishes that something recurs and is named. The
