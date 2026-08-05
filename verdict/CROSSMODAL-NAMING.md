@@ -73,3 +73,77 @@ This doc does not attempt to unify the two axes into one model, or to build
 a rhetorical-mechanism classifier. They measure different things — which
 move, vs. how well-attested — and collapsing them would destroy the
 orthogonality that makes both useful.
+
+## Addendum, 2026-08-05: the naming collision has a real theoretical account
+
+The distinction argued for above by inspection — "identity and analogy don't
+invert between axes, metaphor did" — turns out to be Gentner's (1983)
+structure-mapping theory and Bowdle & Gentner's (2005) "Career of Metaphor"
+hypothesis, arrived at independently and then checked against the
+literature rather than the other way around. Recorded so the order of
+discovery isn't misrepresented later.
+
+**Structure-mapping's actual claim** (Gentner 1983; Gentner & Markman 1997):
+analogy, metaphor, and literal similarity are evaluated by ONE alignment
+mechanism, not three — what differs is (a) how much surface/attribute
+overlap accompanies the relational overlap, and (b) same-domain vs.
+cross-domain. Gentner & Markman's 1997 typology crosses these two axes:
+literal similarity (high relational + high attribute, same domain), analogy
+(high relational + low attribute, cross-domain), mere-appearance (low
+relational + high attribute — a cloud that looks like a rabbit: real,
+noticed, not inferentially productive), and anomaly (low + low).
+
+**Bowdle & Gentner's (2005) "Career of Metaphor"**: a metaphor is not a
+separate kind of correspondence from an analogy — it is a TRAJECTORY. A
+novel metaphor is processed by comparison, the same mechanism as analogy,
+effortful and reversible; with enough repeated conventional use, the mapped
+relational structure gets abstracted into a standing category attached to
+the vehicle term, and comprehension shifts from comparison ("A is like B")
+to categorization ("A is a B'") — a "dead" metaphor. This is exactly the
+shape of the `eoreader4.2` comment this module already traced its ladder
+to: `analogy → REC → DEF` as "the life of a metaphor read off one log" is
+the SAME claim — a live analogy and a metaphor are one relation at
+different points in repeated re-observation, not two labels chosen once.
+
+**What changed in `verdict/crossmodal.js` as a result:**
+
+- `career(history, { minObservations })` — trajectory state (`comparison`
+  vs `categorized`) computed over a SEQUENCE of past `crossModalTag()`
+  results for the same tracked locus, not a property of one call. Replaces
+  the earlier implicit assumption that a tag, once returned, was the whole
+  story.
+- `mode` (`"surfeit" | "moved"`), optional per side, is the first real
+  RELATIONAL-overlap signal this module has had — previously position
+  alignment alone stood in for both relational and attribute overlap, which
+  silently conflated Gentner-Markman's analogy cell with their
+  mere-appearance cell. A new tag, `mereAppearance`, is returned when
+  positions align but declared modes disagree — hard-capped, unreachable
+  from `identity`/`analogy` no matter how strong or corroborated either
+  side is alone, matching Gentner-Markman's claim that mere-appearance has
+  nothing to transfer regardless of how salient the surface overlap is.
+- `sharedOrigin: true` (an option, never inferred) refuses outright rather
+  than tag anything — the metonymy/homology guard: two sides that cite the
+  same literal material are coreferent, not independently similar, and
+  scoring that as an extra-strong "identity" would be the exact
+  unearned-correspondence mistake this module exists to catch, aimed at
+  itself. Metonymy proper (contiguity/association, no relational alignment
+  at all) cannot be guarded here — a `{strength, position, corroborated}`
+  triple carries no signal that could distinguish it — so it must be
+  filtered by the caller before a side is ever constructed.
+
+**Explicitly not done, and should not be treated as confirmed:**
+Gentner-Markman's full quadrant (literal-similarity / analogy /
+mere-appearance / abstraction) needs relational overlap AND attribute
+overlap as two independent, separately-measured axes. `mode`-matching gives
+a real relational signal for the first time; there is still no
+attribute-overlap signal anywhere in this module — nothing compares the two
+sides' underlying magnitudes or surface shapes, only position and a mode
+label. Choosing "literal similarity" as an output tag would require that
+second axis, and inventing a proxy for it now rather than measuring one
+would repeat the mistake this addendum is otherwise fixing.
+Systematicity (Gentner's requirement that a real analogy connects several
+higher-order relations, not one isolated match) is also not implemented:
+that needs an aggregate object over several `crossModalTag()` instances
+checking for a consistent, order-preserving mapping, which is a SYN-level
+feature (allegory-shaped: a cluster of tensions co-varying together) and a
+larger addition than this pass made.
