@@ -91,11 +91,21 @@ test("burstiness's below-censoring is too chronic to calibrate a run against —
   // The near-universal background rate documented in nul's `windowMean`
   // header (79-87%). A run counter over it cannot tell a genuinely regular
   // stretch from ordinary material; both saturate the false-alarm rate.
+  //
+  // Series length raised 300 -> 900, 2026-08-05: atmosphere.js's MIN_GROUND
+  // moved from `3 * window` to `10 * window` (causal re-zero boundary-
+  // correctness fix, see its header), which delays how much of a
+  // FIXED-length series is past warm-up and eligible to accumulate a run at
+  // all. The underlying claim is unchanged and still measured, not assumed
+  // — at `window=5` this over-fires 25/100 at length 300 (below this test's
+  // own 0.3 bar, a regression this length change closes) rising to 55/100 at
+  // length 900, i.e. the same chronic rate, just needing more runway past
+  // the larger warm-up to show it within one finite-length trial.
   let fired = 0;
   const trials = 20;
   for (let t = 0; t < trials; t++) {
     const next = rng(2000 + t);
-    const series = Array.from({ length: 300 }, () => next() * 2);
+    const series = Array.from({ length: 900 }, () => next() * 2);
     const { findings } = findingsOn(series, "burstiness");
     if (findings.length > 0) fired++;
   }
