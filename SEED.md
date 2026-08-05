@@ -902,6 +902,73 @@ for reader-sclerosis.
 
 Evidence: `conformance/locate.test.js`.
 
+### XVII — Selection is a null-bearing act; a generative choice has no null
+
+*2026-08-05. Extends #3, #6, Amendment IV.*
+
+`scripts/navigation-index-war-and-peace.mjs` built a byte-verified index of
+what `read-tiered.mjs`'s fold surfaces — 57 waypoints, each an entry that
+earned its altitude by surviving surprise. The natural next question, asked
+directly and tested rather than assumed: given a reader's question, which
+waypoint should be read? The first attempt handed the model the list and
+asked it to choose. That is a **DEF·Figure act with no ground behind it** —
+a generative selection over candidates, made once, un-reseedable, and with
+no counterfactual to test it against. It looks like the same shape as every
+other admission this engine performs and is not: `defOnEntity`, `verdict`,
+`refuseParadigm` all test an observed value against a *distribution of what
+else could have been observed*. A model's free-form pick has no such
+distribution. It is a single draw with no reseed, which is exactly the null
+of zero width #3 already refuses — just relocated from a statistic to a
+choice.
+
+Measured, not argued: three real local models (0.5B, 1.5B, 3B parameters,
+CPU-only) were each shown the same 57-entry index and the same question
+("how does the book compare Napoleon and Kutuzov as commanders") and asked
+to pick the one entry that answers it. **All three picked wrong**, though
+the correct entry — the one entry whose relation triple names both
+commanders — appeared three separate times in the list every one of them
+read. The smallest model then fabricated a quotation absent from the real
+passage it was subsequently given, on top of having selected the wrong
+passage to be given.
+
+Replacing the generative pick with a mechanical one — deterministic keyword
+overlap between the question and each candidate's own relation triple, no
+model call, the same candidate returned on every re-run against the same
+inputs — selected the correct entry on the first try, at every model size,
+including the smallest. The fix was not a bigger model. It was removing a
+zero-width null from the pipeline and putting a real one back.
+
+**The general clause, stated so it generalizes past this one script:** any
+process that admits one candidate over others — which waypoint to read,
+which cluster to promote, which regime is "above" another — must be
+falsifiable by re-running it against a reseed of the *same* candidate set
+and getting the *same* answer, or a principled account of when it would
+not. A generative model's selection is a legitimate INPUT to such a process
+(it may propose, rank, or score) but is never legitimately the process
+itself, for the same reason a witness must recur to be witnessed (#1's
+origin discipline) and a statistic must be sensitive to what its
+perturbation destroys (#4, Amendment I): a choice that cannot be
+independently reproduced or checked against a null is not a measurement,
+regardless of how confident the text that follows it reads.
+
+**What this does not license.** A generative model reading
+mechanically-selected material and answering in its own words is not
+touched by this amendment — that is `SYN` over an admitted ground, the
+ordinary shape of an answer. What is refused is a generative model
+standing *in place of* the admission step itself, where #3's null-of-zero-
+width refusal already applies and was simply not recognized wearing this
+shape.
+
+**No new declared number.** This amendment adds a discipline for how
+candidates are admitted to a reader's attention, not a new physiology —
+`draws`, `reseeds`, and `window` already fully specify what a reproducible
+selection needs. Three declared numbers still.
+
+Evidence: `scripts/navigation-index-war-and-peace.mjs` and
+`../eochat/scripts/probe-navigate-with-small-model.mjs` (eochat's LAWS.md
+L8 records the same finding at the application layer — this is its
+engine-side statement).
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
