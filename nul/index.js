@@ -445,7 +445,49 @@ export const irreversibility = (series, { window }) => {
   return js / Math.log(2);
 };
 
-export const STATISTICS = Object.freeze({ burstiness, windowMean, permutationEntropy, irreversibility });
+/**
+ * OUTLIER. Max absolute deviation from the material's own median.
+ *
+ * None of the four statistics above see a single point sitting far from its
+ * neighbours, and that gap was measured, not assumed (eoreader6.1's
+ * check-real-ground-full.mjs, run against this engine's real `ground`/
+ * `difference` live): a planted magnitude anomaly, otherwise-ordinary
+ * material around it, ranks 0.42-0.91 against every one of
+ * burstiness/shuffle, windowMean/shuffle, permutationEntropy/shuffle,
+ * irreversibility/shuffle, irreversibility/phase. None flag it, because none
+ * of the four ask a POINTWISE question — they ask about windowed bursts,
+ * distributional order, or reversal asymmetry, never about one value's
+ * distance from the rest.
+ *
+ * `window` is accepted and unused, deliberately: this statistic is a
+ * property of the whole material handed to it, not of a sub-span within it.
+ * The correct use is therefore NOT `ground({material: series, ...})` on a
+ * series that contains the candidate — that would let the ground's own
+ * perturbations draw the candidate back in (`resample` can and will), which
+ * is the exact contamination `pattern`'s own `cites` check exists to catch
+ * elsewhere. The candidate must be held out of `material` and tested
+ * against the ground `difference` builds from the rest, the same shape
+ * `cascade` already uses for holding a target out of its own null.
+ *
+ * NOT licensed for `shuffle`: shuffle only permutes the material's own
+ * multiset, and this statistic is invariant under any permutation of a fixed
+ * multiset, so every draw returns the identical value — `ground` reports
+ * `degenerate_ground` for it, correctly, every time (checked directly,
+ * scripts/check-shuffle-maxdev.mjs). Licensed for `resample` and `phase`
+ * below, which don't hold the multiset fixed.
+ */
+export const maxDeviation = (series) => {
+  const sorted = [...series].sort((a, b) => a - b);
+  const n = sorted.length;
+  const i = (n - 1) / 2;
+  const lo = Math.floor(i);
+  const median = sorted[lo] + (sorted[Math.ceil(i)] - sorted[lo]) * (i - lo);
+  let best = 0;
+  for (const x of series) best = Math.max(best, Math.abs(x - median));
+  return best;
+};
+
+export const STATISTICS = Object.freeze({ burstiness, windowMean, permutationEntropy, irreversibility, maxDeviation });
 
 /**
  * Which (statistic, perturbation) pairs have actually been established.
@@ -473,6 +515,12 @@ export const LICENSED = Object.freeze({
   "irreversibility/shuffle": Object.freeze({ where: "conformance/temporality.test.js — the three rows" }),
   "irreversibility/phase": Object.freeze({
     where: "scripts/turbulence-growth-rule.mjs — level() returns `above` on 84/96 real DNS lines, mean displacement +0.361",
+  }),
+  "maxDeviation/resample": Object.freeze({
+    where: "scripts/verify-maxdeviation-candidate.mjs — a planted single-point magnitude outlier (97 against an otherwise-ordinary series) is none of burstiness/windowMean/permutationEntropy/irreversibility's business (ranks 0.415-0.910 against shuffle and phase, none flagged; see the correction in eoreader6.1's PARITY.md, checked against this file directly). Held out of its own material and tested leave-one-out against the rest: exceeds_witness above, reZero true. A matched control (deviation 0.55, held out the same way) reads exceeds_witness below — regularity per Amendment II, not a hazard",
+  }),
+  "maxDeviation/phase": Object.freeze({
+    where: "scripts/check-shuffle-maxdev.mjs — same outlier, same leave-one-out construction, phase in place of resample: exceeds_witness above, reZero true, on a wider support ([0.93, 1.90] vs resample's [0.79, 1.44])",
   }),
 });
 
@@ -523,7 +571,14 @@ const sameSpec = (a, b) =>
   a.n === b.n &&
   a.direction === b.direction;
 
-const fingerprint = (m) =>
+/**
+ * Exported so a candidate statistic can be checked against the real `ground`/
+ * `difference` pipeline (Amendment I's own demand: "checked, not assumed")
+ * without duplicating this hash to build a compatible `cites`-passing object
+ * by hand. Kept identical to the private construction every ground already
+ * uses — there is no second fingerprint, only this one made reachable.
+ */
+export const fingerprint = (m) =>
   `n${m.length}:${m.reduce((h, v) => (Math.imul(h ^ Math.round(v * 1e6), 16777619) | 0), 2166136261) >>> 0}`;
 
 /**
@@ -542,6 +597,17 @@ const quantile = (sorted, q) => {
   return sorted[lo] + (sorted[Math.ceil(i)] - sorted[lo]) * (i - lo);
 };
 
+/**
+ * `statistic` is a registry key by default, the closed vocabulary `licensed`
+ * and `cascade` reason about. A function is also accepted, unregistered and
+ * unlicensable by construction (`licensed(fn, perturbation)` is false for
+ * any function, since `LICENSED` is keyed by name) — this is what lets a
+ * candidate be run through the real pipeline (Amendment I, "checked, not
+ * assumed") before it earns a name in `STATISTICS` at all, rather than
+ * requiring the registry to be edited just to try something out.
+ */
+const resolveStatistic = (statistic) => (typeof statistic === "function" ? statistic : STATISTICS[statistic]);
+
 /** Construct a nothing by perturbing present material. */
 export const ground = ({ material, draws, window, perturbation = "shuffle", statistic = "burstiness", seed = 0, via }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
@@ -550,7 +616,7 @@ export const ground = ({ material, draws, window, perturbation = "shuffle", stat
   if (!Number.isInteger(window) || window < 2)
     return gap("undeclared", { what: "window", why: "the reach of the present is never derived from material length" });
   const perturb = PERTURBATIONS[perturbation];
-  const stat = STATISTICS[statistic];
+  const stat = resolveStatistic(statistic);
   if (!perturb) return gap("unknown_spec", { perturbation });
   if (!stat) return gap("unknown_spec", { statistic });
 
@@ -651,7 +717,7 @@ export const extremeGround = ({
   if (!Number.isInteger(window) || window < 2)
     return gap("undeclared", { what: "window", why: "the reach of the present is never derived from material length" });
   const perturb = PERTURBATIONS[perturbation];
-  const stat = STATISTICS[statistic];
+  const stat = resolveStatistic(statistic);
   if (!perturb) return gap("unknown_spec", { perturbation });
   if (!stat) return gap("unknown_spec", { statistic });
 
