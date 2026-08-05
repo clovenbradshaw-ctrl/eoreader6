@@ -1031,3 +1031,46 @@ Iliad's 26.1%. Same dialect and formulaic register bought more standing here
 than raw volume of the same author's other epic did — worth reading as a
 finding about what actually transfers (formula and register) rather than
 what seemed like the obvious guess going in (authorship and length).
+
+## The chrome-vs-prose finding generalises: across two whole novels, still one config
+
+`node scripts/predictor-reshape-crossbook.mjs`. The chrome-vs-prose splice
+above turned out too extreme a test — the same config won both registers
+because almost nothing else could compete with heavily-smoothed, short-
+context, continuation-counting on legal boilerplate. The sharper version:
+a reader trained ONLY on Frankenstein prose, reading held-out Frankenstein
+and then crossing into held-out HEIDI prose — a different novel, different
+author, different era, real narrative prose on both sides, no boilerplate
+anywhere. If regime-specific reshaping is real on this axis, two different
+novels are where it should show up.
+
+It doesn't. `order=2 alpha=3 continuation` — the same config the chrome run
+converged to — is the #1 best config in the same 24-point grid for BOTH
+Frankenstein and Heidi, checked directly against deep, transition-free
+material from each:
+
+| | best config | loss |
+|---|---|---|
+| Frankenstein (deep, transition-free) | order=2 alpha=3 cont | 6.805 |
+| Heidi (deep, transition-free) | order=2 alpha=3 cont | 7.378 |
+
+One witnessed correction fired, again inside the *first* region (Frankenstein,
+at index 2030 — alpha 1.5→3, the same refinement the chrome run found), then
+held unchanged through the Heidi region with every later event correctly
+refused as a no-op. Overall: 7.228 nats/form for the reshaping run against
+7.696 for the fixed champion held throughout — the same margin of
+improvement as before, for the same reason as before (a real, small,
+correctly-witnessed refinement to the champion), and the same absence of
+genuine cross-regime divergence.
+
+**This closes the question rather than leaving it open per-corpus.** Checked
+on one book's boilerplate, on that same book's own narrative-voice shifts (the
+control in Experiment 4), and now across two entirely different novels: on
+the order/alpha/continuation-count axis, there is no regime-specific
+configuration to find, anywhere this file has looked. If genuinely emergent,
+per-object predictor rules exist — the hypothesis this whole line of
+experiments was chasing — they do not live on this axis. The Odyssey section
+above already points at where they might: not in how a fixed local model
+should be tuned, but in which *received priors* a reader trusts, which
+varied by real content (formulaic tradition) rather than by local smoothing
+choice, and varied by a wide, clean margin.
