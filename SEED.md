@@ -776,6 +776,78 @@ itself clear a growth rule is untried and unresolved.
 Evidence: `scripts/turbulence-candidate-license.mjs`,
 `scripts/turbulence-recheck-phase-license.mjs`.
 
+### XV — A censored verdict is not yet a refusal; ask why before it becomes one
+
+*2026-08-04. Extends XIV; extends #8.*
+
+Amendment XIV's run left three pairs standing at "does not clear on a
+majority: it waits," and majority was the wrong grain to stop at — most of
+what kept each pair from `above` was not the material being placed and found
+unremarkable. It was censoring and cross-measurement failure, both counted as
+"not above" without being told apart. #8 already says a gap is a result; this
+amendment is that clause applied to the growth rule's own admission test
+before its verdict is trusted, not only to what an organ reports afterward.
+
+Three questions, in order, put to each of the three pairs XIV left open —
+none of them a new mechanism, each one sequencing information `nul` already
+holds:
+
+1. **Does a fact already received on the material explain a mixed verdict?**
+   `component` is part of every line's provenance (Amendment III). Splitting
+   `windowMean/phase` by it did not produce a clean pass in either group —
+   `w` (longitudinal) landed no majority at all; `u`/`v` (transverse) landed
+   `unstable` on a majority. The split did not rescue the pair. It replaced
+   one flat "no" with two different, still-honest non-findings, which is the
+   answer, not a failure to find one.
+
+2. **Is a censored verdict a near miss that resolution can close?** `draws`
+   is nul's own declared number, not a new mechanism. Escalated 200 → 12,800
+   (64x) on `burstiness/resample`, the exceedance shrinks — 0.654x → 0.432x →
+   0.348x → 0.218x the null's own width — and does not close: 0/96 lines
+   placed at every setting tried. The gap is structural, not a resolution
+   shortfall. `burstiness/phase`'s much smaller exceedance (0.063x at
+   draws=200) does close: 95/96 placed by draws=12,800.
+
+3. **When it gaps, is the CANDIDATE failing or is the CORE failing?**
+   `level()` already distinguishes these — `exceeds_witness` on OWN is the
+   candidate's own null failing to place the observation; `unstable` is OWN
+   placing it fine while the CORE (shuffle) cannot. The first sweep reported
+   both as undifferentiated gaps. Read apart:
+
+   | pair | OWN fails | CORE fails (OWN fine) | reading |
+   |---|---|---|---|
+   | `burstiness/resample` | 96/96 | 0/96 | **resample is too narrow for real bursts.** A finding about resample. |
+   | `burstiness/phase` | 5/96 | 91/96 | **shuffle cannot place real bursts.** A finding about shuffle, on 95% of lines. |
+   | `windowMean/phase` | 3/96 | 40/96 | **shuffle cannot place real bursts** on a further third of lines here too. |
+
+**The pattern across two of three pairs is the finding worth keeping.** It is
+not that `phase` fails to add anything to `burstiness` or `windowMean` on
+turbulence. It is that `shuffle` — the growth rule's one core, used
+everywhere in this repo as the baseline every candidate is measured against
+— is measurably unable to place real turbulence's bursts on a large
+fraction of lines, up to 91/96 for `burstiness`. Turbulence is spatially
+coherent (eddies, sustained structures); shuffling destroys exactly that
+coherence and so under-represents how extreme a real windowed burst gets, at
+any draws. This is a limit of the growth rule's own baseline on this class of
+material, not a limit of the candidates tested against it, and it was
+invisible in Amendment XIV's aggregate count.
+
+**What did not change.** `LICENSED` gains nothing here either. All three
+pairs are still refused, not early, by the same standard `cascade` and XIV's
+seven already hold. This amendment does not weaken the growth rule or add a
+second core to compare against — it only refuses to let a censored verdict
+stand as an unread one.
+
+**What is now owed and is not paid here.** If `shuffle` is the wrong core for
+`burstiness`-shaped statistics on spatially coherent material generally, and
+not only on this one field, that is a claim about the growth rule's
+architecture and needs its own material and its own measurement, not an
+inference from one dataset. Recorded so the near-miss is not re-litigated as
+settled: this amendment characterizes a limit, it does not fix one.
+
+Evidence: `scripts/turbulence-why-before-no.mjs`,
+`scripts/turbulence-near-miss-draws.mjs`.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
