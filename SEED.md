@@ -848,6 +848,60 @@ settled: this amendment characterizes a limit, it does not fix one.
 Evidence: `scripts/turbulence-why-before-no.mjs`,
 `scripts/turbulence-near-miss-draws.mjs`.
 
+### XVI — Modality-blind ride, modality-bound return: `locate()` as the missing inverse
+
+*2026-08-05. Extends Amendment IV.*
+
+Amendment IV settled where cross-modal work is free: at the numeric series,
+where every perceiver in this repo already meets, because audio, image,
+video, csv, and text all reduce to material a ground can be built over. What
+it did not settle is the return trip. A standpoint `surf()`/`divide()` yields
+is a position in `material` — a chunk index for text, a frame index for
+audio — and until now nothing mapped that position back to anything a reader
+could actually be shown. Amendment IV's claim was real but unusable past the
+finding itself: a music prior could legally lower the surprise of a
+cardiogram, and there was nowhere to point once it did.
+
+`locate()`, added to `perceiver/text/material.js` and
+`perceiver/audio/material.js`, is that inverse — symmetric with `load`/
+`reduce` by construction, not a new derivation. For audio it is arithmetic:
+`reduce()`'s framing is fixed-stride, so a material index's sample range
+follows from `frameSamples` alone. For text it needed one additional pass —
+`tokenizeWithOffsets`, deliberately independent of `tokenize()`/`load()`,
+which throw byte position away entirely — because there was no existing path
+from a word-chunk index back to a byte range at all, at the engine tier.
+(`host/corpus.js` already had this for its OWN line/heading index; that index
+and `surf()`'s chunk index were never the same coordinate space, and still are
+not — `locate()` closes the engine-tier gap, not that one.)
+
+**What this is not.** `locate()` derives nothing about ground construction,
+proposes no statistic, and licenses no perturbation — it is addressing
+infrastructure, the same tier as `load`/`reduce` themselves, and does not
+touch the growth rule. **No new declared number**: `frameSamples`,
+`sampleRate`, and `chunkSize` are the same constants `reduce()` already
+takes, located from, never against, the physiology. Three declared numbers
+still.
+
+**What this does not extend to.** Amendment IV drew its own boundary at
+discrete forms — "audio cannot put mass on the word 'the'" — and `locate()`
+does not cross it. `packages/host/surfer.js`'s address ladder (SOURCE →
+HEADING → CONTENT → WINDOW) stays exactly as text-bound as it was: HEADING
+and CONTENT are structural-vocabulary and token-matching operations with no
+audio or video analogue built, and none is proposed here. `locate()` only
+answers "what raw range did this material index come from" — it does not
+invent a chapter for a podcast.
+
+**Video is named, not attempted.** `perceiver/video/material.js` is
+unmodified. Video has no decoder validated end-to-end in this lineage yet
+(`eochat`'s real-deployment work scoped it out for exactly that reason), and
+giving it a `locate()` ahead of any measured use would be exactly the kind of
+un-earned generality #1 already refuses for priors — a plausible-looking
+capability standing in for one that was actually tested. Stated so it is not
+mistaken for done, the way "Not yet earned" already does for the frame and
+for reader-sclerosis.
+
+Evidence: `conformance/locate.test.js`.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place

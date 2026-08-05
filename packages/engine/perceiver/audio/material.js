@@ -34,3 +34,18 @@ export const reduce = (samples, { fraction = 1, frameSamples = 400 } = {}) => {
   }
   return material;
 };
+
+// The inverse of reduce()'s framing: a surf()/atmosphere() material index
+// back to the raw sample range (and, given sampleRate, the real time range)
+// it was built from. Symmetric with reduce() by construction -- same
+// frameSamples stride, nothing re-derived -- so a standpoint found in a ride
+// over this material can be located without re-deciding what a frame is.
+// SEED.md Amendment XVI: addressing infrastructure, not a new statistic or
+// perturbation, so it does not trigger the growth rule.
+export const locate = (index, { frameSamples = 400, sampleRate = 8000 } = {}) => {
+  if (!Number.isInteger(index) || index < 0) return { error: "index must be a non-negative integer" };
+  if (!Number.isInteger(frameSamples) || frameSamples < 1) return { error: "frameSamples must be a positive integer" };
+  const sampleStart = index * frameSamples;
+  const sampleEnd = sampleStart + frameSamples;
+  return { sampleStart, sampleEnd, timeStart: sampleStart / sampleRate, timeEnd: sampleEnd / sampleRate };
+};

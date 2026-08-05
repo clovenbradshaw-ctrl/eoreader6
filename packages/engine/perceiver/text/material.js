@@ -160,3 +160,57 @@ export const functionWordSet = (table, { threshold = DEFAULT_RELEVANCE_THRESHOLD
   }
   return set;
 };
+
+// ── locate: the inverse of reduce()'s chunking ──────────────────────────────
+//
+// SEED.md Amendment XVI: a surf()/atmosphere() material index is a chunk index
+// into WORDS, and load()/tokenize() throw the byte position away entirely —
+// there was no way back from a standpoint to real text before this.
+// Deliberately independent of tokenize()/load(): those are untouched, so
+// nothing that already depends on their existing behaviour is at risk.
+// tokenizeWithOffsets is the one extra pass a caller opts into when it wants
+// locate() to work, at the cost of walking the text once more.
+
+const _utf8 = new TextEncoder();
+const _byteLength = (s) => _utf8.encode(s).length;
+
+/**
+ * Same WORD_RE as tokenize(), same lowercasing per word — so the word
+ * sequence is identical to tokenize()'s output, word-for-word — but every
+ * token also carries its UTF-8 byte range against the ORIGINAL (not
+ * lowercased) text, the same coordinate space host/corpus.js's byteIndex
+ * already uses. One pass, O(n) total: the gap between each match and the
+ * last is sliced and encoded once, never the whole prefix each time.
+ */
+export const tokenizeWithOffsets = (text) => {
+  const out = [];
+  const re = new RegExp(WORD_RE.source, WORD_RE.flags);
+  let lastIndex = 0;
+  let byteAt = 0;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    byteAt += _byteLength(text.slice(lastIndex, m.index));
+    const wordBytes = _byteLength(m[0]);
+    out.push({ word: m[0].toLowerCase(), byteStart: byteAt, byteEnd: byteAt + wordBytes });
+    byteAt += wordBytes;
+    lastIndex = m.index + m[0].length;
+  }
+  return out;
+};
+
+/**
+ * A surf()/atmosphere() material index (a chunk of `chunkSize` words) back to
+ * the byte range it was built from — read off the offset table a caller
+ * already tokenized, never re-derived, so the coordinates cannot drift from
+ * what was actually measured. `chunkSize` must match whatever reduce() was
+ * called with; nothing here re-decides it, per SEED.md #5 (two grounds built
+ * to different specs were never comparable).
+ */
+export const locate = (index, offsetTokens, { chunkSize = 40 } = {}) => {
+  if (!Number.isInteger(index) || index < 0) return { error: "index must be a non-negative integer" };
+  if (!Array.isArray(offsetTokens) || offsetTokens.length === 0) return { error: "no offset tokens to locate against" };
+  const wordStart = index * chunkSize;
+  if (wordStart >= offsetTokens.length) return { error: `index ${index} is past the end of the tokenized material` };
+  const wordEnd = Math.min(wordStart + chunkSize, offsetTokens.length);
+  return { wordStart, wordEnd, byteStart: offsetTokens[wordStart].byteStart, byteEnd: offsetTokens[wordEnd - 1].byteEnd };
+};
