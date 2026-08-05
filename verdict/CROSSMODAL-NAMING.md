@@ -147,3 +147,35 @@ that needs an aggregate object over several `crossModalTag()` instances
 checking for a consistent, order-preserving mapping, which is a SYN-level
 feature (allegory-shaped: a cluster of tensions co-varying together) and a
 larger addition than this pass made.
+
+## Addendum, 2026-08-05: mereAppearance checked against real data, not just synthetic sides
+
+Every real case this session had run before this point (`goldens/multimodal`'s
+one non-void pair, all 12 audio↔image true-matches in a synthesized
+corpus grid) happened to clear by the SAME mode on both sides — every
+synthetic transition built that session was a level shift, so `mode`
+agreement was close to guaranteed by the test design, not demonstrated.
+`mereAppearance` had been exercised only by hand-fed synthetic sides in
+`conformance/crossmodal.test.js`. Caught on being asked directly whether
+any of this was useful, checked rather than re-asserted.
+
+`conformance/crossmodal-mereappearance.test.js` closes that gap: two series
+built from `scripts/two-clearings.mjs`'s own already-validated construction
+(a pure level shift, mean 10→25, reliably clears `surfeit`; a pure spread
+shift at a *constant* mean, spread 1→6, reliably clears `moved` — measured
+there at 3/3 vs `surfeit`'s 1/3), their transitions placed at the identical
+normalized position, run through the real `runTurn()` pipeline. Five
+(levelSeed, spreadSeed) pairs, the first five tried, unfiltered:
+
+- All five: position-only logic (`mode` withheld) calls it `analogy` —
+  perfect position match, both sides corroborated.
+- 3 of 5: the underlying phenomena genuinely differ (`surfeit` vs `moved`)
+  and mode-aware logic correctly catches it as `mereAppearance`.
+- 2 of 5: both sides happen to clear by `surfeit` anyway (the same
+  known imperfection `two-clearings.mjs` already measured — a big enough
+  variance jump can still lift `surfeit`'s max-over-windows statistic) and
+  `analogy` is the correct call, not a missed catch.
+
+Evidence: `conformance/crossmodal-mereappearance.test.js`. This is the
+first non-synthetic evidence that `mode`-matching changes a real outcome
+rather than only ever confirming what position-only logic already said.
