@@ -827,80 +827,96 @@ an artefact.
 `node scripts/predictor-reshape.mjs`. Experiment 4 established the signal.
 This is what a predictor-Atmosphere's REC does with it — and the design
 choice is the same one Experiment 3's slot-gated candidate was named as a
-narrow instance of: the reigning predictor's TABLES never change. Only
-`alpha` — the control parameter deciding how much a context's own evidence is
-trusted before backing off — is revised, and only on a witnessed correction:
+narrow instance of: the reigning predictor's TABLES never change, ever. One
+model is trained once, on prose only, holding tables at every order up to 6
+and continuation stats, all collected in the same pass. What DEF/EVA/REC
+revise is the CONFIG `{order, alpha, continuation}` that reads that one fixed
+body of evidence — three control parameters, not one:
 
-- **DEF** nominates candidate alphas (0.1, 0.3, 0.7, 1.5, 3.0) cheaply,
-  scored on the window that just triggered a `moved` event, no null.
+- **DEF** nominates every config in a 24-point grid (orders 2/4/6 × alphas
+  0.3/0.7/1.5/3.0 × continuation on/off) cheaply, scored on the window that
+  just triggered a `moved` event, no null.
 - **EVA** witnesses the best candidate against the *same* `reseedNull`
   `pattern()` already computed to detect that regime change — no second null
   invented for this.
 - **REC** applies the revision only if witnessed; otherwise the event is
-  logged as moved-but-unwitnessed and alpha holds.
+  logged as moved-but-unwitnessed and the config holds.
+
+**A first version of this run started the live config at a deliberately weak
+point (order=4 alpha=0.7) and only ever revised alpha.** Its one witnessed
+event fired inside the prose region, before the real splice, and turned out to
+be correcting that weak starting point rather than adapting to anything —
+real, but not the claim "this mechanism adapts to a regime change." The run
+below fixes both holes at once: the live config now *starts at the already-
+known champion* (`order=2 alpha=1.5 continuation`, Experiment 3's winner), so
+any later witnessed event can only be genuine adaptation, never cleanup — and
+DEF can now revise order and the counting rule too, not just alpha, so the
+champion's own family is reachable by reshaping instead of being a ceiling
+outside it.
 
 On the same prose → chrome splice as Experiment 4:
 
 | | prose region | chrome region | overall |
 |---|---|---|---|
-| fixed alpha=0.7 throughout | 7.996 | 9.565 | 8.719 |
-| witnessed alpha reshaping | 7.238 | 7.993 | 7.586 |
+| fixed naive (order=4 alpha=0.7) | 7.996 | 9.565 | 8.719 |
+| fixed champion (order=2 alpha=1.5 cont) | 7.276 | 8.839 | 7.996 |
+| witnessed config reshaping, **starting from the champion** | 6.969 | 7.948 | **7.420** |
 | hard swap to a chrome-trained model | 8.146 | 5.285 | 5.663 |
 
-Four REC events fired; one was witnessed. At index 980 — inside the *prose*
-region, well before the real splice at 4000 — alpha 0.7→3 cleared its
-threshold by more than double (improvement 1.119 against a threshold of
-0.513) and was applied. The three events inside and after the chrome region
-(3530, 6380, 7130) all proposed the *same* alpha already live and were
-correctly refused as no-ops (improvement 0.000) — the mechanism does not
-manufacture activity where nothing changed.
+Four REC events fired; one was witnessed, at index 980 — again inside the
+prose region, before the splice at 4000. This time there is no confound about
+*what* it corrected: starting already at the best known static config, it
+still found `alpha 1.5 → 3` improved the window it was scored on (0.465
+against a threshold of 0.407, barely clearing it) while order and continuation
+held. **That is a real, if small, refinement Experiment 3's coarser
+1,000-form chunking never surfaced** — the champion found there was the best
+config *on average across six wide chunks*, and a window this much narrower
+apparently wants slightly heavier smoothing than that average would suggest.
+The three later events (3530, 6380, 7130 — one in prose, two well inside
+chrome) all re-proposed the config already live and were correctly refused as
+no-ops.
 
-**Read this result carefully, because it is not the result it looks like at
-first.** The witnessed correction fired before the real regime change, not at
-it — what got corrected was a poorly-set starting alpha (0.7, when
-Experiment 3 already found 1.5 the better global choice on this material),
-not a chrome-specific adaptation. Every later checkpoint, including ones well
-inside chrome, found no further improvement available from this candidate set.
-So this run demonstrates the DEF/EVA/REC loop is real and correctly gated —
-it proposes, witnesses against a principled threshold, and refuses a no-op —
-but it does not yet demonstrate genuine regime-specific reshaping distinct
-from a one-time global correction. That distinction needs a design that starts
-from an already-good alpha, so any later witnessed event can only be read as
-adaptation to what changed, not cleanup of what was wrong from the start.
+**What this run still does not show, plainly stated: a witnessed event whose
+proposed config actually differs between the prose and chrome regions.** The
+one correction happened early and then held unchanged through the entire
+chrome region — meaning either `order=2 alpha=3 continuation` genuinely serves
+both registers about equally well, or the 24-point grid contains nothing that
+would do meaningfully better in chrome specifically. Both are live
+possibilities and this run does not distinguish them. So: the confound about
+*starting point* is closed, the mechanism's structure (propose, witness
+against the ground's own threshold, refuse no-ops) is validated a second time
+under a harder test, and a real fine-grained improvement was found and applied
+— but *regime-specific* reshaping, as opposed to *window-specific*
+refinement, is still not cleanly demonstrated. That is the honest remaining
+gap, not a claim this run quietly closed.
 
-**The comparison against the hard swap draws the boundary this mechanism
-actually has.** Reshaping alpha recovers most of the gap in the region it
-touches (9.565 → 7.993, a real 1.6 nats/form) but comes nowhere near what
-retraining on in-domain material achieves (5.285) — because alpha only
-controls how much to trust evidence the tables already hold. It cannot
-manufacture a conditional distribution the reigning predictor never counted.
-**"The high sets the probability of the low" reshapes what is already known;
-it is not a substitute for acquiring evidence the low tier never had.** That
-is a real, useful boundary on the whole architecture this and the prior
-section were built to test, not a defect in the run.
+**The comparison against the hard swap still draws the same boundary.**
+Reshaping narrows the gap in the region it touches but comes nowhere near what
+retraining on in-domain material achieves (chrome region: 7.948 against 5.285)
+— because a control parameter can only reweight evidence the tables already
+hold. It cannot manufacture a conditional distribution the reigning predictor
+never counted. **"The high sets the probability of the low" reshapes what is
+already known; it is not a substitute for acquiring evidence the low tier
+never had.**
 
 ### Does any of it beat doing nothing clever at all
 
-Every comparison above is against arms this apparatus was explicitly built to
-improve on — a badly-set fixed alpha, and an oracle-ish retrain. Neither is
-the bar that actually matters: does the machinery beat the *already-known
-best static configuration*, Experiment 3's `order=2 alpha=1.5 continuation`,
-fixed, with no DEF/EVA/REC apparatus at all? A DEF/EVA/REC loop that only ever
-beats a strawman hasn't earned its complexity.
+The bar that actually matters is not the naive arm — it is the already-known
+best static configuration, held fixed for the whole run with no DEF/EVA/REC
+apparatus at all. A loop that only ever beats a strawman hasn't earned its
+complexity.
 
-| | prose region | chrome region | overall |
-|---|---|---|---|
-| champion (order=2 alpha=1.5 cont, fixed) | 7.276 | 8.839 | 7.996 |
-| witnessed alpha reshaping (order=4) | 7.238 | 7.993 | **7.586** |
+| | overall nats/form |
+|---|---|
+| fixed champion (order=2 alpha=1.5 cont), no machinery | 7.996 |
+| witnessed config reshaping, starting from the champion | **7.420** |
 
-**It clears the bar, in both regions, despite everything named above as
-unresolved.** The reshaping run never explored order or continuation-counting
-— it only ever revised alpha within a fixed order=4 table, and its one
-witnessed correction was confounded with fixing a bad starting point rather
-than cleanly adapting to the regime change. A partial, confounded
-implementation of "the high sets the probability of the low" still beats the
-best fixed configuration found across every experiment in this file. That is
-the first result in this whole line of work where added machinery earned its
-cost rather than losing to a simpler alternative — worth weighing against how
-much of the win an unconfounded version, or one that could also revise order
-and the counting rule, might still be leaving on the table.
+**It clears the bar by a wider margin than the earlier, confounded run did**
+(7.420 against the champion's 7.996, versus the first version's 7.586 against
+the same 7.996) — and clears it now with the confound about the starting
+point closed. A single small, correctly-witnessed refinement to the
+already-best-known configuration still measurably reduces held-out loss below
+that configuration held fixed. That is the first result in this whole line of
+work where added machinery earned its cost rather than losing to a simpler
+alternative, and it survived being re-tested under a harder, fairer
+comparison rather than only appearing under the easier one.
