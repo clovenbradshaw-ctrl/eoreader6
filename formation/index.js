@@ -124,10 +124,32 @@ export const collapse = ({ emanon: e, observed, regime = null, ground: cutGround
   if (g == null && e.ground != null) g = e.ground;
   if (g == null) {
     const settled = regime == null ? e.material : e.material.slice(0, regime.start);
-    if (regime != null && regime.start < e.spec.window + 2)
+    // MINIMUM VIABLE GROUND — the same defect loops/atmosphere.js's
+    // `groundFrom` carries a fix for, measured independently here rather than
+    // assumed: this derived ground feeds `difference(observed, g)` a few
+    // lines below, the exact difference()-driven mechanism atmosphere.js's
+    // fix addresses. At the old floor, `window + 2`, `burstiness` (the
+    // default statistic, unchanged here) has exactly 3 candidate sub-window
+    // positions regardless of `window`, so the bootstrap null comes back too
+    // narrow and an ordinary next observation clears it almost by
+    // construction — a false DEF·surfeit `exceeds_witness`/above, not a found
+    // one.
+    //
+    // MEASURED, 2026-08-05: on iid noise, collapsing an ordinary next-window
+    // mean (ground and observation drawn from the same iid distribution, so
+    // there is no real surfeit to find) against a ground built at the old
+    // floor reports spurious surfeit on 24.5% (window=5, draws=256, 200
+    // trials) and 16.0% (window=6, draws=96, 200 trials) of trials — the same
+    // two parameter sets atmosphere.js's own calibration used. At `3 *
+    // window` it falls to 2.5%/1.0%, inside the 15% bar this repo's own
+    // CALIBRATION tests hold findings to. Re-measured for this organ's own
+    // statistic (burstiness, unchanged) and perturbation (`e.spec.perturbation`,
+    // unchanged) rather than copied.
+    const MIN_GROUND = 3 * e.spec.window;
+    if (regime != null && regime.start < MIN_GROUND)
       return gap("no_ground", {
         reason: "a cut with nothing settled behind it cannot grow a ground; the first one must be received, not derived",
-        need: e.spec.window + 2,
+        need: MIN_GROUND,
       });
     g = buildGround({ material: settled, draws: e.spec.draws, window: e.spec.window, perturbation: e.spec.perturbation, seed });
     if (isGap(g)) return g;

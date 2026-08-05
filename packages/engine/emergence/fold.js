@@ -144,11 +144,36 @@ export const fold = ({ material, here, window, draws, seed = 0, perturbation = "
   // origin and every one collapsed toward the material's own vocabulary at
   // r ≈ 0.974). So this refuses rather than bootstrapping, and names what it
   // would take.
-  if (region.start < window + 2)
+  //
+  // MINIMUM VIABLE GROUND — the same defect loops/atmosphere.js's `groundFrom`
+  // carries a fix for, measured independently here rather than assumed: this
+  // ground feeds `difference()` against EVERY subsequent window's observed
+  // mean (the projection loop below), the exact difference()-driven mechanism
+  // atmosphere.js's fix addresses, at this organ's own grain (a whole-material
+  // projection rather than a re-zeroing stream). At the old floor, `window +
+  // 2`, `burstiness` (max over `window`-sized sub-windows) has exactly 3
+  // candidate positions regardless of `window`, so the bootstrap null comes
+  // back too narrow and an ordinary next window clears it almost by
+  // construction — a false `beyond`, not a found one.
+  //
+  // MEASURED, 2026-08-05 (scripts/adversarial/challenge-7's methodology,
+  // applied here: iid noise, the FIRST post-ground window — `at = here`, the
+  // most direct analog to challenge-7's own hand-isolated "the very next real
+  // window's mean" check): at `window + 2`, that window is falsely censored
+  // above on 23.5% (window=5, draws=256, 200 trials) and 26.5% (window=6,
+  // draws=96, 200 trials) of iid-noise trials — the same two parameter sets
+  // atmosphere.js's own calibration used, and comparable to its worst-case
+  // range (12.5-27.5%) since this organ shares the same difference()-driven
+  // mechanism, not the milder pattern()-only case. At `3 * window` it falls to
+  // 1.5%/1.5%, inside the 15% bar this repo's own CALIBRATION tests hold
+  // findings to. Re-measured for this organ's own statistic (burstiness,
+  // unchanged) and perturbation (shuffle, unchanged) rather than copied.
+  const MIN_GROUND = 3 * window;
+  if (region.start < MIN_GROUND)
     return gap("no_ground", {
       reason: "a standpoint with nothing settled behind it cannot grow a ground; the first one must be received, not derived",
       here: region,
-      need: window + 2,
+      need: MIN_GROUND,
     });
 
   const g = ground({ material: material.slice(0, region.start), draws, window, seed, perturbation });
@@ -390,6 +415,24 @@ export const standing = (a, b) => {
  * projection through different samplers is the strongest form of the claim,
  * not a violation of it.
  *
+ * THE SELF-IDENTITY GUARD IS BY MATERIAL, NOT BY POSITION. This file's own
+ * header states the doctrine plainly: "two figures are the same iff they make
+ * the same difference to the ground. Never by appearance, not even in
+ * principle." Two standpoints that merely SIT at the same coordinate have not
+ * thereby been shown to be the same standpoint — that would be identity by
+ * appearance, exactly what the doctrine refuses. What actually cannot differ
+ * from itself is one standpoint over one material compared to itself, and a
+ * ground already carries a content fingerprint (`from`, from `nul`'s own
+ * `fingerprint()`) that says which material grew it. So the guard checks
+ * BOTH: same here AND same ground. Two folds of two different modalities that
+ * happen to share a coordinate — the single most literal reading of "same
+ * coordinates regardless of medium" — are two different standpoints and get
+ * compared, not refused. (MEASURED, adversarial challenge #18: before this
+ * fix, `fold(textMaterial, here=40)` vs `fold(audioMaterial, here=40)` — two
+ * different modalities, both gap-free individually — was refused outright by
+ * the position-only guard, which is exactly backwards for a claim about
+ * cross-modal comparison at shared coordinates.)
+ *
  * Reports. Does not rule — no threshold here decides that two heres ARE one.
  */
 export const agree = (a, b) => {
@@ -397,7 +440,7 @@ export const agree = (a, b) => {
   if (!a?.projection || !b?.projection) return gap("no_ground", { reason: "agreement needs two projections" });
   if (a.spec.window !== b.spec.window || a.spec.draws !== b.spec.draws || a.spec.perturbation !== b.spec.perturbation || a.spec.of !== b.spec.of)
     return gap("unknown_spec", { reason: "two projections built to different specs were never comparable", a: a.spec, b: b.spec });
-  if (a.here.start === b.here.start && a.here.end === b.here.end)
+  if (a.here.start === b.here.start && a.here.end === b.here.end && a.ground.from === b.ground.from)
     return gap("no_ground", { reason: "one standpoint cannot differ from itself" });
 
   let same = 0;
@@ -408,11 +451,46 @@ export const agree = (a, b) => {
     else if (x.placement === "placed" || y.placement === "placed") split++;
   }
 
+  const n = a.projection.length;
+  // CHANCE AGREEMENT — a second channel, alongside `concord` and not
+  // replacing it (the shape `perceiver/audio/material.js`'s own header names:
+  // "a gap closes by ADDING a statistic sensitive to what the old one
+  // missed, never by swapping the old one out from under callers who depend
+  // on its exact shape" — `conformance/surf.test.js` asserts
+  // `concord === same/n` directly and stays exactly true).
+  //
+  // WHY THIS WAS MISSING, AND WHY IT IS NEEDED. `concord` is a raw three-way
+  // (placed/beyond/beneath) agreement rate with no correction for either
+  // side's OWN marginal rate of those labels. `reach` already carries that
+  // marginal (`placed`/`beyond`/`beneath` counts) on every fold, so it costs
+  // nothing new to spend it here. Two folds that each independently spend
+  // long contiguous stretches on one placement — for reasons that have
+  // nothing to do with each other, e.g. `burstiness`'s max-over-growing-
+  // prefix ground never releasing a triggered "beyond" run, or a cumulative
+  // frequency table inflating cost past the event that triggered it — agree
+  // on a large, base-rate-driven fraction of positions regardless of true
+  // alignment, and raw `concord` cannot tell that apart from real
+  // correspondence. `chanceAgreement` is exactly what two INDEPENDENT series
+  // with these same marginals would agree on by construction (sum of
+  // per-label marginal products); `kappa` rescales `concord` against it the
+  // standard way (Cohen's kappa: (observed − chance) / (1 − chance)), so 0
+  // means "no better than each side's own base rate" and 1 means perfect
+  // agreement beyond it. Neither number is a threshold — nothing here rules;
+  // a caller still owes its own null (the same "measured, not assumed"
+  // discipline `scripts/lib/surrogates.mjs` already applies) before reading
+  // either as significant.
+  const marginal = (r) => [r.placed / n, r.beyond / n, r.beneath / n];
+  const [pa, ba, na] = marginal(a.reach);
+  const [pb, bb, nb] = marginal(b.reach);
+  const chanceAgreement = n ? pa * pb + ba * bb + na * nb : 0;
+  const concord = n ? same / n : 0;
+  const kappa = chanceAgreement < 1 ? (concord - chanceAgreement) / (1 - chanceAgreement) : 0;
+
   return Object.freeze({
     heres: Object.freeze([a.here, b.here]),
     /** Whitehead's trichotomy. See `standing`. */
     standing: standing(a.here, b.here),
-    n: a.projection.length,
+    n,
     same,
     /**
      * Censored differences are kept, not dropped (SEED.md #6). One here
@@ -420,6 +498,10 @@ export const agree = (a, b) => {
      * informative signal this system can produce, and it used to be discarded.
      */
     split,
-    concord: a.projection.length ? same / a.projection.length : 0,
+    concord,
+    /** What two INDEPENDENT series with these same marginals would agree on. */
+    chanceAgreement,
+    /** Cohen's kappa: concord rescaled against chanceAgreement. See above. */
+    kappa,
   });
 };
