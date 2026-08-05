@@ -43,9 +43,10 @@
 //
 // Declared, never defaulted (SEED.md #7): population, readerVersion, the
 // kinds organ's own numbers (minPrevalence, minKindSize, permutations,
-// quantile, seed, and `reseeds` whenever the records read as values — which
-// graph-derived records always do). The graph's `gamma` is graph.js's
-// declared number, carried through untouched.
+// quantile, seed, and `reseeds` — kinds.js requires it unconditionally now:
+// CON's own search must be nulled against itself whether the records read as
+// values, which graph-derived records always do, or by key alone). The
+// graph's `gamma` is graph.js's declared number, carried through untouched.
 
 import { gap, isGap } from "../../../nul/index.js";
 import { induceKinds, inductionReading } from "./kinds.js";

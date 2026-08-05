@@ -357,12 +357,71 @@ const deriveMinSentences = (surfaces) => {
  *   floor — omit to derive it from `surfaces` (see `deriveMinSentences`).
  *   Compares by EXCEEDS (`>`), matching `minPartners`'s convention.
  * @param {object} [options.minPartners] forwarded to `genericTokens`.
+ * @param {object} [options.groups] surface-arrays this pooled `surfaces` list
+ *   was assembled from (each a document's own candidates, in the same order
+ *   they were concatenated into `surfaces`) — omit for the single-document
+ *   case, where `surfaces` IS the one group and nothing changes.
+ *
+ *   WHY THIS EXISTS: `genericTokens`'s fence is an IQR statistic over
+ *   WHATEVER pool it is handed — correct for one document, where the pool
+ *   IS the material whose ordinary co-occurrence breadth is in question.
+ *   Pool two OR MORE documents' candidates flat and hand them to
+ *   `genericTokens` unchanged, and every unrelated document's own one-off
+ *   proper nouns (each a fresh partner-count-1 token) dilutes the SAME
+ *   quartile fence a real name-and-title pair inside ONE of the documents
+ *   is measured against — the fence keeps falling as more documents join,
+ *   until it wrongly brands an ordinary name individuating-token as generic
+ *   PURELY because other, unrelated documents were also in the batch.
+ *   Measured live on the challenge-25 fixture: "kade" (correctly generic
+ *   within source A alone, by A's own co-occurrence structure — it is A's
+ *   title, not A's individuating evidence) additionally took "marcus" and
+ *   "aurelius" down with it the moment source C's candidates joined the
+ *   pool, because C's own one-off proper nouns (unrelated to Kade) pushed
+ *   the POOLED fence to 1 — collapsing a within-document merge
+ *   ("Marcus Aurelius" / "Marcus Aurelius Kade") that succeeds standalone.
+ *   `groups`, when given, derives the generic set PER GROUP and unions the
+ *   results — each document's own candidates are still judged against
+ *   their OWN co-occurrence breadth, exactly as the single-document case
+ *   already does; pooling more documents can only ADD generic tokens found
+ *   within some document's own material, never dilute another document's
+ *   fence with material foreign to it.
+ *
+ *   `deriveMinSentences`'s recurrence floor has the EXACT same compositional
+ *   flaw and gets the same treatment: pooled flat, a richly-recurring
+ *   document (many candidates recurring across many sentences) raises the
+ *   25th-percentile floor past what a SHORT, sparser document's own
+ *   candidates can ever clear — a name that individuates fine standalone
+ *   drops out entirely the moment it is pooled with a longer document,
+ *   never merging (there's no DEF.admit event to merge) rather than
+ *   over-merging. `groups` derives the floor per group too, so each
+ *   document's own candidates are judged against their own recurrence
+ *   floor, exactly as `minSentences` already promises for the
+ *   single-document case.
  */
-export const discoverReferents = (surfaces, { minSentences, minPartners } = {}) => {
+export const discoverReferents = (surfaces, { minSentences, minPartners, groups } = {}) => {
   const events = [];
   const assigned = new Map(); // surface -> referent_id
-  const generic = genericTokens(surfaces, { minPartners });
-  const sentencesFloor = minSentences ?? deriveMinSentences(surfaces);
+  const generic = groups
+    ? groups.reduce((out, g) => {
+        for (const t of genericTokens(g, { minPartners })) out.add(t);
+        return out;
+      }, new Set())
+    : genericTokens(surfaces, { minPartners });
+  // One sentences-floor per group when grouped, looked up by the surface
+  // OBJECT's identity (not its string, which two different documents' own
+  // candidates could coincidentally share) — a Map keyed on object identity
+  // is exactly what surfaces' own array elements give for free.
+  const sentencesFloorOf = groups
+    ? (() => {
+        const byGroup = groups.map((g) => minSentences ?? deriveMinSentences(g));
+        const lookup = new Map();
+        groups.forEach((g, gi) => { for (const s of g) lookup.set(s, byGroup[gi]); });
+        return (s) => lookup.get(s);
+      })()
+    : (() => {
+        const floor = minSentences ?? deriveMinSentences(surfaces);
+        return () => floor;
+      })();
 
   // Two surfaces corefer only on evidence a GENERIC token didn't supply:
   // strip titles/family names from both and require the remainder to still
@@ -384,8 +443,9 @@ export const discoverReferents = (surfaces, { minSentences, minPartners } = {}) 
     return diaNorm(a) === diaNorm(b);
   };
 
-  for (const { surface, sentences } of surfaces) {
-    if (sentences <= sentencesFloor) continue;
+  for (const entry of surfaces) {
+    const { surface, sentences } = entry;
+    if (sentences <= sentencesFloorOf(entry)) continue;
 
     let referentId = null;
     for (const [existing, id] of assigned) {

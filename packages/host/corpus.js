@@ -7,8 +7,9 @@ import { createSession as makeDiscourseSession } from "../../discourse/index.js"
 import { lineIndex, outlineOfIndex, discoverSegment } from "../engine/perceiver/text/segments.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../engine/perceiver/text/material.js";
 import { splitSentences, deriveAbbreviations, stripContainer } from "../engine/perceiver/text/spans.js";
-import { extractSurfaces, discoverReferents, diaNorm } from "../engine/perceiver/text/surfaces.js";
+import { extractSurfaces, discoverReferents, diaNorm, namesCorefer } from "../engine/perceiver/text/surfaces.js";
 import { resolvePronouns } from "../engine/perceiver/text/pronouns.js";
+import { discoverRelationVocab, extractRelations } from "../engine/perceiver/text/relations.js";
 import { projectReferents } from "../engine/referents/index.js";
 
 // The cells this host organ occupies on the operator grid (engine/operators.js):
@@ -79,6 +80,74 @@ export function createSession({ spanCap = DEFAULT_SPAN_CAP, engineVersion } = {}
   };
 }
 
+// ── serializeSession / deserializeSession — the export/reimport boundary ────
+//
+// eoreader6 itself makes no persistence claim (SEED.md/CUBE.md name none) —
+// but a HOST built on this library (eochat, storing sessions in an
+// origin-private OPFS) cannot honor "reimported state is fold-equivalent to
+// the original" if the library it wraps offers no way to carry a session's
+// terrain (spans, documents) and ledger (provenance) across the origin
+// boundary at all. Measured
+// (scripts/adversarial/challenge-20-export-reimport-fidelity.mjs, step 5):
+// the single most obvious thing an engineer reaches for first — handing
+// createSession()'s return value straight to JSON.stringify — round-trips
+// every native Map as `{}` and silently destroys 100% of a real 31-span,
+// 2-document terrain. Not a hypothetical: run against a real fold from the
+// real pipeline, `reimported.spans instanceof Map` comes back `false` and
+// the very next searchSpans() throws.
+//
+// The fix is narrow because the session was ALREADY plain-data-shaped —
+// that same diagnostic is what shows it: every span, document, and
+// provenance entry is a frozen/plain object with no closures anywhere in
+// it; only the CONTAINERS are Maps, which is exactly the one shape JSON has
+// no notation for. So serialize does one job — Map -> Array of [key, value]
+// entries, which is what a Map's own iterator already yields (`[...map]`,
+// not a rebuild) — and deserialize does the inverse, `new Map(entries)`.
+//
+// `_bytes` (snipRange/snipSegment's per-document byte-buffer + line-index
+// cache) and `_cast` (discoveredCast's per-document memoisation) are
+// deliberately NOT carried across the boundary: both are pure derived
+// caches, recomputed lazily and deterministically from `documents` on next
+// use (snipRange's own `cached ?? byteIndex(...)`; discoveredCast's
+// chunk-count invalidation) — carrying them would mean carrying
+// re-derivable bytes for nothing, and `_bytes`'s `idx.lengthOf` is a
+// closure, which is not JSON-safe at all. Losing them costs a reimported
+// session nothing it cannot recompute the moment it is asked; losing
+// `spans`, `documents`, or `provenance` would cost the corpus itself
+// (searchSpans/foldSpans/readSpan/snip* all read spans or documents) and
+// the ledger (register/lookup read provenance) — which is why only those
+// three needed fixing, per this project's convention of adding a named
+// channel alongside what exists rather than redesigning the session shape.
+export function serializeSession(session) {
+  return {
+    schema: "CorpusSession@1",
+    apiVersion: session.apiVersion,
+    spanCap: session.spanCap,
+    engineVersion: session.engineVersion ?? null,
+    spans: [...session.spans],
+    documents: [...session.documents],
+    provenance: { tick: session.provenance.tick, entries: [...session.provenance] },
+    discourse: structuredClone(session.discourse),
+  };
+}
+
+export function deserializeSession(blob) {
+  if (!blob || blob.schema !== "CorpusSession@1")
+    throw new TypeError(`deserializeSession: expected schema "CorpusSession@1", got ${blob?.schema}`);
+  const provenance = new Map(blob.provenance?.entries ?? []);
+  provenance.tick = blob.provenance?.tick ?? 0;
+  return {
+    apiVersion: blob.apiVersion,
+    spans: new Map(blob.spans ?? []),
+    documents: new Map(blob.documents ?? []),
+    spanCap: blob.spanCap ?? DEFAULT_SPAN_CAP,
+    engineVersion: blob.engineVersion ?? undefined,
+    discourse: structuredClone(blob.discourse ?? makeDiscourseSession()),
+    provenance,
+    _bytes: new Map(),
+  };
+}
+
 function chunkText(text, sourceId, session) {
   const chunks = [];
   const bytes = utf8.encode(text);
@@ -134,10 +203,38 @@ function chunkText(text, sourceId, session) {
  */
 export function admitChunked(session, { text, sourceId, language }) {
   if (!text || !sourceId) return { chunks: 0, admitted: [] };
-  const chunks = chunkText(text, sourceId, session);
   const docId = sourceId;
-  const pieces = chunks.map((c) => ({ byteStart: c.byteStart, text: c.text, length: c.byteEnd - c.byteStart }));
   let info = session.documents.get(docId);
+
+  // Content-addressed re-admission guard — the same principle a chunk's own
+  // span_id already applies (`span:${hash({sourceId, chunkText})}`, which is
+  // why the span registry measured flat across repeat cycles: Map.set on an
+  // existing key is a no-op-equivalent overwrite). `session.documents`,
+  // unlike `session.spans`, is not keyed by content, and the concat below
+  // (`info.text = (info.text||"") + text`) exists for a real case — a
+  // document whose SECOND call carries genuinely new material (streamed
+  // growth, see the note below) — but applies unconditionally, so a caller
+  // that simply re-opens the same file next session (the ordinary shape of
+  // sustained use: no export/reimport layer exists yet, so a restart means
+  // re-ingesting the same source from scratch — challenge #20) hands back
+  // byte-identical text and every re-admission concatenates it again,
+  // unbounded in admit-count and independent of whether anything new was
+  // read. Measured: 3 admissions of an unchanged 717,784-byte source grew
+  // that document's `.text` to exactly 3.00x, not 1x
+  // (scripts/adversarial/challenge-22-storage-growth-bound-over-sustained-use.mjs).
+  // A hash of THIS call's own {sourceId, text} — not the document's
+  // accumulated state — tells the two cases apart cheaply: unseen text
+  // (first admission, or a second call carrying real new material) hashes to
+  // something not yet recorded and is admitted exactly as before; text this
+  // docId has already incorporated, byte for byte, is a repeat and is
+  // reported without growing the record.
+  const admissionHash = canonicalHashSync({ sourceId, text });
+  if (info && info.admissionHashes?.includes(admissionHash)) {
+    return { chunks: info.chunks.length, admitted: info.chunks, deduped: true };
+  }
+
+  const chunks = chunkText(text, sourceId, session);
+  const pieces = chunks.map((c) => ({ byteStart: c.byteStart, text: c.text, length: c.byteEnd - c.byteStart }));
   if (info) {
     info.chunks = info.chunks.concat(chunks);
     info.pieces = info.pieces.concat(pieces);
@@ -147,9 +244,18 @@ export function admitChunked(session, { text, sourceId, language }) {
     // document grown in two calls was folded as if the second half did not
     // exist. The chunker's own offsets already assume one continuous text.
     info.text = (info.text || "") + text;
+    info.admissionHashes = (info.admissionHashes || []).concat(admissionHash);
     if (language) info.language = language;
   } else {
-    session.documents.set(docId, { id: docId, path: sourceId, chunks, pieces, text, language: language ?? null });
+    session.documents.set(docId, {
+      id: docId,
+      path: sourceId,
+      chunks,
+      pieces,
+      text,
+      language: language ?? null,
+      admissionHashes: [admissionHash],
+    });
   }
   return { chunks: chunks.length, admitted: chunks };
 }
@@ -578,6 +684,193 @@ const countAcrossChunks = (chunks, surfaces) => {
   return { mentions, frames, firstFrame, lastFrame };
 };
 
+// ── apparatus demotion — the "apparatus" slot of referents/index.js's own
+// INDIVIDUATION_TYPES, populated for the first time ────────────────────────
+//
+// `INDIVIDUATION_TYPES` (engine/referents/index.js) has named "apparatus"
+// as one of five individuation kinds since that file's first line, and
+// nothing anywhere in this repo ever assigned it — every discovered
+// referent's `individuation` stayed the literal `null` this file's own
+// comment already flags ("the caller sees null and applies its own
+// policy"). This is that policy, for exactly this one kind, built on ONE
+// measured, derived signal — not the general mass x coupling x agency
+// classifier the other four kinds (field/emanon/protogon/holon) would still
+// need; that is a genuinely larger, un-built subsystem and stays out of
+// scope here.
+//
+// THE SIGNAL: what share of the document's OWN sentences a referent is
+// named in. A narrating apparatus — a wire-service byline, a news outlet
+// repeated as the attribution frame — gets re-stapled onto nearly every
+// sentence precisely BECAUSE English third-person-singular pronouns do not
+// apply to an organisation the way they do to a person: there is no "she"
+// standing in for it, so the proper noun itself has to recur. A real
+// narrative subject, however central, does not: prose carries a person
+// forward with pronouns and unnamed continuation, so even the single most
+// heavily NAMED character in an entire novel is named in only a small
+// fraction of its sentences.
+//
+// MEASURED, NOT ASSUMED, against real fixtures already in this repo
+// (scripts/adversarial/fixtures/), using the exact per-sentence occurrence
+// count this file already applies per-chunk two functions up:
+//   Frankenstein (pg84-frankenstein.txt, 3392 sentences): Elizabeth Lavenza,
+//     the MOST-named character in the whole novel, 90/3392 sentences = 2.7%.
+//   Heart of Darkness (2476 sentences): Mr Kurtz — discussed constantly
+//     while physically absent for nearly the whole book, the protogon case
+//     challenge #24 names — still only 113/2476 sentences = 4.6%.
+//   The adversarial wire-service fixture (scripts/adversarial/fixtures/
+//     wire-quiet-subject.txt, 40 sentences): "Continental Newswire",
+//     21/40 sentences = 52.5% — an order of magnitude past either real
+//     figure above, with real prose's own most extreme case (Kurtz, 4.6%)
+//     nowhere near it.
+// The floor below sits at 15%: comfortably above every real narrative
+// referent measured (2.7%–4.6%), comfortably below the adversarial case
+// (52.5%), and re-run against the exact numbers above rather than picked
+// to fit one fixture (see scripts/adversarial/challenge-23-apparatus-
+// demotion-regression-npr-bug-cl.mjs for the reproduction).
+const APPARATUS_NAMING_SHARE_FLOOR = 0.15;
+
+// Same occurrence discipline as countAcrossChunks just above, applied to
+// SENTENCES instead of admitted chunks — chunks are a byte-capped storage
+// unit (DEFAULT_SPAN_CAP) unrelated to sentence structure, and on a short
+// document there may be only one or two of them, too coarse a grain for a
+// share statistic to mean anything. Sentences are already computed once per
+// document by discoveredCast and reused here, not re-split.
+const namingSentenceShare = (sentences, surfaces) => {
+  if (!sentences?.length) return 0;
+  const re = occurrenceMatcher(surfaces);
+  if (!re) return 0;
+  let hit = 0;
+  for (const s of sentences) {
+    re.lastIndex = 0;
+    if (re.test(s.text)) hit++;
+  }
+  return hit / sentences.length;
+};
+
+// ── individuation — the mass x coupling x agency classifier for the three
+// remaining reachable INDIVIDUATION_TYPES slots ───────────────────────────
+//
+// (engine/referents/index.js's own INDIVIDUATION_TYPES has named
+// field/emanon/protogon/holon/apparatus since that file's first line.
+// "apparatus" is populated above, by one derived signal. This is the "genuinely
+// larger, un-built subsystem" that section's own comment named as out of
+// scope for that fix — built here, on the same discipline: a real signal,
+// measured against real fixtures already in this repo, never assumed.)
+//
+// "field" stays definitionally unreachable, unchanged: a referent record
+// only exists once something has recurred enough to be discovered or
+// witnessed at all, and field names exactly the diffuse case that never
+// individuates that far — there is nothing for this function to be asked
+// to classify a field AS.
+//
+// THREE SIGNALS, ONE STRUCTURAL AND TWO STATISTICAL:
+//
+//   mass     — this referent's own `mentions` (already computed above).
+//              Used here only as a RELIABILITY FLOOR: below it, no ratio
+//              built on `mentions` has enough evidence to trust, so the
+//              classifier declines rather than guesses (MASS_FLOOR, below).
+//   coupling — pronounMentions / mentions, already computed and sitting on
+//              every discovered referent unused before this. How much the
+//              discourse's own grammar orbits this referent beyond bare
+//              naming.
+//   agency   — NEW. Real (subject, verb, object) triples already exist in
+//              this codebase (perceiver/text/relations.js, discoveredCast's
+//              own `relations`, above) — this is the first place they are
+//              read PER REFERENT rather than as a flat list. agency is the
+//              share of a referent's own mentions that occurred specifically
+//              in subject position of an extracted relation: how often this
+//              being enacts something, relative to how often it is merely
+//              named.
+//
+// MEASURED, not assumed, against the two real literary fixtures challenge
+// #24 itself used (scripts/adversarial/fixtures/pg84-frankenstein.txt,
+// heart-of-darkness.txt) plus the human-curated coref prior for "the
+// creature" (pg84-frankenstein.coref.json):
+//
+//   MASS_FLOOR = 15. Every noise-tier referent measured in Heart of
+//   Darkness (Company 14, "I've" 14, English 13, Europe 8, Russian 8, God
+//   7 — places, nationalities, and split contractions, not people) sits at
+//   or below 14 mentions; every real named character measured in either
+//   fixture (Frankenstein's own cast, 26-92 mentions; Kurtz, 121) sits well
+//   above it. The one real exception is Marlow — Heart of Darkness's own
+//   first-person narrator, whose third-person NAME is used only 10 times
+//   because he is telling the story as "I," a structural property of
+//   first-person narration this signal cannot see past. He is left
+//   unclassified (null) rather than guessed at from too little naming
+//   evidence — the honest outcome, not a special case.
+//
+//   PROTOGON_COUPLING_FLOOR = 1.0 — "referred to by pronoun MORE than
+//   named outright." Measured against every mass-qualified referent in
+//   both fixtures (Frankenstein's own eight: 0.07-0.83; Heart of Darkness's
+//   own: 2.06 for Kurtz alone, everything else below the mass floor):
+//   coupling never exceeds 1.0 for anyone except Kurtz, discussed and
+//   pronoun-referenced for most of the book despite being physically
+//   absent until Part III — this is the natural crossing point the
+//   measurement itself produces, not a percentile picked to fit one
+//   fixture.
+//
+//   agency IS computed and reported on every classified referent (below),
+//   closing the "agency" third of the claim's own name — but it does NOT
+//   gate the protogon decision above. Measured: at the mass this floor
+//   requires, agency did not separate Kurtz (0.149) from an ordinary named
+//   character — Frankenstein's own Victor sits LOWER, at 0.000. An honest
+//   limit of what this signal can discriminate at this scale, disclosed
+//   rather than smoothed over with a threshold that would only be fitting
+//   one fixture's noise.
+//
+//   emanon is structural, not a threshold at all: every surface on the
+//   real "creature" prior ("the creature", "the monster", "the wretch",
+//   "my adversary", ...) fails the SAME capitalised-run shape
+//   extractSurfaces itself already gates ordinary discovery on — this
+//   referent could only ever have arrived via a prior. A referent whose
+//   surfaces are categorically not name-shaped, with real mass behind it,
+//   is emanon; there is nothing to measure a threshold against.
+const MASS_FLOOR = 15;
+const PROTOGON_COUPLING_FLOOR = 1.0;
+
+const isNameShaped = (surface) => /^\p{Lu}/u.test(String(surface ?? "").trim());
+const surfaceTextOf = (s) => (typeof s === "string" ? s : s?.surface);
+const surfaceTextsOf = (raw) => (raw ?? []).map(surfaceTextOf).filter((s) => typeof s === "string" && s);
+
+const referentOwnsSubject = (subjectText, surfaceTexts) => {
+  const subj = diaNorm(subjectText);
+  return surfaceTexts.some((s) => diaNorm(s) === subj || namesCorefer(s, subjectText));
+};
+
+/**
+ * Classifies one referent into "emanon" | "protogon" | "holon" | null,
+ * mutating `r` to also carry the `agency` and (when available) `coupling`
+ * evidence it measured, whichever way the decision landed. `relations` is
+ * discoveredCast's own per-document (subject, verb, object) triples (empty
+ * array for a prior-sourced referent with no document-level relations to
+ * read, which is fine — agency and the structural emanon test both still
+ * work from `r` alone).
+ *
+ * Never called for a referent already typed "apparatus" — that decision,
+ * made above from a different signal, is never second-guessed here.
+ */
+const classifyIndividuation = (r, relations) => {
+  const surfaceTexts = surfaceTextsOf(r.surfaces);
+  const mentions = r.mentions ?? 0;
+  const nameShaped = surfaceTexts.some(isNameShaped);
+
+  if (!nameShaped) {
+    return surfaceTexts.length > 0 && mentions >= MASS_FLOOR ? "emanon" : null;
+  }
+
+  if (mentions < MASS_FLOOR) return null;
+
+  const subjectHits = relations.filter((rel) => referentOwnsSubject(rel.subject, surfaceTexts)).length;
+  r.agency = mentions > 0 ? subjectHits / mentions : 0;
+
+  if (typeof r.pronounMentions === "number") {
+    r.coupling = r.pronounMentions / mentions;
+    if (r.coupling > PROTOGON_COUPLING_FLOOR) return "protogon";
+  }
+
+  return "holon";
+};
+
 // bin/priors/lang/<language>.json — a received prior naming which tokens
 // this language writes with a trailing period without ending a sentence
 // (spans.js's own docstring: "a caller that has a prior should pass it").
@@ -600,13 +893,20 @@ const loadAbbreviationPrior = (language) => {
   return { language: raw.language, giver: raw.provenance.source, abbreviations: raw.abbreviations };
 };
 
-// Discovery is deterministic in the document text, so it is memoised per
-// document and invalidated by chunk count — the only way a document grows
-// here is admitChunked appending to it. /api/fold is polled by the app on
-// every source toggle and every reader open; re-splitting 400 KB of sentences
-// each time is work with a known answer.
-function discoveredCast(session, doc) {
-  const cached = session._cast?.get(doc.id);
+// The document-local half of discoveredCast, factored out so a caller that
+// needs surfaces from MORE THAN ONE document (sessionReferentsAcrossDocuments,
+// below) can pool them before clustering, instead of re-deriving this by
+// hand. Nothing past this point — sentence splitting, the abbreviation prior,
+// the capitalisation/function-word filter — is document-count-aware; it was
+// only ever CALLED once per document, which is a property of the caller
+// (discoveredCast), not of the extraction itself.
+//
+// Memoised per document and invalidated by chunk count, same rationale as
+// discoveredCast's own memoisation below: deterministic in the document
+// text, and re-splitting 400 KB of sentences on every /api/fold poll is work
+// with a known answer.
+function extractDocSurfaces(session, doc) {
+  const cached = session._surfaces?.get(doc.id);
   if (cached && cached.chunks === doc.chunks.length) return cached.value;
 
   const source = doc.text || doc.chunks.map((c) => c.text).join("\n");
@@ -640,9 +940,8 @@ function discoveredCast(session, doc) {
   if (!abbreviations) abbreviations = deriveAbbreviations(body);
   const sentences = splitSentences(body, { abbreviations });
 
-  let referents = [];
-  let pronounBindings = [];
-
+  let surfaces = [];
+  let functionWords = null;
   if (!sentences.length) {
     gaps.push({
       reason: "no_sentence_units_in_document",
@@ -650,9 +949,8 @@ function discoveredCast(session, doc) {
       detail: "the text perceiver found no sentence boundaries, so no surface could be positioned",
     });
   } else {
-    const functionWords = functionWordSet(buildFrequencyTable(tokenize(body)));
-    const surfaces = extractSurfaces(sentences, { functionWords, abbreviations });
-
+    functionWords = functionWordSet(buildFrequencyTable(tokenize(body)));
+    surfaces = extractSurfaces(sentences, { functionWords, abbreviations });
     if (!surfaces.length) {
       gaps.push({
         reason: "no_candidate_surfaces",
@@ -663,9 +961,72 @@ function discoveredCast(session, doc) {
           "Latin/Greek/Cyrillic script — on a caseless script (Han, Arabic, Hebrew) this detector " +
           "does not apply, and its silence is not evidence that the text has no cast.",
       });
-    } else {
+    }
+  }
+
+  // `body` and `functionWords` are exposed (not just used locally) so
+  // discoveredCast can measure the individuation classifier's `agency`
+  // signal (subject-of-own-verbs rate, via relations.js) against the exact
+  // same text and closed class this function already derived — never a
+  // second, possibly-inconsistent derivation.
+  const value = { sentences, surfaces, gaps, abbreviationGiver, body, functionWords };
+  if (!session._surfaces) session._surfaces = new Map();
+  session._surfaces.set(doc.id, { chunks: doc.chunks.length, value });
+  return value;
+}
+
+// Discovery is deterministic in the document text, so it is memoised per
+// document and invalidated by chunk count — the only way a document grows
+// here is admitChunked appending to it. /api/fold is polled by the app on
+// every source toggle and every reader open; re-splitting 400 KB of sentences
+// each time is work with a known answer.
+function discoveredCast(session, doc) {
+  const cached = session._cast?.get(doc.id);
+  if (cached && cached.chunks === doc.chunks.length) return cached.value;
+
+  const { sentences, surfaces, gaps: extractionGaps, abbreviationGiver, body, functionWords } = extractDocSurfaces(session, doc);
+  const gaps = [...extractionGaps];
+
+  let referents = [];
+  let pronounBindings = [];
+  // (subject, verb, object) triples, measured once per document — the
+  // individuation classifier's `agency` signal below reads these, and
+  // sessionReferents may call discoveredCast many times over one document's
+  // life (polled on every source toggle), so this is computed here,
+  // alongside the same memoisation discoveredCast's own header already
+  // explains, rather than re-scanned on every call.
+  let relations = [];
+
+  // extractDocSurfaces already reported the applicable one of
+  // no_sentence_units_in_document / no_candidate_surfaces above, if either
+  // applied — nothing further to discover from an empty surface list.
+  if (surfaces.length) {
       const discovery = discoverReferents(surfaces);
       referents = projectReferents(discovery.events);
+      // Apparatus demotion (see the section header above `namingSentenceShare`):
+      // one derived signal, measured against this document's own sentences,
+      // answering the one INDIVIDUATION_TYPES slot ("apparatus") this repo
+      // had declared but never populated. Every other referent keeps
+      // `individuation` unset here exactly as before — sessionReferents'
+      // own comment stands: the caller sees no assertion and applies its
+      // own policy for the rest.
+      for (const r of referents) {
+        const share = namingSentenceShare(sentences, r.surfaces);
+        r.namingSentenceShare = share;
+        if (share >= APPARATUS_NAMING_SHARE_FLOOR) r.individuation = "apparatus";
+      }
+
+      // The `agency` signal the individuation classifier reads below
+      // (sessionReferents): real (subject, verb, object) triples, the same
+      // primitive discoverRelationVocab/extractRelations already supply
+      // elsewhere in this codebase (perceiver/text/relations.js). minSurfaces
+      // is the same value 1 this repo's own challenge-14 script already used
+      // measuring this exact organ against real prose — a candidate verb
+      // need only follow one distinct surface to enter the vocabulary, the
+      // most permissive reading, appropriate here because this signal is
+      // read RELATIVE to other referents in the same document, never
+      // against an absolute count.
+      relations = extractRelations(body, { verbs: discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 }).verbs });
       // discoverReferents emits the same gap once per referent, because at
       // that level each referent is the unit. Forwarding 63 identical
       // objects to a reader-facing audit log is noise that buries the gaps
@@ -688,9 +1049,16 @@ function discoveredCast(session, doc) {
       // surfaces of its own, it only asks which already-named referent a
       // pronoun's sentence resembles by one-hop recall.
       const surfaceToReferent = new Map(discovery.events.map((e) => [e.surface, e.referent_id]));
+      // Referents already typed "apparatus" above are handed in as
+      // known-non-personal — resolvePronouns has no individuation notion of
+      // its own and is not asked to derive one; this is the same "caller
+      // applies its own policy" hand-off the ranking demotion above already
+      // makes, reused for pronoun binding instead of reinvented.
+      const nonPersonal = new Set(referents.filter((r) => r.individuation === "apparatus").map((r) => r.id));
       const resolved = resolvePronouns(sentences, surfaceToReferent, {
         minActivation: PRONOUN_MIN_ACTIVATION,
         minMargin: PRONOUN_MIN_MARGIN,
+        nonPersonal,
       });
       pronounBindings = resolved.bindings;
 
@@ -712,16 +1080,195 @@ function discoveredCast(session, doc) {
             "what remains.",
         });
       }
-    }
   }
 
-  const value = { referents, gaps, abbreviationGiver, pronounBindings };
+  const value = { referents, gaps, abbreviationGiver, pronounBindings, relations };
   if (!session._cast) session._cast = new Map();
   session._cast.set(doc.id, { chunks: doc.chunks.length, value });
   return value;
 }
 
+// discoveredCastAcrossDocuments — the cast of MORE THAN ONE document, pooled
+// before clustering.
+//
+// ROOT CAUSE THIS ANSWERS: discoveredCast/sessionReferents hard-scoped
+// referent discovery to exactly one sourceId (`session.documents.get`),
+// which is a property of the CALLER, not of discoverReferents itself —
+// surfaces.js's own clustering (namesCorefer: containment or shared final
+// token, the ENGINE-tier "NAME-variant coreference" its header declares,
+// same doctrine that already merges "Victor Frankenstein" with
+// "Frankenstein" within one document) never receives a document boundary as
+// an argument. It clusters whatever flat surface list it is handed. Handing
+// it ONE document's surfaces every time, with no caller ever pooling more
+// than one, was the only reason two documents' variant name-forms for the
+// same being never merged — not a missing capability, an unexercised one.
+//
+// This is name-variant coreference EXTENDED ACROSS documents, not a new
+// identity mechanism: same `discoverReferents`, same `namesCorefer`, same
+// generic-token fence, run once over the union of every named document's
+// candidate surfaces instead of once per document. Two sources naming a
+// being "Kade" and "Marcus Aurelius Kade" now corefer for the same reason
+// "Frankenstein" corefers with "Victor Frankenstein" inside one book: a
+// shared final token, structural, no witness needed (SEED.md "identity by
+// consequence" is a different, deeper claim — CON · Pattern, requiring
+// arrival-position evidence — and is untouched by this; this stays exactly
+// on the SIG · Void · Tending cell discoverReferents already occupies).
+//
+// WHAT THIS DOES NOT CLOSE: two sources with NO shared or variant literal
+// name form (a pure epithet with no name-token overlap, e.g. "the Iron
+// Admiral" against "Kade") still will not merge — namesCorefer has nothing
+// to compare. That is not a scoping bug; it is the tier boundary
+// surfaces.js's own header already draws ("MODEL tier: descriptor synonymy
+// ... NOT derivable, reported as a typed gap"). Closing that case needs a
+// cross-document identity STATISTIC that does not exist in this repo yet
+// (referents/consequence.js::identityByConsequence is the one non-string
+// identity-comparison organ here, and it is not that statistic: it needs
+// both surfaces inside one continuous openReading() state, and its own
+// header already records "weak segregation power" on an ensemble cast where
+// entities are rarely apart — the same weak-power failure mode reproduces
+// when it is naively extended across concatenated documents).
+function discoveredCastAcrossDocuments(session, docs) {
+  const gaps = [];
+  const pooledSurfaces = [];
+  const groups = [];
+  for (const doc of docs) {
+    const { surfaces, gaps: docGaps } = extractDocSurfaces(session, doc);
+    if (docGaps.length) gaps.push(...docGaps.map((g) => ({ ...g, sourceId: doc.id })));
+    pooledSurfaces.push(...surfaces);
+    groups.push(surfaces);
+  }
+
+  if (!pooledSurfaces.length) return { referents: [], gaps };
+
+  // Clustering runs on the POOLED candidate list for CO-REFERENCE (a name
+  // from source A is free to match a name from source C), but `groups` keeps
+  // the GENERIC-TOKEN fence document-local (see discoverReferents's own
+  // header on `groups`) — otherwise unrelated documents' one-off proper
+  // nouns dilute the fence that decides whether a title/family-name inside
+  // ONE document is generic, measured live on this repo's own challenge-25
+  // fixture (a within-source merge that succeeds standalone silently broke
+  // under naive flat pooling before `groups` existed).
+  const discovery = discoverReferents(pooledSurfaces, { groups });
+  const referents = projectReferents(discovery.events);
+
+  if (discovery.gaps.length) {
+    const one = discovery.gaps[0];
+    gaps.push({
+      reason: one.reason,
+      tier: one.tier,
+      needsWitness: one.needsWitness,
+      referents: discovery.gaps.length,
+      detail: `${discovery.gaps.length} discovered referents, pooled across ${docs.length} document(s): ${one.detail}`,
+    });
+  }
+
+  return { referents, gaps };
+}
+
+// sessionReferentsAcrossDocuments — the cast of a NAMED SET of documents,
+// with each surviving referent's evidence still broken out per source.
+//
+// THE PROVENANCE HALF OF THE CLAIM: merging "Kade" (source A) and
+// "Vessa's Kade" (source C) into one referent must not blur WHICH source
+// attests WHICH occurrences. `sources` on each referent is exactly that —
+// countAcrossChunks run separately against each document's OWN chunks with
+// the referent's full (merged) surface set, so a source that never used one
+// particular variant simply counts zero for it, and a source's own mentions
+// never leak into another source's tally. `mentions`/`frames` stay the sum,
+// for the same "how prominent is this being in what I ingested" reading a
+// single-document referent already gives; `sources` is the citation-grade
+// breakdown underneath it.
+function sessionReferentsAcrossDocuments(session, { sourceIds, priors = [], limit = 100 } = {}) {
+  const gaps = [];
+  const docs = [];
+  for (const id of sourceIds) {
+    const doc = session.documents.get(id);
+    if (!doc) gaps.push(`unknown document ${id}`);
+    else docs.push(doc);
+  }
+  if (!docs.length) return { referents: [], gaps, sourceIds: [] };
+
+  const referents = [];
+  const claimed = new Set();
+
+  const countPerSource = (surfaces) => {
+    const sources = [];
+    let mentions = 0;
+    let frames = 0;
+    for (const doc of docs) {
+      const counted = countAcrossChunks(doc.chunks || [], surfaces);
+      if (counted.mentions) sources.push({ sourceId: doc.id, ...counted });
+      mentions += counted.mentions;
+      frames += counted.frames;
+    }
+    return { sources, mentions, frames };
+  };
+
+  // Same "prior wins every surface it names" precedence as the single-
+  // document path, applied against the union of all named documents' chunks.
+  for (const prior of priors) {
+    const id = prior.id || prior.name || `ref:${canonicalHashSync(prior)}`;
+    const raw = prior.surfaces || [prior.name].filter(Boolean);
+    const surfaces = raw
+      .map((s) => (typeof s === "string" ? s : s && s.surface))
+      .filter((s) => typeof s === "string" && s && !/@\d+-\d+$/.test(s));
+    const counted = countPerSource(surfaces.length ? surfaces : raw.filter((s) => typeof s === "string"));
+    for (const s of surfaces) claimed.add(diaNorm(s));
+    referents.push({
+      id,
+      display: prior.display || prior.name || id,
+      surfaces: raw,
+      ...counted,
+      individuation: prior.individuation || "holon",
+      fromPrior: true,
+    });
+  }
+
+  const discovery = discoveredCastAcrossDocuments(session, docs);
+  gaps.push(...discovery.gaps);
+
+  for (const r of discovery.referents) {
+    if (r.surfaces.some((s) => claimed.has(diaNorm(s)))) continue;
+    const counted = countPerSource(r.surfaces);
+    if (!counted.mentions) continue; // discovered in the pooled body, absent from every source's admitted chunks
+    const display = [...r.surfaces].sort((a, b) => b.length - a.length)[0];
+    referents.push({
+      id: r.id,
+      display,
+      surfaces: r.surfaces,
+      ...counted,
+      // Individuation (apparatus demotion in particular) is a per-document
+      // naming-sentence-share measurement (namingSentenceShare above) that
+      // has no defined meaning pooled across documents of different length
+      // and register — left null, the same "caller applies its own policy"
+      // standing four of five individuation kinds already take on the
+      // single-document path.
+      individuation: null,
+      fromPrior: false,
+    });
+  }
+
+  referents.sort((a, b) => (b.fromPrior === true) - (a.fromPrior === true) || b.mentions - a.mentions);
+
+  const total = referents.length;
+  const kept = Number.isFinite(limit) ? referents.slice(0, limit) : referents;
+  if (kept.length < total) {
+    gaps.push({
+      reason: "cast_truncated",
+      tier: "host",
+      detail: `${total} referents discovered, ${kept.length} returned (limit=${limit})`,
+    });
+  }
+
+  return { referents: kept, gaps, sourceIds: docs.map((d) => d.id) };
+}
+
 export function sessionReferents(session, { sourceId, priors = [], limit = 100 } = {}) {
+  // A caller naming MORE THAN ONE document asks a different question than
+  // the single-document cast below — see sessionReferentsAcrossDocuments's
+  // own header for what this does and does not merge, and why.
+  if (Array.isArray(sourceId)) return sessionReferentsAcrossDocuments(session, { sourceIds: sourceId, priors, limit });
+
   const doc = session.documents.get(sourceId);
   if (!doc) return { referents: [], gaps: [`unknown document ${sourceId}`] };
 
@@ -729,6 +1276,15 @@ export function sessionReferents(session, { sourceId, priors = [], limit = 100 }
   const referents = [];
   const gaps = [];
   const claimed = new Set(); // lowercased surfaces a prior has already spoken for
+
+  // Computed before the prior loop now (moved up from after it — nothing in
+  // either loop's own logic depends on the ORDER these two run in, only on
+  // `claimed` existing before discovered referents are filtered against it,
+  // which is unaffected) so a prior with no explicit `individuation` can
+  // read discoveredCast's own per-document `relations` for the classifier
+  // below, the same evidence discovered referents already get.
+  const discovery = discoveredCast(session, doc);
+  gaps.push(...discovery.gaps);
 
   // The prior first, and it wins every surface it names. Witness knowledge is
   // received, not competed with — a discovered candidate that happens to share
@@ -743,18 +1299,23 @@ export function sessionReferents(session, { sourceId, priors = [], limit = 100 }
       .filter((s) => typeof s === "string" && s && !/@\d+-\d+$/.test(s));
     const counted = countAcrossChunks(chunks, surfaces.length ? surfaces : raw.filter((s) => typeof s === "string"));
     for (const s of surfaces) claimed.add(diaNorm(s));
-    referents.push({
-      id,
-      display: prior.display || prior.name || id,
-      surfaces: raw,
-      ...counted,
-      individuation: prior.individuation || "holon",
-      fromPrior: true,
-    });
+    const ref = { id, display: prior.display || prior.name || id, surfaces: raw, ...counted, fromPrior: true };
+    // Witness knowledge is received, not competed with — an EXPLICIT prior
+    // individuation is never second-guessed. Only when the prior omits the
+    // field does this fall through to the classifier discovered referents
+    // already use, instead of silently defaulting to the literal string
+    // "holon": stripping the field used to report "holon" with zero other
+    // change (measured — see classifyIndividuation's own header); this
+    // replaces that silent default with an actual, evidenced computation.
+    // "holon" is still what it lands on absent any contrary evidence, so an
+    // already-correct prior never regresses. Coupling is unavailable here
+    // (pronoun binding is keyed off the discovered cast only) — the
+    // structural emanon test doesn't need it, and classifyIndividuation
+    // degrades to "holon" gracefully without it, same as any other
+    // evidence-poor case.
+    ref.individuation = prior.individuation || classifyIndividuation(ref, discovery.relations) || "holon";
+    referents.push(ref);
   }
-
-  const discovery = discoveredCast(session, doc);
-  gaps.push(...discovery.gaps);
 
   for (const r of discovery.referents) {
     if (r.surfaces.some((s) => claimed.has(diaNorm(s)))) continue;
@@ -768,23 +1329,43 @@ export function sessionReferents(session, { sourceId, priors = [], limit = 100 }
     // `mentions`/`frames`, which stay literal-surface-only).
     const pronounHits = discovery.pronounBindings.filter((b) => b.referentId === r.id);
     const pronounFrameOrders = new Set(pronounHits.map((b) => b.sentenceOrder));
-    referents.push({
+    const ref = {
       id: r.id,
       display,
       surfaces: r.surfaces,
       ...counted,
       pronounMentions: pronounHits.length,
       pronounFrames: pronounFrameOrders.size,
-      // Individuation is NOT decided here. Which kind of being a referent is
-      // (holon / emanon / protogon / field / apparatus) is a typed judgement;
-      // discovery only establishes that something recurs and is named. The
-      // caller sees null and applies its own policy.
-      individuation: null,
+      namingSentenceShare: r.namingSentenceShare,
       fromPrior: false,
-    });
+    };
+    // Individuation. Which kind of being a referent is (holon / emanon /
+    // protogon / field / apparatus) is a typed judgement; discovery only
+    // establishes that something recurs and is named. "apparatus" is
+    // already decided (discoveredCast measured this referent's own
+    // naming-sentence-share against THIS document — see
+    // `namingSentenceShare`/`APPARATUS_NAMING_SHARE_FLOOR` above) and is
+    // passed through, never re-derived. For the rest, classifyIndividuation
+    // reads the mass/coupling/agency evidence this loop just assembled;
+    // genuinely insufficient evidence still returns null, the same "caller
+    // applies its own policy" contract as before either classifier existed.
+    ref.individuation = r.individuation ?? classifyIndividuation(ref, discovery.relations);
+    referents.push(ref);
   }
 
-  referents.sort((a, b) => (b.fromPrior === true) - (a.fromPrior === true) || b.mentions - a.mentions);
+  // Apparatus demotion: a referent typed "apparatus" above sorts AFTER every
+  // other discovered referent regardless of raw mention count — the fix for
+  // the bug class this ranking used to be naive about. fromPrior still wins
+  // outright (witness knowledge received, not competed with, unchanged from
+  // before) and raw mentions still break ties within a tier, exactly as
+  // before; only a new tier was added, not a replacement of what existed.
+  const isApparatus = (r) => (r.individuation === "apparatus" ? 1 : 0);
+  referents.sort(
+    (a, b) =>
+      (b.fromPrior === true) - (a.fromPrior === true) ||
+      isApparatus(a) - isApparatus(b) ||
+      b.mentions - a.mentions,
+  );
 
   // L3: where the cast is cut, the cut is reported.
   const total = referents.length;

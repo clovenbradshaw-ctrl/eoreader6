@@ -43,6 +43,21 @@
 //   video spatial permutation                vs half-frame motion       breaks
 //   video brighten-vs-darken                 vs signed mean difference  breaks
 //
+// AUDIO'S WITHIN-FRAME-PERMUTATION GAP IS NOW CLOSED, not just predicted to be
+// closeable — perceiver/audio/material.js added a second channel, `flux`
+// (mean absolute first-difference per frame, the zero-crossing-rate family
+// this file predicted would break the equality), ADDED alongside `rms`, never
+// replacing it. `rms` stays the default and stays exactly as blind as before
+// — it is the loudness channel and loudness genuinely does not depend on
+// arrangement, which is a fact about sums-of-squares, not an unfixed bug.
+// The gap this file used to record as unclosed is the one a caller now closes
+// by asking for the `flux` channel instead. Both claims are asserted below:
+// the "blind:" test for `rms` still passes (channel default unchanged), and a
+// new "sees:" test proves `flux` does not share the blindness — with a
+// "holds:" test alongside it proving the fix did not cost polarity
+// invariance, which is the other half of "did not break what RESULTS.md
+// confirmed is not a defect."
+//
 // The check demoted two tests written as `blind:` and moved them to `holds:`.
 // A per-row gradient reduction is ALSO mirror-invariant (reversing a row
 // preserves the multiset of adjacent differences), and zero-crossing rate is
@@ -50,13 +65,18 @@
 // in the first place. That demotion is the method working, and it is the
 // reason the mutation step is not optional when adding to this file.
 //
-// WHAT THIS FILE ESTABLISHES, in one line: four of the five perceivers reduce
-// to first-order intensity (RMS, mean luminance, mean absolute difference, the
-// raw column) and one reduces to second-order surprise (causal surprisal
-// against its own prior history). Only the second-order one is sensitive to
-// the arrangement of what it is made of. scripts/RESULTS.md measured that
-// asymmetry once already, on bytes: meanByte 8/24 against causal surprisal
-// 14/24, and "RMS energy is the analogue of meanByte."
+// WHAT THIS FILE ESTABLISHES, in one line: four of the five perceivers' DEFAULT
+// channel reduces to first-order intensity (RMS, mean luminance, mean absolute
+// difference, the raw column) and one reduces to second-order surprise (causal
+// surprisal against its own prior history). Only the second-order one is
+// sensitive to the arrangement of what it is made of BY DEFAULT.
+// scripts/RESULTS.md measured that asymmetry once already, on bytes: meanByte
+// 8/24 against causal surprisal 14/24, and "RMS energy is the analogue of
+// meanByte." Audio is no longer only-first-order, though: it now carries a
+// second, non-default channel (`flux`) that is order-sensitive the same way
+// causal surprisal is, closing (for a caller who asks for it) the specific gap
+// this file's own header used to record as unclosed. See the AUDIO section
+// below for the measured proof, on both channels, that this is true.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -93,12 +113,20 @@ const shuffledIndices = (n, seed) => {
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// AUDIO — RMS energy per frame
+// AUDIO — RMS energy per frame (default channel), flux per frame (2nd channel)
 //
 // RMS is a sum of squares over a frame. Sum is permutation-invariant and
 // square is sign-invariant, so the reduction is blind to EVERYTHING inside a
 // frame except its energy: pitch, timbre, phase, polarity, direction. What
-// survives is the loudness envelope and nothing else.
+// survives is the loudness envelope and nothing else. That is still exactly
+// true of `rms`, the default channel, and the first two tests below still
+// measure it.
+//
+// `flux` (mean absolute first-difference per frame) was added alongside it,
+// never replacing it, specifically to close the within-frame-permutation gap
+// — the tests after that measure the same permutation against `flux` instead,
+// and prove the closure survives the one invariance (polarity) RESULTS.md
+// separately confirmed a competent reduction may legitimately keep.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const RATE = 8000;
@@ -125,7 +153,9 @@ test("audio blind: an octave is inaudible — 440 Hz and 880 Hz at matched ampli
   // informative for music as causal surprisal is for prose").
 });
 
-test("audio blind: permuting samples WITHIN each frame changes nothing at all", () => {
+// Shared fixtures for every test below that compares real order against a
+// within-frame permutation of the exact same samples.
+const permutedTone440 = () => {
   const src = tone(440);
   const scrambled = new Int16Array(src);
   for (let f = 0; f + FRAME <= scrambled.length; f += FRAME) {
@@ -133,20 +163,71 @@ test("audio blind: permuting samples WITHIN each frame changes nothing at all", 
     const frame = scrambled.slice(f, f + FRAME);
     for (let i = 0; i < FRAME; i++) scrambled[f + i] = frame[idx[i]];
   }
-  // A pure tone and broadband noise built from the same samples: exactly equal.
+  return scrambled;
+};
+
+test("audio blind: permuting samples WITHIN each frame changes nothing at all — the RMS channel, still (default, unchanged)", () => {
+  const src = tone(440);
+  const scrambled = permutedTone440();
+  // A pure tone and broadband noise built from the same samples: exactly equal
+  // on the DEFAULT channel. This is not the whole story anymore — see "audio
+  // sees:" below — but `reduce()` with no `channel` option is byte-identical
+  // to before the fix, which is the point: RMS is a genuine loudness
+  // statistic and loudness genuinely does not depend on arrangement.
   assert.ok(
     same(audio.reduce(src, { frameSamples: FRAME }), audio.reduce(scrambled, { frameSamples: FRAME })),
-    "within-frame permutation moved the material — the reduction is no longer pure energy",
+    "within-frame permutation moved the RMS material — the reduction is no longer pure energy",
   );
 });
 
-test("audio holds: polarity inversion, which a hearer may legitimately ignore", () => {
+test("audio sees (regression proof, challenge #15 / RESULTS.md): the flux channel is NOT blind to the same within-frame permutation", () => {
+  const src = tone(440);
+  const scrambled = permutedTone440();
+  // Exactly the transform the test above shows RMS cannot see, scored against
+  // the second channel instead. This is the file's own header's "success
+  // signal" (line ~28: "delete the test and record what replaced it"),
+  // applied without deleting the RMS test — because the fix is an added
+  // channel, RMS keeps its (accurate) blind: test and flux earns a sees: one.
+  assert.ok(
+    !same(audio.reduce(src, { frameSamples: FRAME, channel: "flux" }), audio.reduce(scrambled, { frameSamples: FRAME, channel: "flux" })),
+    "flux was supposed to close this gap and did not — a tone and its within-frame permutation are still one series",
+  );
+  // Not a coincidence of this one seed: reconfirm with four more independent
+  // shuffles of the same frames (the audit's own standard for ruling out a
+  // seed-specific accident — see the file header's "not a coincidence" note
+  // on determinism, applied here to the fix instead of to a blindness).
+  for (const seedBase of [777, 2024, 4243, 99991]) {
+    const scrambled2 = new Int16Array(src);
+    for (let f = 0; f + FRAME <= scrambled2.length; f += FRAME) {
+      const idx = shuffledIndices(FRAME, seedBase + f);
+      const frame = scrambled2.slice(f, f + FRAME);
+      for (let i = 0; i < FRAME; i++) scrambled2[f + i] = frame[idx[i]];
+    }
+    assert.ok(
+      !same(audio.reduce(src, { frameSamples: FRAME, channel: "flux" }), audio.reduce(scrambled2, { frameSamples: FRAME, channel: "flux" })),
+      `flux failed to discriminate a within-frame permutation at seed ${seedBase}`,
+    );
+  }
+});
+
+test("audio holds: polarity inversion, which a hearer may legitimately ignore — true on both channels", () => {
   const src = tone(440);
   const flipped = Int16Array.from(src, (v) => -v);
   assert.ok(same(audio.reduce(src, { frameSamples: FRAME }), audio.reduce(flipped, { frameSamples: FRAME })));
   // Not filed as a blindness: zero-crossing rate is polarity-invariant too, and
   // so is hearing for most signals. A reduction that STARTED distinguishing
-  // these would need to say why.
+  // these would need to say why. The fix must not cost this invariance either
+  // — flux was chosen (mean ABSOLUTE first-difference) specifically so it
+  // would not, and this is the measured check of that construction, not just
+  // an appeal to it.
+  assert.ok(
+    same(audio.reduce(src, { frameSamples: FRAME, channel: "flux" }), audio.reduce(flipped, { frameSamples: FRAME, channel: "flux" })),
+    "flux distinguished polarity — the new channel cost an invariance RESULTS.md confirmed is not a defect",
+  );
+});
+
+test("audio: an invalid channel name is a type error, not a silent fallback to rms", () => {
+  assert.throws(() => audio.reduce(tone(440), { frameSamples: FRAME, channel: "spectrum" }), TypeError);
 });
 
 test("audio sees: the loudness envelope, which is the one thing it carries", () => {

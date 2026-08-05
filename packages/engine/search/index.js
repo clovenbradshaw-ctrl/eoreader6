@@ -219,31 +219,116 @@ export const judge = (graph, candidate, { reseeds, seed, alpha = 1 } = {}) => {
   const newEdges = observed.INS.edges.length;
   const insNullHi = nulls.INS.length ? Math.max(...nulls.INS) : 0;
 
+  // ── ANCHORING: is a newly-minted identity corroborated, or a one-off? ──────
+  //
+  // INS's null is CORRECTLY zero-width for new nodes (revision.js: a rotation
+  // of the ground's own edges can never mint a node it does not already hold),
+  // so `newNodes > 0` clears that null trivially, by construction — the null
+  // has nothing to say about WHETHER a new identity is real, only that
+  // rotation cannot manufacture one. That is sound exactly when "new node"
+  // means a referent — which the graph itself cannot check (graph.js: "the
+  // graph does not resolve identity... that is coref's job, upstream"). If the
+  // perceiver instead hands in an unvalidated span (relations.js captures an
+  // object as everything up to the next punctuation mark, no coherence check),
+  // a permutation of real prose can still match a real verb and mint a
+  // brand-new subject/object string on every clause it touches — and INS's
+  // zero-width null cannot see the difference, because a permutation is
+  // invisible to a set-membership test.
+  //
+  // The one thing a permutation cannot fake at the graph-structure level:
+  // genuine reference recurs. A being this passage actually introduces is
+  // named again within it, or is connected to something the reader already
+  // holds; a "being" manufactured by scrambled adjacency is a disposable
+  // one-off — matched exactly once, in a triple whose other endpoint is also
+  // never seen anywhere else. That is measurable directly off the arrival's
+  // own edges, no text access required (the gate stays modality-agnostic —
+  // this is a graph-shaped check, not a text-shaped one). A new node is
+  // ANCHORED when it is touched by more than one of the candidate's own new
+  // edges (recurs within the passage), or when one of those edges reaches an
+  // endpoint the reader already held (connects to the ground).
+  //
+  // This does not apply against the EMPTY ground: the founding movement (SEED:
+  // "the only next available is the ground") has nothing to recur against or
+  // connect to, by construction — see the empty-ground branch below, and the
+  // conformance test "a first clause of a never-seen subject against the
+  // empty ground is preserved".
+  const newNodeSet = new Set(observed.INS.nodes);
+  const insDegree = new Map();
+  const touchesKnown = new Set();
+  for (const k of observed.INS.edges) {
+    const { s, o } = parseEdge(k);
+    insDegree.set(s, (insDegree.get(s) ?? 0) + 1);
+    insDegree.set(o, (insDegree.get(o) ?? 0) + 1);
+    if (newNodeSet.has(s) && !newNodeSet.has(o)) touchesKnown.add(s);
+    if (newNodeSet.has(o) && !newNodeSet.has(s)) touchesKnown.add(o);
+  }
+  const anchoredNewNodes = observed.INS.nodes.filter(
+    (id) => insDegree.get(id) > 1 || touchesKnown.has(id),
+  );
+  // Against the empty ground every node is founding by construction — there
+  // is nothing yet to recur against or connect to, and the founding movement
+  // is preserved outright (below). Elsewhere, only corroborated identity
+  // founds; a one-off is reportable, not placeable (see the new `censored`
+  // branch below).
+  const newAnchored = groundEmpty ? newNodes : anchoredNewNodes.length;
+  const OTHER_THAN_INS = MEASURED.filter((op) => op !== "INS");
+
+  // `decisive` names exactly which of the 8 MEASURED operators drove the
+  // branch taken — not for computation (the verdict above already stands on
+  // its own), but so the record kept downstream can answer "which null did
+  // this fail, at what threshold" without re-deriving it from `operators`.
+  // Structured (an array of operator names), not just interpolated into
+  // `what`'s prose, so an auditor need not parse a sentence to get it.
   let verdict;
   let what;
-  if (newNodes > 0) {
+  let decisive;
+  if (newAnchored > 0) {
     verdict = "preserve";
     what = "a being comes into existence — the ground cannot mint existence";
+    decisive = ["INS"];
   } else if (newEdges > 0 && newEdges > insNullHi) {
     verdict = "preserve";
     what = "a relation the ground's own reseeding cannot produce";
-  } else if (MEASURED.some((op) => operators[op].exceed)) {
+    decisive = ["INS"];
+  } else if (OTHER_THAN_INS.some((op) => operators[op].exceed)) {
+    // INS is deliberately excluded here: its null is zero-width for new
+    // nodes by construction (rotation cannot mint one), so `operators.INS.
+    // exceed` is trivially true whenever ANY unanchored node arrived — that
+    // is exactly the loophole above closes, and letting it back in through
+    // this generic check would undo it. Every case where INS legitimately
+    // drives preserve — a new edge between known nodes beyond the null, or
+    // an anchored new node — is already caught above.
+    decisive = OTHER_THAN_INS.filter((op) => operators[op].exceed);
     verdict = "preserve";
-    what = "movement beyond the ground's own reseeding variation";
-  } else if (MEASURED.some((op) => operators[op].within)) {
-    verdict = "refuse";
-    what = "redundant against the reader — the ground's own reseeding reproduces the movement";
-  } else if (MEASURED.some((op) => operators[op].observed > 0)) {
+    what = `movement beyond the ground's own reseeding variation (${decisive.join(", ")})`;
+  } else if (newNodes > 0) {
+    // Reached only when nothing else preserved this candidate: every new
+    // node it introduced is a one-off — it recurs nowhere within the
+    // candidate and touches nothing the reader already holds. INS's null
+    // cannot place it (zero-width, by construction) and the graph offers no
+    // corroboration either. A magnitude arrived; nothing grounds it as a
+    // referent rather than an artefact of an unvalidated span.
     verdict = "censored";
-    what = "magnitude reportable, place not — the ground gave no support to place it against";
+    what = "a new identity arrived but never recurs and touches nothing the ground already holds — magnitude reportable, corroboration not";
+    decisive = ["INS"];
+  } else if (MEASURED.some((op) => operators[op].within)) {
+    decisive = MEASURED.filter((op) => operators[op].within);
+    verdict = "refuse";
+    what = `redundant against the reader — the ground's own reseeding reproduces the movement (${decisive.join(", ")})`;
+  } else if (MEASURED.some((op) => operators[op].observed > 0)) {
+    decisive = MEASURED.filter((op) => operators[op].observed > 0);
+    verdict = "censored";
+    what = `magnitude reportable, place not — the ground gave no support to place it against (${decisive.join(", ")})`;
   } else {
     verdict = "refuse";
     what = "nothing moved — the candidate restated what the reader already holds";
+    decisive = [];
   }
 
   return Object.freeze({
     verdict,
     what,
+    decisive: Object.freeze(decisive),
     ground: Object.freeze({
       empty: groundEmpty,
       nodes: graph.nodes.size,
@@ -251,6 +336,17 @@ export const judge = (graph, candidate, { reseeds, seed, alpha = 1 } = {}) => {
       rotation_capable: graph.edges.size > 0,
     }),
     candidate: Object.freeze({ triples: candidate.length, distinct: arrival.size }),
+    // Raw INS magnitude (`counts.INS`) is unchanged and still fully honest —
+    // this is a NEW channel alongside it, not a replacement: how much of the
+    // new-node magnitude is corroborated (recurs within the candidate, or
+    // touches a node the reader already held) versus a one-off the ground has
+    // no way to place. See the anchoring computation above.
+    anchoring: Object.freeze({
+      newNodes,
+      anchored: newAnchored,
+      unanchored: newNodes - newAnchored,
+      groundEmpty,
+    }),
     counts,
     operator_changes: observed,
     operators,
