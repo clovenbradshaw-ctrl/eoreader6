@@ -91,6 +91,38 @@ test("a genuinely singular regime still fires", () => {
   assert.ok(!isGap(c) && c.constrains, "a 9-sigma burst regime must register as constraining");
 });
 
+test("existence-dependency + possibility-constraint stay calibrated at the shortest regime length holonGatedRegimeMean's gate ever sees", () => {
+  // packages/engine/prediction/candidates.js's holonGatedRegimeMean skips
+  // this gate below `window + 2`, TRUSTING the proposed reset outright
+  // rather than refusing it — the opposite action from atmosphere.js's
+  // MIN_GROUND floor, which refuses to build a ground at all below its own
+  // minimum. That comment used to claim the two floors matched; they don't,
+  // and this pins the actual claim that matters: gating is never worse than
+  // the unconditional-accept the bypass produces, because the combined
+  // above-rate stays far under nominal even at window+2 itself. If a future
+  // change to either test inflates the false-positive rate at short regime
+  // lengths, this is where it would show up.
+  let fired = 0;
+  let placed = 0;
+  const trials = 60;
+  const window = 6;
+  for (let t = 0; t < trials; t++) {
+    const series = iidSeries(9000 + t, 300);
+    const at = 60 + (t * 7) % 160;
+    const regime = { start: at, end: at + window + 2 }; // candidates.js's exact floor
+    const e = existenceDependencyTest(series, regime, { draws: 96, window, reseeds: 16 });
+    const c = possibilityConstraintTest(series, regime, { reseeds: 16 });
+    if (isGap(e) || isGap(c)) continue;
+    placed++;
+    if (e.exists && c.constrains) fired++;
+  }
+  assert.ok(placed >= trials * 0.8, `too few trials placed: ${placed}/${trials}`);
+  assert.ok(
+    fired / placed <= 0.15,
+    `the combined gate fired on ${fired}/${placed} structureless window+2 regimes — raising candidates.js's floor would not be fixing a false-alarm defect, because there isn't one`,
+  );
+});
+
 test("a regime leaving no room for a non-overlapping placement is a typed gap, not a zero-width null", () => {
   const series = iidSeries(777, 60);
   const regime = { start: 2, end: 58 }; // flanks too short for a 56-wide window

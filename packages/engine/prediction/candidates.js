@@ -206,9 +206,40 @@ export const holonGatedRegimeMean = ({ window, draws, tolerance, reseeds, seed =
   const evaluateProposedReset = () => {
     const regime = { start: trustedStart, end: tracker.regimeStart };
     if (regime.end - regime.start < window + 2) {
-      // Too little material in the closed regime to gate at all — atmosphere
-      // itself would refuse a ground this short (groundFrom's own floor), so
-      // there is nothing here for the level test to weigh in on either way.
+      // NOT a stand-in for atmosphere's own floor — that claim was checked
+      // and was wrong twice over. atmosphere.js's MIN_GROUND has since moved
+      // window+2 -> 3*window -> 10*window (see its header comment), so
+      // "matches groundFrom's floor" stopped being true regardless of which
+      // value it named. More basically, the two floors are not the same KIND
+      // of guard: groundFrom's floor refuses to even BUILD a ground, because
+      // burstiness is a max-over-sub-windows statistic whose bootstrap null
+      // collapses to near-zero-width when too few sub-window positions exist
+      // — a content-independent false-REC clock. existenceDependencyTest and
+      // possibilityConstraintTest below don't share that mechanism: neither
+      // builds a ground FROM this short regime alone (existence-dependency
+      // grounds the FULL and DEGRADED series, both document-scale; the
+      // constraint test is a plain inside/outside mean, not a max-of-windows
+      // statistic), so there is no analogous collapsing-null artifact here to
+      // guard against.
+      //
+      // What this branch actually does on a short regime is TRUST the
+      // proposed reset outright — the same action a genuine "above" verdict
+      // produces — not refuse it. So raising this floor doesn't add a safety
+      // margin; it only widens the range of short regimes that skip the gate
+      // and auto-accept instead of being tested.
+      //
+      // MEASURED, 2026-08-05 (iid noise, 60 trials/length, reseeds=16, both
+      // window=5/draws=48 and window=6/draws=96): existence-dependency and
+      // possibility-constraint each hold their ~15% nominal false-positive
+      // rate (conformance/calibration.test.js's own bound) at every regime
+      // length tried, window+2 included — no inflation at the floor the way
+      // groundFrom had. The COMBINED above-rate (both true, what actually
+      // triggers accept) stayed at 0-1.7% throughout, far under the 100%
+      // accept rate this bypass produces. Gating is therefore strictly more
+      // conservative than bypassing at every length tested, so raising
+      // window+2 to 3*window (or 10*window) would not fix a false-alarm
+      // defect — there isn't one — it would just gate fewer short regimes.
+      // See conformance/calibration.test.js's short-regime test for the pin.
       trustedStart = tracker.regimeStart;
       return;
     }
