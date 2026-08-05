@@ -462,7 +462,35 @@ test("REC·Pattern: a re-zero that concedes nothing is refused", () => {
 });
 
 test("REC·Pattern: declared numbers are declared, never defaulted", () => {
-  assert.throws(() => rezeroParadigm(MUSIC_POPULATION, { minPrevalence: 0.25 }, { prior: { gap: "paradigm_unraveled", paradigm: ["x"] } }), /population/);
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const unravel = refuseParadigm(kinds, MUSIC_POPULATION, PARADIGM_OPTS);
+  assert.equal(unravel.gap, "paradigm_unraveled");
+  assert.throws(() => rezeroParadigm(MUSIC_POPULATION, { minPrevalence: 0.25 }, { prior: unravel }), /population/);
+});
+
+test("REC·Pattern: refuseParadigm's own non-unraveled result is not a trigger, even though it carries a `paradigm` array", () => {
+  // The adversarial case: refuseParadigm's routine "not refused" return
+  // ({ refused: false, paradigm: [...], ... }) has the same `paradigm` array
+  // shape as the unravel gap, but is a plain object, never built by `gap()` —
+  // `isGap` on it is false. A prior admission check that accepted any object
+  // with a `paradigm` array would let this masquerade as a measured unravel.
+  const kinds = induceKinds(FAMILY_POPULATION, PARADIGM_OPTS);
+  const moreFamily = [
+    { id: "cousin", attributes: [ATTR("anchor_shared")] },
+    { id: "aunt", attributes: [ATTR("anchor_shared")] },
+    { id: "uncle", attributes: [ATTR("anchor_shared")] },
+    { id: "nephew", attributes: [ATTR("anchor_shared")] },
+    { id: "stepmother", attributes: [ATTR("anchor_shared"), ATTR("stem_shared")] },
+    { id: "fiance", attributes: [ATTR("subject_shared")] },
+    { id: "lover", attributes: [ATTR("subject_shared")] },
+    { id: "crush", attributes: [ATTR("subject_shared")] },
+  ];
+  const notUnraveled = refuseParadigm(kinds, moreFamily, PARADIGM_OPTS);
+  assert.equal(notUnraveled.refused, false, "same-frame material is placed, not unravelled");
+  assert.ok(Array.isArray(notUnraveled.paradigm), "carries a paradigm array, same shape as the unravel gap");
+
+  const result = rezeroParadigm(moreFamily, PARADIGM_OPTS, { prior: notUnraveled });
+  assert.equal(result.gap, "no_rezero_trigger", "a non-gap prior must never trigger a re-zero, regardless of its shape");
 });
 
 // ── SYN·Ground: the arena as one extent ─────────────────────────────────────

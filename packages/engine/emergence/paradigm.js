@@ -134,10 +134,11 @@ export const refuseParadigm = (kinds, records, opts = {}) => {
  * Compose the next paradigm over the accumulated material — the reset at the
  * Pattern grain.
  *
- * The trigger is the DEF·Pattern unravel: `prior` is the `paradigm_unraveled`
- * gap (or an object carrying the unraveled paradigm's labels). REC is never a
- * default — without a measured unravel there is nothing to concede and no new
- * ambient ground begins.
+ * The trigger is the DEF·Pattern unravel: `prior` must be the typed gap
+ * `paradigm_unraveled` itself, exactly as `refuseParadigm` returns it — never
+ * an object that merely resembles one (e.g. carries a `paradigm` array of its
+ * own). REC is never a default — without a measured unravel there is nothing
+ * to concede and no new ambient ground begins.
  *
  * The new paradigm is measured twice, never assumed:
  *
@@ -151,11 +152,9 @@ export const refuseParadigm = (kinds, records, opts = {}) => {
 export const rezeroParadigm = (records, opts = {}, { prior } = {}) => {
   if (prior === undefined || prior === null)
     return gap("no_rezero_trigger", { reason: "REC is never a default — the DEF·Pattern unravel must be measured first" });
-  const unraveled = isGap(prior) ? prior : prior.unraveled ?? null;
-  const priorLabels = Array.isArray(prior?.paradigm) ? prior.paradigm : Array.isArray(unraveled?.paradigm) ? unraveled.paradigm : null;
-  const oldCores = new Set(Array.isArray(unraveled?.cores) ? unraveled.cores : []);
-  if (unraveled?.gap !== "paradigm_unraveled" && !priorLabels)
+  if (!isGap(prior) || prior.gap !== "paradigm_unraveled")
     return gap("no_rezero_trigger", { reason: "a re-zero needs a measured unravel, not a guess (got a prior that did not unravel)" });
+  const oldCores = new Set(Array.isArray(prior.cores) ? prior.cores : []);
 
   const { population, minPrevalence, minKindSize, permutations, quantile, seed } = opts;
   for (const [name, v] of [["population", population], ["minPrevalence", minPrevalence], ["minKindSize", minKindSize], ["permutations", permutations], ["quantile", quantile], ["seed", seed]]) {
@@ -188,7 +187,7 @@ export const rezeroParadigm = (records, opts = {}, { prior } = {}) => {
     paradigm: above.map((k) => k.label),
     cores: [...newCores],
     held_records: records.length - stillUnheld.length,
-    trigger: isGap(prior) ? prior.gap : "paradigm_unraveled",
+    trigger: prior.gap,
     reason: "a new ambient ground begins",
   });
 };
