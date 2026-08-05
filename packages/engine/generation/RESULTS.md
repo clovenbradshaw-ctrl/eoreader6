@@ -609,3 +609,215 @@ number, and the third was found only because the second control still failed.
 The conformance fixture never exposed defect 3 because its small vocabulary
 had no unmet forms. **A fixture with no unmet form cannot test the reserve**,
 which is exactly the sort of hole the repo's own history keeps recording.
+
+## A third spending mechanism refuted, and a different question that isn't
+
+Two prior sections above establish: an abstraction added as a backoff level
+loses, whether the inventory is received (lemma) or derived-and-witnessed
+(slots), and a *better* grouping does *more* damage — the debt is in the
+spending, not the inventory. `slotExpectation` was named as the organ built to
+spend it differently, constraining rather than competing for mass, and left
+unwired. `node scripts/predictor-scientist.mjs` and
+`node scripts/predictor-atmosphere.mjs` wire it, test it, and ask a further
+question the first two sections never reached: is "which predictor is right"
+itself a fixed constant, or does it vary — and if it varies, does it vary
+*emergently*, by object, or does it converge to one global answer like
+everything else tried so far?
+
+Reproduce with `node scripts/predictor-scientist.mjs [text]` (defaults to both
+`scripts/corpus/pg84.txt` and `scripts/corpus/pg20781.txt`) and
+`node scripts/predictor-atmosphere.mjs`. Corpus fetched, not vendored, per the
+header above.
+
+### Experiment 1 — which null design actually separates order from noise
+
+A candidate predictor competing over one span needs a null built from that
+span's own reseeding variation, not a global benchmark — but "reseed the
+span" has two readings: shuffle the span in isolation, or resample from the
+wider material at the same size. `predictor-scientist.mjs` built both, on four
+spans of each book, and ranked each span's real loss and its shuffled twin's
+loss against both.
+
+**Neither ad hoc design is the answer this codebase already has.** `pattern()`
+(`nul/index.js:849`) and its `continueBy` helper (`nul/index.js:790`) settled
+this exact question once already, for content: the null must be a
+**growth-matched conditional null** — continue `before`'s material by drawing
+from itself out to the target extent, then reseed — never a flat shuffle of
+what was actually observed and never material sampled from a different
+extent. `nul/index.js`'s own history names the cost of getting this wrong:
+wired as a flat comparison, `moved` fired on homogeneous noise at almost
+exactly even spacing (a clock, not a perception) and recovered 23/24
+Frankenstein chapter boundaries **while also recovering 21–23/24 of them from
+the same series shuffled** — a coin landing true about `1/(reseeds+1)` of the
+time regardless of the material. `pattern()` now refuses the wrong call
+outright (`incommensurate_extent`) rather than answering it.
+
+So Experiment 1's own two designs are superseded, not adopted — reported
+below for the record, then set aside in favour of the established mechanism,
+which Experiment 4 uses directly.
+
+| span (Frankenstein) | real loss | twin loss | span-local: real / twin %ile | global-resample: real / twin %ile |
+|---|---|---|---|---|
+| 0 | 7.987 | 10.116 | 100% / 0% | 100% / 0% |
+| 1000 | 8.217 | 9.916 | 100% / 84% | 100% / 34% |
+| 2500 | 7.745 | 9.890 | 100% / 19% | 100% / 50% |
+| 4000 | 7.659 | 9.977 | 100% / 16% | 100% / 16% |
+
+Real is a clean outlier under both designs (100th percentile every time — the
+predictor genuinely tracks order). The twin's percentile is where the designs
+should agree and don't: span-local means 30% (Frankenstein) / 53% (Heidi),
+global-resample means 25% / 69% — inconsistent across books, because a random
+resample from the wider "before" material conflates "does this span have
+order" with "does this span's local vocabulary happen to match the
+surrounding pool's," which is a confound the growth-matched design doesn't
+have.
+
+### Experiment 2 — nominate cheap, witness expensive
+
+19 candidates (orders 2/4/6 × alphas 0.3/0.7/1.5 × raw-frequency-or-
+continuation-count at the floor, plus the slot-gated candidate below), ranked
+by a 200-form unnulled proxy against the full 6,000-form held-out score.
+Spearman rank correlation **0.995 (Frankenstein), 1.000 (Heidi)**; the
+cheap proxy's top 3 and the expensive top 3 were identical on both books. A
+nominate-cheap/witness-expensive split — the same two-stage shape `slots.js`
+already uses for class nomination — is validated for this candidate family:
+null-per-candidate is the expensive step, and a cheap proxy ranks it well
+enough to prefilter.
+
+### Experiment 3 — does the winning n-gram shape change, chunk to chunk
+
+Held-out material split into six 1,000-form chunks per book. Every chunk:
+nominate the top 3 candidates by the cheap proxy, witness them properly, keep
+the winner.
+
+**One configuration won every chunk of both books: `order=2 alpha=1.5`,
+counting the order-0 floor by continuation (distinct preceding contexts) 
+rather than raw frequency.** Zero emergence on this axis — short order, heavy
+smoothing, and continuation counting (the same statistic Kneser-Ney's lower
+order uses, and the same shape as `recalled`, the strongest channel in
+`scripts/RESULTS.md`'s activation-clearings table) dominates uniformly,
+consistent with Brown-clustering-era literature: a stronger local model
+narrows the room for anything coarser to help, and continuation-count is
+simply a better statistic than frequency at the floor, everywhere tested.
+
+| | Frankenstein | Heidi |
+|---|---|---|
+| best fixed (order=2 alpha=1.5 cont) | 7.235 | 6.107 |
+| worst fixed (order=6 alpha=0.3) | 8.708 | 7.637 |
+| random switcher | 8.668 | 7.593 |
+| nominate+witness switcher | 7.235 | 6.107 |
+
+The switcher converges exactly to the single global champion — real evidence
+against "different chunks want different n-gram hyperparameters," not an
+artefact of the search. **This also means the search was pointed at the wrong
+altitude for finding emergence**: order/alpha/counting-rule are all still
+flavours of local frequency. The genuinely different question — does a
+terrain-derived predictor ever win — needed a terrain-derived candidate.
+
+### Experiment 3, extended — the constraint-gated slot spending, tested directly
+
+One candidate was added to the same competition: `order=4 slot-gated`, the
+`slotExpectation` reading finally wired to an emitter. For a base surface
+distribution and the induced slot classes (same declared numbers as the slot
+section above — classes=48, features=400, minCount=4, iterations=12), the
+gate computes `β = (h_form − h_class) / h_form` per position and reweights
+every candidate form by `P_class(class(form))^β`, renormalised — a product,
+not a summand, self-silencing wherever the class distribution has nothing to
+say, exactly the shape the earlier sections named as owed.
+
+It never won a single chunk, on either book, and it made its own ungated base
+worse, not better, at **every** chunk of both books:
+
+| chunk | Frankenstein: order=4/0.7 ungated | slot-gated | Heidi: order=4/0.7 ungated | slot-gated |
+|---|---|---|---|---|
+| 0 | 8.153 | 8.683 | 6.612 | 7.019 |
+| 1 | 8.203 | 8.792 | 6.512 | 7.049 |
+| 2 | 7.802 | 8.326 | 7.155 | 7.568 |
+| 3 | 7.839 | 8.397 | 7.135 | 7.565 |
+| 4 | 7.909 | 8.379 | 7.055 | 7.470 |
+| 5 | 7.876 | 8.474 | 6.900 | 7.311 |
+
+**A third distinct spending mechanism, refuted as cleanly as the first two.**
+Interleaved backoff, ranked-last backoff, and now a constraint-gated product
+of experts have all been tried against the same class of induced abstraction,
+and all three make held-out next-form loss worse. This closes the reading
+Amendment IV consequence 5 was hoping to open: constraining which form is
+chosen, instead of competing for mass, was the mechanism named as owed — and
+it is now measured, not merely unwired, and it does not help next-form
+prediction either.
+
+**What this does and does not settle.** It refutes rescaling the *word
+distribution* by a class signal for the purpose of guessing the next word. It
+says nothing about rescaling the *control parameters* — which received gifts
+are live, where λ sits, how heavily α smooths — which is a different node in
+the same architecture and was not tested here. The two existing defects on
+record in this codebase are the same category error at that other node: a
+lone received gift takes its whole share unconditionally (`shares()` returning
+`[1]`, "no decay, no floor, no measured standing" — belief.js), and an
+abstract backoff level's share is set by its own coarseness-inflated evidence
+count, drowning out levels that knew more. Both times a higher-order signal
+was given a *likelihood* role — a vote sized by its own local evidence — where
+`slotExpectation`'s β is the one place in the repo that already gives a
+higher-order signal a *prior* role instead: it reshapes what the existing
+terms mean without itself appearing as a term. The slot-gated candidate above
+is exactly that shape, applied to a word distribution, and it still lost —
+which narrows, rather than closes, the question: does the prior role work
+when applied one node higher, to the parameters instead of the distribution?
+
+### Experiment 4 — a predictor's own competency stream, read by the same organ that reads content
+
+Before any such mechanism is worth building, one thing has to be checked
+first: does a predictor's per-form loss series, run through the *exact*
+`ground`/`pattern` machinery `loops/turn.js` already uses on content —
+unmodified, pointed at a different series — produce a real, correctly-timed
+correction signal, or does it rediscover the `1/(reseeds+1)` coin-flip bug
+`pattern()`'s own history already paid to fix?
+
+`node scripts/predictor-atmosphere.mjs`. A reader trained on Frankenstein's
+prose only (`order=4 alpha=0.7`, 30,000 forms) reads three held-out streams —
+its own per-form `-log(mass or reserve)` at each position is the material,
+never the text:
+
+- **control** — 8,000 forms of held-out prose. Not guaranteed stationary:
+  Frankenstein is a frame narrative and changes first-person voice more than
+  once.
+- **shuffled** — the same control span, order destroyed, same vocabulary. No
+  regime change is possible here by construction.
+- **splice** — 4,000 forms of held-out prose, then the closing Project
+  Gutenberg license (chrome), concatenated — a genuine regime change, and the
+  same chrome-vs-prose pairing already on record elsewhere in this repo as a
+  register a prose-trained predictor is worse on than a naive one.
+
+Walked in 150-observation steps, `before`/`after` grounds built with
+`window=40 draws=32`, `pattern({..., reseeds: 16})` exactly as `turn.js` calls
+it, no local reimplementation:
+
+| stream | moved events | where |
+|---|---|---|
+| shuffled (no regime possible) | 1 / ~53 checks | 1130 |
+| control (real prose) | 3 / ~53 checks | 980, 3530, 4280 |
+| splice (prose → chrome at 4000) | 7 / ~53 checks | 980, 3530, **4130**, 4280, 6380, 6980, 7130 |
+
+The shuffled control's rate (≈2%) sits below the ≈6% nominal tolerance
+`reseeds=16` implies, and does not manufacture a clock — no evenly-spaced
+false alarms, unlike the uncorrected `moved`'s history. The real-prose
+control's three events are shared exactly with the splice stream up to the
+splice point (identical material, identical signal — a reproducibility check,
+not three separate false alarms), and are plausibly genuine content-level
+shifts in a frame narrative rather than detector noise. The splice stream's
+**first new event past the shared prefix lands at 4130 — 130 observations
+after the true boundary at 4000, the earliest a 150-step walk can register
+it** — followed by further events deeper into the chrome region, itself
+plausible given the license text's own internal section breaks.
+
+**This is a positive result, and it stands apart from Experiment 3's
+refutation rather than being undercut by it.** It says nothing about which
+word comes next; it says a predictor's own competency, read as a plain time
+series through the organ this codebase already trusts for content, produces a
+correctly-timed, appropriately-calibrated correction signal at a genuine
+regime change while staying quiet on one that is order-destroyed. That is the
+prerequisite for treating predictor competency as a terrain object with its
+own Atmosphere — not the mechanism itself, which remains unbuilt: nothing here
+adjusts λ, α, or which gifts are live in response to a `moved` event. It only
+establishes that the signal such a mechanism would react to is real and not
+an artefact.
