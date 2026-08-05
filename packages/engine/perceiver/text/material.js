@@ -110,13 +110,73 @@ export const reduce = (words, { fraction = 1, chunkSize = 40 } = {}) => {
 // mechanism, not an assertion: "how much new information would this add,
 // given what's already been read" is a different, causally honest question
 // from "how rare are these words across the whole book."
-export const causalSurprisalSeries = (chunks) => {
+//
+// `gamma` (default 1, undecayed — identical to this function before
+// 2026-08-05) is belief.js's own forgetting rate, ported here for the same
+// reason belief.js has one: "relevance is local and revisable, so it must be
+// able to decay" (SEED.md Amendment IV.2). At gamma=1 an unseen word's cost,
+// log2(table.total+1), is mathematically guaranteed to rise for as long as
+// the document runs, REGARDLESS OF CONTENT — table.total only ever grows.
+// That is a residual of the fix just above (the 0.297 measurement is real
+// and stands, unchanged, as gamma=1's own number) and is large enough to
+// make a healthy, non-degenerate atmosphere ground on a single coherent
+// 250-chunk passage read as "surfeit" purely from position, confirmed
+// directly: scripts/adversarial/challenge-7-rec-re-zero-atmosphere-boundary-
+// correctn.mjs's cookery-alone negative control cleared its own ground at
+// chunk ~199 with the series having drifted from ~5.4M to ~9M microbits,
+// zero topic shift behind it.
+//
+// gamma<1 bounds table.total (and every word's own count) to a decaying
+// window of recent reading — belief.js's lazy schedule, cell.v *
+// gamma^(t−cell.t), applied per word and to the running total alike, so an
+// unseen-in-a-while word costs what it would cost against a reader's
+// EFFECTIVE recent memory, not against everything since page one. MEASURED,
+// 2026-08-05 (scripts/causal-surprisal-gamma-calibration.mjs): at gamma=0.999
+// (chunkSize=50 — half-life ≈ 14 chunks, ≈700 words) r(position, causal
+// surprisal) on Frankenstein (pg84) falls from 0.443 (gamma=1) to -0.27, and
+// the series stops climbing (chunk 30/400/800/last ≈ 7.0M/7.2M/6.9M/7.7M
+// microbits, vs. gamma=1's 7.6M/9.3M/9.2M/10.7M). Ground-size alone cannot
+// buy this back at gamma=1 — the same script confirms drift still clears a
+// healthy ground at minimums up to 20*window — so this is not a
+// ground-size substitute; both matter, see atmosphere.js's MIN_GROUND.
+export const causalSurprisalSeries = (chunks, { gamma = 1 } = {}) => {
+  if (!(gamma > 0) || gamma > 1)
+    throw new TypeError("material: gamma is the reader's fading (belief.js's own gamma) and must lie in (0,1]");
   const table = { freq: new Map(), total: 0 };
   const series = [];
+  let t = 0;
   for (const chunk of chunks) {
-    series.push(table.total === 0 ? selfEntropyMicrobits(chunk) : surprisalMicrobits(chunk, table));
-    for (const w of chunk) table.freq.set(w, (table.freq.get(w) || 0) + 1);
-    table.total += chunk.length;
+    if (table.total === 0) {
+      series.push(selfEntropyMicrobits(chunk));
+    } else {
+      // Only words actually IN this chunk are ever looked up, so the decayed
+      // snapshot handed to surprisalMicrobits needs entries for exactly
+      // those — never the whole vocabulary — and the unchanged, already-
+      // tested formula does the rest. At gamma=1 this snapshot is bit-for-
+      // bit `table` restricted to the chunk's own words, which is why gamma=1
+      // reproduces this function's pre-2026-08-05 output exactly.
+      const snapshot = { freq: new Map(), total: table.total };
+      for (const w of new Set(chunk)) {
+        const cell = table.freq.get(w);
+        if (cell) snapshot.freq.set(w, cell.v * gamma ** (t - cell.t));
+      }
+      series.push(surprisalMicrobits(chunk, snapshot));
+    }
+    // Decay is applied ONCE per chunk, not per word within it: every
+    // occurrence in this chunk is folded in at the same instant, t + this
+    // chunk's own length, so repeats within one chunk neither decay against
+    // nor inflate the cost of one another — same causal boundary the
+    // undecayed version already held (scoring happens before any of this
+    // chunk's own words are folded in).
+    const counts = new Map();
+    for (const w of chunk) counts.set(w, (counts.get(w) || 0) + 1);
+    for (const [w, n] of counts) {
+      const cell = table.freq.get(w);
+      const decayed = cell ? cell.v * gamma ** (t - cell.t) : 0;
+      table.freq.set(w, { v: decayed + n, t: t + chunk.length });
+    }
+    table.total = table.total * gamma ** chunk.length + chunk.length;
+    t += chunk.length;
   }
   return series;
 };

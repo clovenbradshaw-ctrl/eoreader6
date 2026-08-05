@@ -111,8 +111,52 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   let tended = 0;
   let apertureAtOpen = null; // equanimity toward what arises and passes (SEED.md §5): a closed region is reported with the same prominence as an open one
 
+  // MINIMUM VIABLE GROUND, measured rather than assumed — the same
+  // discipline `slackRunNull`'s header documents for the other channel. At
+  // `window + 2` elements (the smallest span `burstiness` can be computed
+  // over at all) a max-over-`window`-sub-windows statistic has exactly 3
+  // candidate positions to draw from regardless of `window`, so shuffling
+  // barely moves the sample and the bootstrap null comes back near
+  // zero-width — not the exact-zero `ground()` already refuses as
+  // `degenerate_ground`, but narrow enough that an ordinary next window
+  // clears it almost by construction. That is a false REC, not a found one,
+  // and because a fresh ground is rebuilt from this same minimum immediately
+  // after every re-zero (not only at the start of a material), a too-small
+  // minimum manufactures re-zeros on a content-independent clock. MEASURED,
+  // 2026-08-05 (scripts/adversarial/challenge-7-rec-re-zero-atmosphere-boundary-correctn.mjs
+  // and its calibration sweep): on iid noise, causal re-zero fires spuriously
+  // at `window + 2` on 12.5-27.5% of trials across two independently-used
+  // parameter sets (window=5/draws=256/tolerance=3 and window=6/draws=96/
+  // tolerance=2); at `3 * window` it falls to 0-10%.
+  //
+  // `3 * window` turned out to be necessary but not sufficient. It fixed the
+  // content-independent clock above and left a second, content-DEPENDENT
+  // artifact standing: a real, single-topic passage (Homer's Odyssey, Book
+  // IX alone — no seam, no shift) still re-zeroed at the very first chunk a
+  // ground became legally buildable, on every one of 20 seeds tried, at
+  // `3 * window` AND at every multiple up to `8 * window` — a minimal-width
+  // ground is still fragile against ordinary local variance in real prose
+  // even once the iid-noise clock is gone. RAISED TO `10 * window`.
+  // MEASURED, 2026-08-05 (scripts/causal-surprisal-gamma-calibration.mjs,
+  // section 2): at `10 * window` (paired with causalSurprisalSeries's own
+  // `gamma` fix, perceiver/text/material.js — ground size alone does not
+  // buy this back; the same script's section 1 shows drift still clears a
+  // healthy ground at minimums up to `20 * window` when the series itself is
+  // undecayed) the false-alarm rate on BOTH of challenge-7's real-text
+  // negative controls (Book IX alone, cookery alone) falls to 0/20 seeds,
+  // the real seam between them is still found on 20/20, and the region is a
+  // plateau from `9 * window` to at least `16 * window` — not a single
+  // lucky cell. Section 3 of the same script confirms the raise costs
+  // nothing on iid noise: 0-1/40 fired at `3 * window`, 0/40 at `10 * window`
+  // and `12 * window`, on both parameter sets above. Still no default: it is
+  // `window` itself, declared, not a derived multiple of the material's
+  // length — and still a real cost worth naming, not hidden: a caller now
+  // waits `10 * window` arrivals (60, at speak-from-here.mjs's window=6)
+  // before atmosphere can report anything at all.
+  const MIN_GROUND = (window) => 10 * window;
+
   const groundFrom = (start, end) => {
-    if (end - start < window + 2) return null;
+    if (end - start < MIN_GROUND(window)) return null;
     const built = ground({ material: material.slice(start, end), draws, window, statistic, seed: seed + start });
     return isGap(built) ? null : built;
   };
@@ -272,8 +316,13 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
   const belowFlags = [];
   let sinceSlackSample = 0;
 
+  // Same measured minimum as readAtmosphere's `groundFrom` — see its header
+  // comment for the calibration. Duplicated here rather than shared because
+  // the two closures already are (material.slice vs seen.slice); this keeps
+  // that existing duplication rather than adding a new cross-closure import
+  // for one constant.
   const groundFrom = (start, end) => {
-    if (end - start < window + 2) return null;
+    if (end - start < 10 * window) return null;
     const built = ground({ material: seen.slice(start, end), draws, window, statistic, seed: seed + start });
     return isGap(built) ? null : built;
   };
