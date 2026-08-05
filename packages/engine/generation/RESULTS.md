@@ -878,3 +878,29 @@ manufacture a conditional distribution the reigning predictor never counted.
 it is not a substitute for acquiring evidence the low tier never had.** That
 is a real, useful boundary on the whole architecture this and the prior
 section were built to test, not a defect in the run.
+
+### Does any of it beat doing nothing clever at all
+
+Every comparison above is against arms this apparatus was explicitly built to
+improve on — a badly-set fixed alpha, and an oracle-ish retrain. Neither is
+the bar that actually matters: does the machinery beat the *already-known
+best static configuration*, Experiment 3's `order=2 alpha=1.5 continuation`,
+fixed, with no DEF/EVA/REC apparatus at all? A DEF/EVA/REC loop that only ever
+beats a strawman hasn't earned its complexity.
+
+| | prose region | chrome region | overall |
+|---|---|---|---|
+| champion (order=2 alpha=1.5 cont, fixed) | 7.276 | 8.839 | 7.996 |
+| witnessed alpha reshaping (order=4) | 7.238 | 7.993 | **7.586** |
+
+**It clears the bar, in both regions, despite everything named above as
+unresolved.** The reshaping run never explored order or continuation-counting
+— it only ever revised alpha within a fixed order=4 table, and its one
+witnessed correction was confounded with fixing a bad starting point rather
+than cleanly adapting to the regime change. A partial, confounded
+implementation of "the high sets the probability of the low" still beats the
+best fixed configuration found across every experiment in this file. That is
+the first result in this whole line of work where added machinery earned its
+cost rather than losing to a simpler alternative — worth weighing against how
+much of the win an unconfounded version, or one that could also revise order
+and the counting rule, might still be leaving on the table.

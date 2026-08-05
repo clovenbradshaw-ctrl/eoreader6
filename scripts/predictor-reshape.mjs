@@ -67,9 +67,16 @@ const chrome = chromeRaw.toLowerCase().match(WORD) ?? [];
 
 const CTX_SEP = "";
 class Candidate {
-  constructor({ order }) { this.order = order; this.alpha = FIXED_ALPHA; this.tables = Array.from({ length: order + 1 }, () => new Map()); }
+  constructor({ order, continuation = false }) {
+    this.order = order;
+    this.alpha = FIXED_ALPHA;
+    this.continuation = continuation;
+    this.tables = Array.from({ length: order + 1 }, () => new Map());
+    this.continuationOf = new Map();
+    this.continuationTotal = 0;
+  }
   train(tokens) {
-    for (let i = 0; i < tokens.length; i++)
+    for (let i = 0; i < tokens.length; i++) {
       for (let j = 0; j <= this.order; j++) {
         if (i - j < 0) break;
         const key = j === 0 ? "" : tokens.slice(i - j, i).join(CTX_SEP);
@@ -78,6 +85,13 @@ class Candidate {
         entry.succ.set(tokens[i], (entry.succ.get(tokens[i]) ?? 0) + 1);
         entry.total++;
       }
+      if (this.continuation) {
+        const prev = i >= 1 ? tokens[i - 1] : " START";
+        let set = this.continuationOf.get(tokens[i]);
+        if (!set) { set = new Set(); this.continuationOf.set(tokens[i], set); }
+        if (!set.has(prev)) { set.add(prev); this.continuationTotal++; }
+      }
+    }
     return this;
   }
   massOf(ctx, form, alphaOverride) {
@@ -97,8 +111,14 @@ class Candidate {
     const entry0 = this.tables[0].get("");
     if (entry0 && entry0.total > 0) {
       const share = remaining * (entry0.total / (entry0.total + alpha));
-      const c = entry0.succ.get(form);
-      if (c) mass += (share * c) / entry0.total;
+      let p0 = 0;
+      if (this.continuation && this.continuationTotal > 0) {
+        p0 = (this.continuationOf.get(form)?.size ?? 0) / this.continuationTotal;
+      } else {
+        const c = entry0.succ.get(form);
+        p0 = c ? c / entry0.total : 0;
+      }
+      mass += share * p0;
       remaining -= share;
     }
     return { mass, reserve: Math.max(0, remaining) };
@@ -216,7 +236,28 @@ console.log(`\nARM B — hard swap to a chrome-trained model at ${swapPoint}:`);
 console.log(`  prose region:  mean ${meanOf(bLossPre).toFixed(3)} nats/form`);
 console.log(`  chrome region: mean ${meanOf(bLossPost).toFixed(3)} nats/form`);
 
+// ── ARM D: the null hypothesis this whole apparatus has to beat — does any of
+// it earn its complexity over simply using the ALREADY-ESTABLISHED champion
+// (predictor-scientist.mjs, Experiment 3: order=2 alpha=1.5 continuation-count),
+// fixed, no machinery, for the entire run? Trained fresh here since it needs a
+// different order and continuation counting the reigning model above was never
+// built with. ─────────────────────────────────────────────────────────────
+const champion = new Candidate({ order: 2, continuation: true }).train(prose.slice(0, TRAIN_SIZE));
+const championLoss = new Array(spliceSpan.length);
+for (let i = 0; i < spliceSpan.length; i++) {
+  const history = i === 0 ? before0 : [...before0.slice(Math.max(0, before0.length - champion.order + i)), ...spliceSpan.slice(0, i)];
+  const ctx = history.slice(Math.max(0, history.length - champion.order));
+  const { mass, reserve } = champion.massOf(ctx, spliceSpan[i], 1.5);
+  const p = mass > 0 ? mass : reserve;
+  championLoss[i] = p > 0 ? -Math.log(p) : -Math.log(Number.MIN_VALUE);
+}
+console.log(`\nARM D — the null hypothesis: order=2 alpha=1.5 continuation-count, fixed, no machinery:`);
+console.log(`  prose region (0..${spliceBoundary}):   mean ${meanOf(championLoss.slice(0, spliceBoundary)).toFixed(3)} nats/form`);
+console.log(`  chrome region (${spliceBoundary}..end): mean ${meanOf(championLoss.slice(spliceBoundary)).toFixed(3)} nats/form`);
+
 console.log(`\n── overall mean nats/form, whole splice stream ──`);
-console.log(`  fixed alpha (no reshaping):     ${meanOf(fixedLoss).toFixed(3)}`);
-console.log(`  hard model swap:                ${meanOf([...bLossPre, ...bLossPost]).toFixed(3)}`);
-console.log(`  witnessed alpha reshaping:      ${meanOf(reshapedLoss).toFixed(3)}`);
+console.log(`  fixed alpha=0.7, order=4 (no machinery):        ${meanOf(fixedLoss).toFixed(3)}`);
+console.log(`  hard model swap:                                ${meanOf([...bLossPre, ...bLossPost]).toFixed(3)}`);
+console.log(`  witnessed alpha reshaping (order=4):            ${meanOf(reshapedLoss).toFixed(3)}`);
+console.log(`  order=2 alpha=1.5 cont, fixed (the champion):   ${meanOf(championLoss).toFixed(3)}`);
+console.log(`\nthe reshaping apparatus only earns its complexity if it beats the champion, not just the arm it was built to improve on.`);
