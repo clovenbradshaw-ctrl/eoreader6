@@ -27,12 +27,18 @@
 //     (earned) or both are independently corroborated, but not both at
 //     once. A real, standing structural resemblance that has not (yet)
 //     been earned AND checked against something outside itself together.
-//   metaphor — aligned, but neither "both earned" nor "both corroborated"
+//   nascent  — aligned, but neither "both earned" nor "both corroborated"
 //     holds — at least one side is only held (supported, not settled), and
 //     no independent check closes the gap. A correspondence still finding
-//     its footing, not a stable structure: the eoreader4.2 precedent's
-//     "analogy → REC → DEF is the life of a metaphor," a trajectory read
-//     off a log, not a claim asserted outright.
+//     its footing, not a stable structure — read off a trajectory, not
+//     asserted outright (the eoreader4.2 precedent this traces to called
+//     exactly this shape "the life of a metaphor," but that word names a
+//     RHETORICAL MOVE — figure substituted for ground, identity asserted
+//     not compared — on a completely different, orthogonal axis than the
+//     one this ladder measures, and on that other axis "metaphor" is a
+//     confident, settled claim, not a weak one. Naming this rung "metaphor"
+//     would collide the two axes with inverted meanings; see
+//     verdict/CROSSMODAL-NAMING.md).
 //   void     — not aligned, or a side has nothing earned or held to offer.
 //     Refuses to tag anything rather than guess.
 //
@@ -42,7 +48,7 @@
 
 import { gap, isGap } from "../nul/index.js";
 
-export const CROSSMODAL_TAGS = Object.freeze(["identity", "analogy", "metaphor", "void"]);
+export const CROSSMODAL_TAGS = Object.freeze(["identity", "analogy", "nascent", "void"]);
 
 const STRENGTHS = Object.freeze(["earned", "held", "weak"]);
 
@@ -101,5 +107,5 @@ export const crossModalTag = (a, b, { positionTolerance } = {}) => {
   if (bothEarned || bothCorroborated)
     return Object.freeze({ tag: "analogy", aligned: true, distance, strengthA: a.strength, strengthB: b.strength, corroborated: bothCorroborated });
 
-  return Object.freeze({ tag: "metaphor", aligned: true, distance, strengthA: a.strength, strengthB: b.strength, corroborated: false });
+  return Object.freeze({ tag: "nascent", aligned: true, distance, strengthA: a.strength, strengthB: b.strength, corroborated: false });
 };

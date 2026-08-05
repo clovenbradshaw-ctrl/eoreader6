@@ -34,14 +34,14 @@ test("analogy: aligned, both corroborated, but not both earned", () => {
   assert.equal(v.corroborated, true);
 });
 
-test("metaphor: aligned, held on both sides, corroborated on neither", () => {
+test("nascent: aligned, held on both sides, corroborated on neither", () => {
   const v = crossModalTag(held(0.5, false), held(0.49, false), { positionTolerance: 0.05 });
-  assert.equal(v.tag, "metaphor");
+  assert.equal(v.tag, "nascent");
 });
 
-test("metaphor: one earned-uncorroborated, one held-uncorroborated — neither escape hatch fires", () => {
+test("nascent: one earned-uncorroborated, one held-uncorroborated — neither escape hatch fires", () => {
   const v = crossModalTag(earned(0.5, false), held(0.49, false), { positionTolerance: 0.05 });
-  assert.equal(v.tag, "metaphor");
+  assert.equal(v.tag, "nascent");
 });
 
 test("void: positions do not align at the declared tolerance", () => {
@@ -85,5 +85,14 @@ test("invariant: tag is void if and only if the result is a gap", () => {
 });
 
 test("CROSSMODAL_TAGS names exactly the tags this module returns", () => {
-  assert.deepEqual(CROSSMODAL_TAGS, ["identity", "analogy", "metaphor", "void"]);
+  assert.deepEqual(CROSSMODAL_TAGS, ["identity", "analogy", "nascent", "void"]);
+});
+
+test("no tag collides with a named rhetorical-mechanism device (verdict/CROSSMODAL-NAMING.md)", () => {
+  // This is the one axis-collision check worth pinning: "metaphor" was
+  // renamed away from because it is inverted between axes (a confident,
+  // settled claim on the rhetorical-mechanism axis; the weakest evidential
+  // rung here). "identity" and "analogy" are kept — see the naming doc for
+  // why those two are not inverted the same way.
+  assert.ok(!CROSSMODAL_TAGS.includes("metaphor"));
 });
