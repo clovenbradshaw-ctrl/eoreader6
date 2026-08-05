@@ -39,12 +39,21 @@ const homogeneous = (seed, n = 360) => {
 // matters: the ground the reader has accumulated by then is already wide
 // enough to absorb a lot, which is exactly when a max-over-windows statistic
 // stops noticing.
+//
+// REGIME's length must clear buildAt's own floor, `10 * SPEC.window` (=120),
+// with real room to spare: after the first (level-shift) concession, a
+// SECOND ground has to accumulate another full `10 * window` elements of
+// elevated-only material before it exists at all, and that has to happen
+// AND still leave room to observe the turbulent regime nearby — 120 itself
+// (the pre-2026-08-05 regime length, sized for the retired `3 * window`
+// floor) no longer clears that with any margin. 500 (≈4x the floor) does.
+const REGIME = 500;
 const threeRegimes = (seed) => {
   const next = rng(seed);
   const out = [];
-  for (let i = 0; i < 120; i++) out.push(10 + gaussian(next) * 1); // calm
-  for (let i = 0; i < 120; i++) out.push(25 + gaussian(next) * 1); // elevated  — LEVEL shift at 120
-  for (let i = 0; i < 120; i++) out.push(25 + gaussian(next) * 6); // turbulent — SPREAD shift at 240
+  for (let i = 0; i < REGIME; i++) out.push(10 + gaussian(next) * 1); // calm
+  for (let i = 0; i < REGIME; i++) out.push(25 + gaussian(next) * 1); // elevated  — LEVEL shift at REGIME
+  for (let i = 0; i < REGIME; i++) out.push(25 + gaussian(next) * 6); // turbulent — SPREAD shift at 2*REGIME
   return out;
 };
 
@@ -139,10 +148,12 @@ test("CALIBRATION: on iid noise, buildAt's minimum ground no longer manufactures
   // Same two parameter sets atmosphere.js's own fix was calibrated against.
   // MEASURED, 2026-08-05: at the old `window + 2` floor this fired on 10%
   // (window=5/draws=256/tolerance=3) and 20% (window=6/draws=96/tolerance=2)
-  // of 40 iid-noise trials, hop=1; at `3 * window` (the fix) it fell to 0/40
-  // in both, and 0/40 at hop=4 too. Modelled on conformance/atmosphere.test.js's
-  // "CALIBRATION: on iid noise..." device: how often does a finding say yes
-  // on material with nothing there.
+  // of 40 iid-noise trials, hop=1; at `3 * window` it fell to 0/40 in both,
+  // and 0/40 at hop=4 too. `buildAt`'s floor was later raised again to
+  // `10 * window` (see its own header) for a DIFFERENT, content-dependent
+  // reason iid noise cannot exercise — the test below stays on iid noise
+  // (modelled on conformance/atmosphere.test.js's own "CALIBRATION" device)
+  // to confirm the wider floor costs nothing here either: still 0/40.
   const paramSets = [
     { window: 5, draws: 256, tolerance: 3 },
     { window: 6, draws: 96, tolerance: 2 },
@@ -177,7 +188,7 @@ test("the moved clearing finds a SPREAD shift that surfeit finds only sometimes"
   // `tolerance` failures have arrived, so the earliest honest detection sits
   // window + tolerance*hop after the change.
   const fwd = SPEC.window + SPEC.tolerance * SPEC.hop;
-  const near = (at) => at.some((f) => f - 240 >= -SPEC.window && f - 240 <= fwd);
+  const near = (at) => at.some((f) => f - 2 * REGIME >= -SPEC.window && f - 2 * REGIME <= fwd);
 
   let movedFound = 0;
   let surfeitFound = 0;
@@ -293,11 +304,19 @@ test("burstiness's chronic below-rate is not calibratable — measured, matching
   // Documented in nul's windowMean header: an ordinary real window sits BELOW
   // burstiness's support 79-87% of the time. A run counter over that chronic
   // background cannot discriminate real regularity from ordinary material.
+  //
+  // Series length raised 300 -> 1500, 2026-08-05: `buildAt`'s floor moved from
+  // `3 * window` to `10 * window` (the same content-dependent-drift fix, see
+  // its own header), which delays how much of a FIXED-length series is past
+  // warm-up and eligible to accumulate a slack run at all — the identical
+  // adjustment conformance/atmosphere.test.js's own regularity test needed for
+  // the same reason when atmosphere.js made this same move. The underlying
+  // claim is unchanged and still measured, not assumed.
   let fired = 0;
   const trials = 15;
   for (let t = 0; t < trials; t++) {
     const next = rng2(6000 + t);
-    const material = Array.from({ length: 300 }, () => next() * 2);
+    const material = Array.from({ length: 1500 }, () => next() * 2);
     const turn = runTurn({ material, ...SPEC, clearOn: ["surfeit", "regularity"] });
     if (!isGap(turn) && turn.findings.length > 0) fired++;
   }

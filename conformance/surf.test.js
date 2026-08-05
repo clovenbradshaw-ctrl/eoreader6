@@ -208,7 +208,10 @@ test("divide declares its extent and refuses an unknown mode", () => {
 
 test("a fold projects the whole universe from its standpoint, and drops nothing", () => {
   const r = ride(shaped);
-  const here = standpointsOf(divide(r, { mode: "surfeit" }))[0];
+  // The earliest surfeit standpoint clears `fold`'s own MINIMUM VIABLE GROUND
+  // floor (10 * W) — some of the earlier ones do not, by construction (the
+  // burst starts at 60, exactly the floor for W=6).
+  const here = standpointsOf(divide(r, { mode: "surfeit" })).find((h) => h >= 10 * W);
   const f = fold({ material: shaped, here, window: W, draws: DRAWS, seed: 11 });
   assert.equal(f.reach.total, f.projection.length);
   assert.equal(f.reach.placed + f.reach.beyond + f.reach.beneath, f.reach.total, "every position is placed or censored");
@@ -224,11 +227,11 @@ test("the ground is causal, the projection is total, and the two are labelled ap
   // actual world only, and the horizon is then placed in a ground that never
   // saw it. That is Merleau-Ponty's "thoughts I vaguely sense in advance", and
   // pooling the two labels would hide it.
-  const f = fold({ material: shaped, here: { start: 55, end: 65 }, window: W, draws: DRAWS, seed: 11 });
+  const f = fold({ material: shaped, here: { start: 60, end: 70 }, window: W, draws: DRAWS, seed: 11 });
   // The ground must be the one grown over the actual world and nothing else —
   // checked against a ground built independently over exactly that slice,
   // not against a restatement of what the fold already returned.
-  const actualWorld = ground({ material: shaped.slice(0, 55), draws: DRAWS, window: W, seed: 11 });
+  const actualWorld = ground({ material: shaped.slice(0, 60), draws: DRAWS, window: W, seed: 11 });
   assert.equal(f.ground.from, actualWorld.from, "the ground cites more or less than the actual world");
   assert.deepEqual([...f.ground.samples], [...actualWorld.samples]);
 
@@ -236,14 +239,14 @@ test("the ground is causal, the projection is total, and the two are labelled ap
   const horizon = f.projection.filter((p) => p.relation === "horizon");
   const contemporary = f.projection.filter((p) => p.relation === "contemporary");
   assert.ok(past.length > 0 && horizon.length > 0 && contemporary.length > 0);
-  assert.ok(past.every((p) => p.at + W <= 55));
-  assert.ok(horizon.every((p) => p.at >= 65));
+  assert.ok(past.every((p) => p.at + W <= 60));
+  assert.ok(horizon.every((p) => p.at >= 70));
 });
 
 test("a standpoint is an extensive region; a bare index is one of extent one", () => {
-  const asPoint = fold({ material: shaped, here: 55, window: W, draws: DRAWS, seed: 11 });
-  assert.deepEqual(asPoint.here, { start: 55, end: 56 });
-  const asRegion = fold({ material: shaped, here: { start: 55, end: 65 }, window: W, draws: DRAWS, seed: 11 });
+  const asPoint = fold({ material: shaped, here: 60, window: W, draws: DRAWS, seed: 11 });
+  assert.deepEqual(asPoint.here, { start: 60, end: 61 });
+  const asRegion = fold({ material: shaped, here: { start: 60, end: 70 }, window: W, draws: DRAWS, seed: 11 });
   // Same actual world, so the same ground — the extent changes only what falls
   // WITHIN the standpoint, never what it was grown from.
   assert.deepEqual(asPoint.reach, asRegion.reach);
@@ -255,7 +258,7 @@ test("a standpoint with nothing settled behind it refuses, and names what it wou
   // mechanisms tried to derive an origin and all collapsed at r ≈ 0.974.
   const f = fold({ material: shaped, here: 0, window: W, draws: DRAWS });
   assert.equal(f.gap, "no_ground");
-  assert.equal(f.need, 3 * W);
+  assert.equal(f.need, 10 * W);
   assert.equal(fold({ material: shaped, window: W, draws: DRAWS }).gap, "undeclared");
   assert.equal(fold({ material: shaped, here: { start: 60, end: 60 }, window: W, draws: DRAWS }).gap, "undeclared");
   assert.equal(fold({ material: shaped, here: 60, draws: DRAWS }).gap, "undeclared");
@@ -266,7 +269,10 @@ test("identity by consequence: two standpoints are compared on what they project
   // the ground. Never by appearance, not even in principle."
   const r = ride(shaped);
   const heres = standpointsOf(divide(r, { mode: "surfeit" }));
-  const a = fold({ material: shaped, here: heres[0], window: W, draws: DRAWS, seed: 11 });
+  // The earliest standpoint that clears `fold`'s floor (10 * W) — some
+  // earlier ones do not, by construction (the burst starts at 60, exactly
+  // the floor for W=6).
+  const a = fold({ material: shaped, here: heres.find((h) => h >= 10 * W), window: W, draws: DRAWS, seed: 11 });
   const b = fold({ material: shaped, here: heres.at(-1), window: W, draws: DRAWS, seed: 11 });
   const ag = agree(a, b);
   assert.equal(ag.n, a.projection.length);
@@ -292,7 +298,10 @@ test("mereology: a coordinate division is foldable as an actual entity, from its
   // the part, projected from itself, is a whole.
   const waves = divide(ride(shaped), { mode: "surfeit" });
   const early = waves[0];
-  const later = waves.find((w) => w.from >= 20);
+  // `>= 10 * W`, not the old `>= 20`: a wave whose `from` sits below fold's
+  // own floor would be refused below for the wrong reason (too little ground,
+  // not "the part is a whole subject to the same refusals" this asserts).
+  const later = waves.find((w) => w.from >= 10 * W);
 
   const f = fold({ material: shaped, here: later, window: W, draws: DRAWS, seed: 11 });
   assert.deepEqual(f.here, { start: later.from, end: later.to + 1 });
@@ -302,7 +311,7 @@ test("mereology: a coordinate division is foldable as an actual entity, from its
   // that opens before anything has settled behind it gets no free pass.
   const refused = fold({ material: shaped, here: early, window: W, draws: DRAWS, seed: 11 });
   assert.equal(refused.gap, "no_ground");
-  assert.equal(refused.need, 3 * W);
+  assert.equal(refused.need, 10 * W);
 });
 
 test("decided conditions qualify freedom without banishing it, and the alternatives are countable", () => {
@@ -316,7 +325,7 @@ test("decided conditions qualify freedom without banishing it, and the alternati
   // is genuinely open. This is defeasibility from the other end — not "the
   // claim could be revised" as a disclaimer, but the specific positions where
   // the alternatives are still live, enumerated.
-  const quanta = [{ start: 20, end: 60 }, { start: 55, end: 65 }, { start: 70, end: 120 }];
+  const quanta = [{ start: 60, end: 75 }, { start: 65, end: 95 }, { start: 90, end: 120 }];
   const folds = quanta.map((here) => fold({ material: shaped, here, window: W, draws: DRAWS, seed: 11 }));
   const alt = alternatives(folds);
 

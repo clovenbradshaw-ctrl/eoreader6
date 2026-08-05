@@ -68,6 +68,41 @@ export const timeLoop = ({ reduce, units, passes, window, draws, reseeds }) => {
     // non-significant, rates within a point of the plateau) — independently
     // confirming the multiplier atmosphere.js and turn.js also settled on,
     // not assuming it transfers.
+    //
+    // NOT RAISED to `10 * window` alongside atmosphere.js's, turn.js's, and
+    // fold.js's second fix, and this was checked, not assumed — this organ's
+    // floor is the one place in the family that stayed a special case rather
+    // than following the sync those three share.
+    //
+    // The mechanism itself is NOT immune to the content-DEPENDENT drift the
+    // other three needed the raise for: MEASURED
+    // (scripts/turn-fold-formation-min-ground-real-text-calibration.mjs §4)
+    // feeding `pattern()` real `causalSurprisalSeries` output directly (Book
+    // IX alone, gamma=0.999, no topic shift) produces a false `moved` on up
+    // to 28% of trials at floors through `10 * window`, clearing only at
+    // `12 * window` for one of the two parameter sets — so "pattern() mostly
+    // cancels this," the finding this file's own header once generalized from
+    // iid noise alone, does not hold once real drifting material is fed
+    // straight in. What actually protects this organ today is the CALLER,
+    // not the mechanism: its one production pathway (`reduce`, always
+    // text/material.js's `reduce()` via scripts/aperture-run.mjs) builds one
+    // FIXED frequency table per pass over that pass's whole read fraction,
+    // never causalSurprisalSeries's incrementally-growing one, so a pass's own
+    // series carries none of the within-ground positional drift the other
+    // three organs' fix addresses.
+    //
+    // That caller has its OWN, larger, and separate real-text instability —
+    // MEASURED (scripts/time-real-caller-drift-check.mjs): `moved` fires on
+    // 60-100% of real passes on Book IX and cookery alike, at every parameter
+    // set including aperture-run.mjs's own production SPEC — and raising this
+    // minimum does not fix it (scripts/time-real-caller-drift-check.mjs's own
+    // sweep: 80%->71%->50% from `3*window` to `20*window`, never reaching a
+    // healthy baseline before the pass simply runs out of material to build a
+    // ground from at all). That instability traces to `reduce()` itself
+    // rescoring already-read chunks against a new, non-causal, whole-fraction
+    // table every pass — a different organ's defect, out of this fix's scope,
+    // and one a MIN_GROUND change here cannot buy back. Left as a named, open
+    // question rather than silently patched over.
     if (material.length < 3 * window) {
       results.push({ pass: p, fraction, gap: { reason: "not enough real material read yet", have: material.length, need: 3 * window } });
       continue;

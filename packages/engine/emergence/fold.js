@@ -168,7 +168,28 @@ export const fold = ({ material, here, window, draws, seed = 0, perturbation = "
   // 1.5%/1.5%, inside the 15% bar this repo's own CALIBRATION tests hold
   // findings to. Re-measured for this organ's own statistic (burstiness,
   // unchanged) and perturbation (shuffle, unchanged) rather than copied.
-  const MIN_GROUND = 3 * window;
+  //
+  // RAISED TO `10 * window`, 2026-08-05, alongside atmosphere.js's and
+  // turn.js's own second fix: `3 * window` fixed the iid near-degenerate-null
+  // artifact above but not necessarily the content-DEPENDENT one atmosphere.js
+  // separately found and fixed — and this organ is fed real production
+  // material through this exact ground, not only synthetic material
+  // (scripts/adversarial/challenge-18 folds `causalSurprisalSeries` output
+  // over real prose). MEASURED
+  // (scripts/turn-fold-formation-min-ground-real-text-calibration.mjs §2,
+  // same real, single-topic, no-seam Book IX / cookery-recipe fixtures
+  // challenge-7 uses, gamma=0.999, sampled at several standpoints per
+  // document, not only the floor): at `3 * window`, one of the two real-text
+  // negative controls falsely reads `beyond` on 25% of trials, purely from
+  // causal-surprisal's content-independent upward drift. The false-alarm rate
+  // is actually already 0% by `6 * window` here — this organ's single
+  // isolated `difference()` check per standpoint is less exposed than
+  // turn.js's repeatedly-re-tested standing ground — but `10 * window` is
+  // chosen anyway to keep one shared floor across the four organs built on
+  // this identical mechanism (atmosphere.js, turn.js, this file, formation/
+  // index.js): confirmed 0% throughout the `6*window`-`16*window` plateau,
+  // so the extra margin costs nothing measured.
+  const MIN_GROUND = 10 * window;
   if (region.start < MIN_GROUND)
     return gap("no_ground", {
       reason: "a standpoint with nothing settled behind it cannot grow a ground; the first one must be received, not derived",

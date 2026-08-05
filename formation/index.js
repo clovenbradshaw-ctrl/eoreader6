@@ -145,7 +145,20 @@ export const collapse = ({ emanon: e, observed, regime = null, ground: cutGround
     // CALIBRATION tests hold findings to. Re-measured for this organ's own
     // statistic (burstiness, unchanged) and perturbation (`e.spec.perturbation`,
     // unchanged) rather than copied.
-    const MIN_GROUND = 3 * e.spec.window;
+    //
+    // RAISED TO `10 * window`, 2026-08-05, alongside atmosphere.js's, turn.js's
+    // and fold.js's own second fix, for the same reason fold.js's header gives
+    // (this is the same `difference()`-driven mechanism at this organ's own
+    // grain): MEASURED
+    // (scripts/turn-fold-formation-min-ground-real-text-calibration.mjs §3,
+    // same real, single-topic, no-seam Book IX / cookery-recipe fixtures,
+    // gamma=0.999) collapsing real causal-surprisal material at `3 * window`
+    // falsely reads surfeit on 25% of trials on one of the two negative
+    // controls, purely from content-independent drift; 0% from `6 * window`
+    // through `16 * window`. `10 * window` sits inside that confirmed-safe
+    // plateau and keeps one shared floor across the four organs sharing this
+    // mechanism, at no measured cost.
+    const MIN_GROUND = 10 * e.spec.window;
     if (regime != null && regime.start < MIN_GROUND)
       return gap("no_ground", {
         reason: "a cut with nothing settled behind it cannot grow a ground; the first one must be received, not derived",
