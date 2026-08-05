@@ -876,19 +876,21 @@ The three later events (3530, 6380, 7130 — one in prose, two well inside
 chrome) all re-proposed the config already live and were correctly refused as
 no-ops.
 
-**What this run still does not show, plainly stated: a witnessed event whose
-proposed config actually differs between the prose and chrome regions.** The
-one correction happened early and then held unchanged through the entire
-chrome region — meaning either `order=2 alpha=3 continuation` genuinely serves
-both registers about equally well, or the 24-point grid contains nothing that
-would do meaningfully better in chrome specifically. Both are live
-possibilities and this run does not distinguish them. So: the confound about
-*starting point* is closed, the mechanism's structure (propose, witness
-against the ground's own threshold, refuse no-ops) is validated a second time
-under a harder test, and a real fine-grained improvement was found and applied
-— but *regime-specific* reshaping, as opposed to *window-specific*
-refinement, is still not cleanly demonstrated. That is the honest remaining
-gap, not a claim this run quietly closed.
+**Checked directly, rather than left open: is there a config in the grid the
+online walk missed for chrome specifically?** Scored all 24 configs against
+1,917 forms of chrome well past the boundary (no transition effects). The
+answer is no — `order=2 alpha=3 continuation`, exactly what the walk settled
+on, is the #1 best config in the entire grid for chrome too, with a gap of
+0.000 against the true best. So "one correction that holds through both
+regions" is not a missed opportunity here; it is the correct answer for this
+particular splice, on this particular axis. That also means prose-vs-Gutenberg
+-boilerplate was too extreme a test to settle the real question — the two
+registers are different enough that the same heavily-smoothed, short-context,
+continuation-counting config dominates both, leaving no genuine
+regime-specific choice for the mechanism to find even in principle. Whether it
+can propose *different* configs for two regions that actually want different
+ones is still open, and needs two registers of real content, not one register
+of content against boilerplate that turned out not to need separate tuning.
 
 **The comparison against the hard swap still draws the same boundary.**
 Reshaping narrows the gap in the region it touches but comes nowhere near what
@@ -920,3 +922,112 @@ that configuration held fixed. That is the first result in this whole line of
 work where added machinery earned its cost rather than losing to a simpler
 alternative, and it survived being re-tested under a harder, fairer
 comparison rather than only appearing under the easier one.
+
+## Reading the Odyssey in Greek: a real learning curve, and which priors actually help
+
+Every experiment above measured a single held-out split. `node
+scripts/odyssey-greek.mjs` runs the audit this whole line of work kept
+naming and never actually ran: not "is the loss low," but "does SUCCESSIVE,
+never-before-seen material get cheaper to predict as more of the SAME book
+has been read" — scored continuously across one long text rather than at one
+static split. Homeric epic is an unusually strong material for this: oral-
+formulaic composition (Milman Parry) is built from repeated epithets and
+whole half-lines, so if a statistical reader can exploit accumulated
+structure at all, this is where it should show.
+
+Real production code throughout, in ancient Greek, for the first time in
+this file's history — the tokenizer needed no changes (`\p{L}` already
+covers precomposed polytonic Greek; verified directly, no normalisation
+needed). Text: the Odyssey (Perseus Digital Library, canonical-greekLit
+tlg0012.tlg002, Allen's edition), 89,260 forms. Three received priors, each
+naming its giver (SEED.md #1):
+
+- **the Iliad** — same author, same artificial epic dialect, same formulaic
+  system. 114,263 forms.
+- **the Homeric Hymns** — same dialect and formulaic tradition, different
+  (anonymous) authorship, much shorter. 14,729 forms.
+- **the Greek New Testament** (Matthew/Mark/Luke/John/Acts, Koine, SBLGNT) —
+  same broad language, different dialect, register, era and genre entirely.
+  71,208 forms.
+- **+ the shuffled-Iliad noise floor** `priorAugmented` adds automatically.
+
+`order=4 alpha=0.7 gamma=1 rho=0.999 checkpoint=2000 seed=20260731`.
+
+**A performance defect found and fixed on the way, because it matters for
+reading this doc's own numbers correctly.** A first version scored held-out
+loss through the gift-augmented belief's own `probabilityOf`, which calls
+`layer.successors(ctx)` on every received layer to build the admissible-mass
+renormalisation — O(vocabulary) per gift per scored token, by design
+(`belief.js`'s own comment: "the price of the gate, paid here and not
+hidden"). Correct, and ruinous at 89,000 held-out tokens × 4 gift layers: the
+run did not finish in five minutes. `witnessForm` — what `observe()` calls
+per token to update relevance — only ever calls `layer.massOf(ctx, form)`,
+O(order), cheap. So the two questions below are answered by two right-sized
+instruments reading the SAME stream in lockstep: a plain, gift-free belief
+for the learning curve, and `relevanceReport()` — kept current by the cheap
+path alone — for which priors help. Runtime: 8.7 seconds.
+
+### Does prediction get smarter the more it reads — not the answer expected
+
+| | first quarter of checkpoints | last quarter |
+|---|---|---|
+| real Odyssey | 5.160 nats/form | 6.416 nats/form |
+| shuffled Odyssey (order destroyed) | 6.248 nats/form | 9.368 nats/form |
+
+**Loss went UP over the course of the read, for both arms.** The naive
+version of the audit — early loss versus late loss, full stop — reads as a
+refutation: the reader got worse, not better. That is real and is reported
+as measured, not smoothed over. The reason is a genuine confound this design
+did not control for: this is not a fixed train/test split, it is sequential
+material from a single narrative, and the Odyssey is not stationary —
+Telemachus's search in Books 1–4, Odysseus's own first-person adventure
+narrative in 5–12, and the revenge plot in 13–24 differ in vocabulary,
+named entities, and register. Later held-out chunks are not necessarily
+harder to predict FROM MORE READING; they may just be intrinsically harder
+material, arriving later. A rising curve on both arms is consistent with
+content drift dominating whatever the reader was learning.
+
+**What separates the two arms is the finding.** The shuffled control's rise
+(3.120 nats) is more than double the real Odyssey's (1.256 nats) — order
+destroyed, the same content drift costs far more. Read as a gap rather than
+a trend: real-minus-shuffled advantage was 1.088 nats/form in the first
+quarter and 2.952 nats/form in the last — **the reader's advantage from
+tracking real order over having none of it nearly tripled over the course of
+the read.** That is the honest form of "getting smarter" a non-stationary
+text actually supports: not falling absolute loss, but a widening margin
+over a matched no-order control as more of the poem's real structure
+accumulates. The naive framing from earlier in this conversation — plain
+early-loss-vs-late-loss — is retired by this result, not confirmed by it;
+the corrected framing is the gap against a control, not the trend alone.
+
+### Which priors actually help
+
+| prior | share (final, after 86,000 forms) | above the shuffled-Iliad noise floor |
+|---|---|---|
+| Homeric Hymns | 45.7% | YES |
+| Iliad | 43.0% | YES |
+| Greek New Testament (Koine) | 5.3% | no |
+| shuffled Iliad (the floor itself) | 6.0% | — |
+
+Both the Iliad and the Homeric Hymns earned real, sustained standing across
+the whole read — never close to the noise floor at any checkpoint. The Greek
+New Testament never did: its share tracked the shuffled-Iliad floor almost
+exactly throughout (both in the 4–7% band at every checkpoint), meaning
+Koine prose earned no measurable trust beyond what a gift with no order at
+all would have gotten by accident. **Being "the same language" bought
+nothing; being the same formulaic tradition did.** This is SEED.md Amendment
+IV's claim — "relevance is not a property of a prior, it is a property of
+the meeting between a prior and this material" — read against real
+classical material for the first time in this file, and it holds cleanly:
+the two epic-tradition gifts, one of them a fraction of the Iliad's size,
+both cleared the bar; the register-mismatched gift, despite sharing every
+word of its alphabet with the read text, did not.
+
+**The one genuine surprise: the Homeric Hymns matched or exceeded the
+Iliad's share at most checkpoints, despite being a fraction of its size**
+(14,729 against 114,263 forms) and by a different, anonymous set of authors.
+At the 32,000-form checkpoint the gap was largest: Hymns 61.8% against
+Iliad's 26.1%. Same dialect and formulaic register bought more standing here
+than raw volume of the same author's other epic did — worth reading as a
+finding about what actually transfers (formula and register) rather than
+what seemed like the obvious guess going in (authorship and length).

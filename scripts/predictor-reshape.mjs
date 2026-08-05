@@ -277,3 +277,35 @@ console.log(`  hard model swap:                                ${meanOf([...bLos
 console.log(`  fixed champion (${configLabel(CHAMPION_CONFIG)}):     ${meanOf(championLoss).toFixed(3)}`);
 console.log(`  witnessed config reshaping (from champion):     ${meanOf(reshapedLoss).toFixed(3)}`);
 console.log(`\nthe reshaping apparatus only earns its complexity if it beats the FIXED CHAMPION, not just the naive arm — and it is now starting FROM the champion, so any win has to be genuine adaptation.`);
+
+// ── DID THE ONLINE MECHANISM MISS A GENUINELY BETTER CHROME-SPECIFIC CONFIG? ──
+// The live config settled at index 980 and held unchanged through the entire
+// chrome region — no event ever proposed something different once inside it.
+// That is consistent with two very different explanations: (a) the grid
+// genuinely has nothing better for chrome specifically, so "one correction
+// that holds through both" is the CORRECT answer, or (b) something better
+// exists in the grid and the online walk (STEP=150 windows, gated by a
+// threshold built for detecting the FIRST regime shift) never surfaced it.
+// Score every grid config directly against DEEP chrome material — well past
+// any boundary transition — to tell the two apart.
+const deepChromeStart = spliceBoundary + Math.min(1500, Math.floor((spliceSpan.length - spliceBoundary) / 2));
+const deepChrome = spliceSpan.slice(deepChromeStart);
+const deepChromeBefore = [...before0, ...spliceSpan.slice(0, deepChromeStart)];
+console.log(`\n── is there a genuinely better config for chrome the online walk missed? ──`);
+console.log(`scoring the full ${CONFIG_GRID.length}-config grid directly against ${deepChrome.length} forms of DEEP chrome (from index ${deepChromeStart}, past any boundary transition):\n`);
+const deepChromeScores = CONFIG_GRID.map((cfg) => ({ cfg, loss: meanOf(lossAt(deepChromeBefore, deepChrome, cfg)) }));
+deepChromeScores.sort((a, b) => a.loss - b.loss);
+const liveOnDeepChrome = deepChromeScores.find((s) => s.cfg.order === liveConfig.order && s.cfg.alpha === liveConfig.alpha && s.cfg.continuation === liveConfig.continuation);
+deepChromeScores.slice(0, 5).forEach((s, i) => console.log(`  #${i + 1}  ${configLabel(s.cfg).padEnd(28)} ${s.loss.toFixed(3)} nats/form${s === liveOnDeepChrome ? "   <- what the online walk actually settled on" : ""}`));
+if (!deepChromeScores.slice(0, 5).includes(liveOnDeepChrome)) {
+  const rank = 1 + deepChromeScores.indexOf(liveOnDeepChrome);
+  console.log(`  ...\n  #${rank}  ${configLabel(liveConfig).padEnd(28)} ${liveOnDeepChrome.loss.toFixed(3)} nats/form   <- what the online walk actually settled on`);
+}
+const gridBest = deepChromeScores[0];
+const missedGap = liveOnDeepChrome.loss - gridBest.loss;
+console.log(`\nbest-in-grid for deep chrome: ${configLabel(gridBest.cfg)} at ${gridBest.loss.toFixed(3)}. what the walk is actually running: ${configLabel(liveConfig)} at ${liveOnDeepChrome.loss.toFixed(3)}.`);
+console.log(
+  missedGap > 0.05
+    ? `GAP OF ${missedGap.toFixed(3)} nats/form: the online mechanism left real, findable improvement on the table for chrome specifically — a genuinely better config exists in its own grid and it never proposed switching to it.`
+    : `GAP OF ${missedGap.toFixed(3)} nats/form, effectively none: what the walk settled on IS (at or near) the best available config for chrome too. "One correction that holds through both regions" is the correct answer here, not a missed opportunity.`,
+);
