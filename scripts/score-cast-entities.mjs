@@ -152,7 +152,7 @@ export function scoreCastEntities({ quiet = false } = {}) {
   for (const p of perBrother) line(`  ${p.brother.padEnd(8)} → ${p.surfaces.length ? p.surfaces.join(", ") : "—"}`);
   if (!quiet) {
     line(`\nfirst 40 admitted:`);
-    for (const e of register.slice(0, 40)) line(`  ${e.surfaces[0]}  censored=${e.censored}  ananda=${e.ananda.toFixed(3)}  moved=${e.moved}  censoredRank=${e.censoredRank}`);
+    for (const e of register.slice(0, 40)) line(`  ${e.surfaces[0]}  censored=${e.censored}  aperture=${e.aperture.toFixed(3)}  moved=${e.moved}  censoredRank=${e.censoredRank}`);
     const gaps = new Map();
     for (const f of refs) gaps.set(f.why, (gaps.get(f.why) ?? 0) + 1);
     line(`\nrefusal reasons:`);

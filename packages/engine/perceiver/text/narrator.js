@@ -68,6 +68,39 @@ export const resolveNarratorSpans = (text, referentId, spans) => {
 export const isFirstPerson = (surface) => FIRST_PERSON.test(String(surface ?? "").trim());
 
 /**
+ * Resolve narrator spans across EVERY referent that carries them, not just
+ * one. A frame narrative can nest more than one pen — Frankenstein alone has
+ * three (Walton, Victor, the creature) — and a prior with a `narratorSpans`
+ * array on more than one referent was always structurally legal; the callers
+ * were the bug, each written as `coref.referents.find(r => r.narratorSpans…)`,
+ * which resolves the FIRST referent carrying spans and silently drops the
+ * rest. Fixed once here rather than three times at the call sites
+ * (`scripts/read-ladder.mjs`, `read-tiered.mjs`, `read-people.mjs` all
+ * carried the identical bug).
+ *
+ * Sorted NARROWEST FIRST, not by position. `narratorAt` below returns the
+ * first span whose range contains an offset, so if two referents' spans
+ * ever nest — Frankenstein's do: the creature's final speech is quoted
+ * inside Walton's closing letters — a naive sort by `from` would let the
+ * wider, outer span win for the inner one's whole extent, silently
+ * misattributing every "I" inside the quotation to whoever is holding the
+ * pen outside it. Narrowest-first makes the nested span win where it
+ * applies and costs nothing where spans don't overlap at all.
+ */
+export const resolveAllNarratorSpans = (text, referents) => {
+  const resolved = [];
+  const unresolved = [];
+  for (const r of referents ?? []) {
+    if (!Array.isArray(r?.narratorSpans) || r.narratorSpans.length === 0) continue;
+    const out = resolveNarratorSpans(text, `ref:narrator:${r.id}`, r.narratorSpans);
+    resolved.push(...out.resolved);
+    for (const u of out.unresolved) unresolved.push({ ...u, referent: r.id });
+  }
+  resolved.sort((a, b) => (a.to - a.from) - (b.to - b.from));
+  return { resolved: Object.freeze(resolved), unresolved: Object.freeze(unresolved) };
+};
+
+/**
  * Who does this first-person surface point at, at this offset?
  * Returns a referent id, or a typed gap when no span covers the position —
  * "some narrator, and the prior does not say which."

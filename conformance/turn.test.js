@@ -151,7 +151,7 @@ test("the moved clearing finds a SPREAD shift that surfeit finds only sometimes"
     if (near(recs(moved))) movedFound++;
   }
 
-  assert.equal(movedFound, 3, "the moved clearing must find what ananda could already see");
+  assert.equal(movedFound, 3, "the moved clearing must find what aperture could already see");
   assert.ok(movedFound > surfeitFound, `moved ${movedFound}/3 vs surfeit ${surfeitFound}/3 — the second clearing has to earn its place`);
 });
 
@@ -170,7 +170,7 @@ test("regions carry the vital sign and which failure ended them", () => {
   for (const r of turn.regions.slice(0, -1)) assert.ok(r.clearedBy === "surfeit" || r.clearedBy === "moved");
 });
 
-test("ANANDA FLOWS — a region opens with exactly the warmth the last region closed with", () => {
+test("APERTURE FLOWS — a region opens with exactly the warmth the last region closed with", () => {
   // The reading's own settled past is RECEIVED by its present (belief.js
   // WORLDS.this: "the giver is this reader at an earlier here"; SEED.md #1).
   // Encounter is judged against accumulated warmth — by identity, not by
@@ -181,16 +181,16 @@ test("ANANDA FLOWS — a region opens with exactly the warmth the last region cl
   assert.ok(turn.regions.length >= 2);
   for (let k = 1; k < turn.regions.length; k++) {
     assert.equal(
-      turn.regions[k].anandaOpen,
-      turn.regions[k - 1].anandaClose,
+      turn.regions[k].apertureOpen,
+      turn.regions[k - 1].apertureClose,
       `region ${k} must open with exactly the warmth region ${k - 1} closed with`,
     );
   }
   // The SIGN follows the flow: opened is close-vs-carried, and never a gate.
   for (let k = 1; k < turn.regions.length; k++) {
     const r = turn.regions[k];
-    if (r.anandaClose != null)
-      assert.equal(r.opened, r.anandaClose > turn.regions[k - 1].anandaClose);
+    if (r.apertureClose != null)
+      assert.equal(r.opened, r.apertureClose > turn.regions[k - 1].apertureClose);
   }
   // Not a gate: the flow changes nothing about how regions close.
   assert.ok(turn.clearings >= 1);
@@ -276,7 +276,7 @@ test("A LATER TURN OPENS WITH EXACTLY THE WARMTH THE EARLIER TURN CLOSED WITH", 
   const t1 = runTurn({ material, ...SPEC });
   assert.ok(!isGap(t1));
 
-  const lastClose = t1.regions[t1.regions.length - 1].anandaClose;
+  const lastClose = t1.regions[t1.regions.length - 1].apertureClose;
   assert.equal(t1.register.giver, "reader");
   assert.equal(t1.register.close, lastClose, "the register carries the last closing warmth — one scalar, never a rollup");
   assert.equal(t1.register.perturbation, "shuffle");
@@ -285,7 +285,7 @@ test("A LATER TURN OPENS WITH EXACTLY THE WARMTH THE EARLIER TURN CLOSED WITH", 
   const t2 = runTurn({ material, ...SPEC, register: t1.register });
   assert.ok(!isGap(t2));
   assert.equal(
-    t2.regions[0].anandaOpen,
+    t2.regions[0].apertureOpen,
     lastClose,
     "the first region of the later turn opens with the earlier turn's closing warmth",
   );
@@ -294,7 +294,7 @@ test("A LATER TURN OPENS WITH EXACTLY THE WARMTH THE EARLIER TURN CLOSED WITH", 
 
   const t3 = runTurn({ material, ...SPEC, register: t2.register });
   assert.ok(!isGap(t3));
-  assert.equal(t3.regions[0].anandaOpen, t2.regions[t2.regions.length - 1].anandaClose, "the register chains — a third turn receives the second's close");
+  assert.equal(t3.regions[0].apertureOpen, t2.regions[t2.regions.length - 1].apertureClose, "the register chains — a third turn receives the second's close");
 });
 
 test("firstness is never derived — a turn with no register says own, never first", () => {

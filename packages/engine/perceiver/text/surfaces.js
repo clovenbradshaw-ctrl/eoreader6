@@ -281,7 +281,7 @@ const quantileOf = (sorted, q) => {
  * A partner-count fence derived from THIS document's own co-occurrence
  * structure, not a fixed absolute count. The interquartile range is already
  * this codebase's own measure of a distribution's ordinary spread (nul's
- * `volume`, "ananda") — a token whose partner-set size sits more than one
+ * `volume`, "aperture") — a token whose partner-set size sits more than one
  * IQR above the 75th percentile of this document's own partner-count
  * distribution is exceeding what ordinary co-occurrence breadth looks like
  * HERE, a Tukey-style upper fence rather than a percentile chosen by hand.

@@ -59,11 +59,11 @@ const ENCOUNTERING = () => 1.0;
 const CLOSING = (t) => 1.0 - 0.85 * (t / (TURNS - 1));
 
 const reader = (ampFn, seed, turns = TURNS) => {
-  let f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  let f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   for (let t = 0; t < turns; t++) {
     const g = ground({ material: stretchAt(seed, t, ampFn(t)), draws: D, window: W, seed: seed * 31 + t });
     if (isGap(g)) continue;
-    f = note(f, { op: "EVA", grain: "Figure", ground: g });
+    f = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: g });
     if (isGap(f)) return f;
   }
   return f;
@@ -75,15 +75,15 @@ test("the first ground of a sequence is received, never derived", () => {
   const f = openFrame({ giver: "the-suite" });
   const constructed = ground({ material: stretchAt(1, 0, 1), draws: D, window: W });
   assert.ok(!isGap(constructed));
-  const refused = note(f, { op: "EVA", grain: "Figure", ground: constructed });
+  const refused = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: constructed });
   assert.equal(refused.gap, "unreceived_origin");
   // ...and the gift is admitted in the same position.
-  assert.ok(!isGap(note(f, { op: "NUL", grain: "Ground", ground: GIFT })));
+  assert.ok(!isGap(note(f, { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT })));
 });
 
 test("only the first is received — a later act cites the material it perturbed", () => {
-  const opened = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
-  const refused = note(opened, { op: "EVA", grain: "Figure", ground: GIFT });
+  const opened = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
+  const refused = note(opened, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: GIFT });
   assert.equal(refused.gap, "unreceived_origin");
 });
 
@@ -101,7 +101,7 @@ test("a sequence that never received a first ground has no trajectory", () => {
 test("the origin is in the record and NOT in the trajectory", () => {
   // A received ground's volume is in its giver's units; a constructed one's is
   // in the statistic's units over the material. Averaging them is SEED.md #5,
-  // and it did not fail loudly: the gift's ananda was simply larger than every
+  // and it did not fail loudly: the gift's aperture was simply larger than every
   // act's, so a max-over-windows statistic read the GIFT at every window and
   // every reader looked identical. Both deaths read as health.
   const f = reader(ENCOUNTERING, 1);
@@ -111,24 +111,24 @@ test("the origin is in the record and NOT in the trajectory", () => {
   assert.deepEqual(m.origin, { giver: "the-suite" }, "the trajectory still names the gift it began from");
   assert.ok(
     m.material.every((v) => v < volume(GIFT)),
-    "the gift's ananda is off the acts' scale — which is why it may not be a member",
+    "the gift's aperture is off the acts' scale — which is why it may not be a member",
   );
 });
 
 // ── commensurability: a trajectory or it is not a trajectory ────────────────
 
 test("acts built to different specs were never one trajectory", () => {
-  let f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
-  f = note(f, { op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
+  let f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
+  f = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
   const otherWindow = ground({ material: stretchAt(1, 1, 1), draws: D, window: W + 2 });
-  assert.equal(note(f, { op: "EVA", grain: "Figure", ground: otherWindow }).gap, "unknown_spec");
+  assert.equal(note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: otherWindow }).gap, "unknown_spec");
 });
 
 test("acts over different amounts of material do not share a scale", () => {
-  let f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
-  f = note(f, { op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
+  let f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
+  f = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
   const shorter = ground({ material: stretchAt(1, 1, 1).slice(0, 30), draws: D, window: W });
-  const refused = note(f, { op: "EVA", grain: "Figure", ground: shorter });
+  const refused = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: shorter });
   assert.equal(refused.gap, "incommensurate_extent");
   assert.equal(refused.given, 30);
   assert.equal(refused.trajectory, STRETCH);
@@ -137,24 +137,29 @@ test("acts over different amounts of material do not share a scale", () => {
 // ── the type discipline, and the record that cannot be edited ───────────────
 
 test("an act declares its operator and its grain, both from the grid", () => {
-  const f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  const f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   const g = ground({ material: stretchAt(1, 0, 1), draws: D, window: W });
-  assert.equal(note(f, { grain: "Figure", ground: g }).gap, "undeclared");
-  assert.equal(note(f, { op: "EVA", ground: g }).gap, "undeclared");
-  assert.equal(note(f, { op: "NOPE", grain: "Figure", ground: g }).gap, "unknown_spec");
-  assert.equal(note(f, { op: "EVA", grain: "Nope", ground: g }).gap, "unknown_spec");
+  assert.equal(note(f, { organ: "conformance/frame", grain: "Figure", ground: g }).gap, "undeclared");
+  assert.equal(note(f, { organ: "conformance/frame", op: "EVA", ground: g }).gap, "undeclared");
+  assert.equal(note(f, { organ: "conformance/frame", op: "NOPE", grain: "Figure", ground: g }).gap, "unknown_spec");
+  assert.equal(note(f, { organ: "conformance/frame", op: "EVA", grain: "Nope", ground: g }).gap, "unknown_spec");
+  // An act that names no organ is not in the record. The record refuses
+  // anonymity; whether the name is a real organ is the roster's question, and
+  // frame depends on nul and on nothing else in the tree.
+  assert.equal(note(f, { op: "EVA", grain: "Figure", ground: g }).gap, "undeclared");
+  assert.equal(note(f, { op: "EVA", grain: "Figure", ground: g }).what, "organ");
 });
 
 test("an act that could not build a ground is not notable, and the gap is returned", () => {
-  const f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  const f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   const flat = ground({ material: Array(STRETCH).fill(2), draws: D, window: W });
   assert.equal(flat.gap, "degenerate_ground");
-  assert.equal(note(f, { op: "EVA", grain: "Figure", ground: flat }).gap, "no_ground");
+  assert.equal(note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: flat }).gap, "no_ground");
 });
 
 test("every note returns a NEW frame — a record a later call can edit is not a record", () => {
-  const a = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
-  const b = note(a, { op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
+  const a = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
+  const b = note(a, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: ground({ material: stretchAt(1, 0, 1), draws: D, window: W }) });
   assert.equal(a.n, 0);
   assert.equal(b.n, 1);
   assert.notEqual(a, b);
@@ -170,7 +175,7 @@ test("no number is defaulted", () => {
 });
 
 test("a sequence of one has no trajectory", () => {
-  const f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  const f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   assert.equal(selfMaterial(f).gap, "empty_material");
   assert.equal(selfLevel(f, { draws: D, window: W, reseeds: RESEEDS }).gap, "empty_material");
 });
@@ -182,10 +187,10 @@ test("the null destroys the order of the acts, and a trajectory it cannot move i
   // would clear anything. A trajectory of one repeated value is unmoved by
   // shuffling, so no displacement between its halves is sayable — and the
   // organ says so rather than reporting `continuous` for free.
-  let f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  let f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   const fixed = stretchAt(9, 0, 1);
   for (let t = 0; t < 12; t++) {
-    f = note(f, { op: "EVA", grain: "Figure", ground: ground({ material: fixed, draws: D, window: W, seed: 5 }) });
+    f = note(f, { organ: "conformance/frame", op: "EVA", grain: "Figure", ground: ground({ material: fixed, draws: D, window: W, seed: 5 }) });
   }
   assert.equal(selfLevel(f, { draws: D, window: W, reseeds: RESEEDS }).gap, "degenerate_ground");
 });
@@ -380,7 +385,7 @@ test("posture is a pure read — called twice, same answer, nothing about the fr
 });
 
 test("posture propagates selfLevel's gaps rather than guessing a situation", () => {
-  const f = note(openFrame({ giver: "the-suite" }), { op: "NUL", grain: "Ground", ground: GIFT });
+  const f = note(openFrame({ giver: "the-suite" }), { organ: "conformance/frame", op: "NUL", grain: "Ground", ground: GIFT });
   const p = posture(f, { draws: D, window: W, reseeds: RESEEDS });
   assert.equal(p.gap, "empty_material");
 });

@@ -19,7 +19,7 @@
 // Ground grain is implemented; the other grains are honestly refused rather
 // than faked.
 //
-// ANANDA FLOWS: a region closes with its warmth and the next region opens with
+// APERTURE FLOWS: a region closes with its warmth and the next region opens with
 // that SAME warmth — by identity, not by resemblance. The reading's own settled
 // past is received by its present (SEED.md #1; belief.js WORLDS.this: "the
 // giver is this reader at an earlier here"). No gate decides it, no number
@@ -75,14 +75,14 @@ export const clearVoid = ({ material, draws, window, seed, perturbation = "shuff
  * ② SIG · Void · Tending — keep the nothing fit to perceive through, and
  * report how much room is left to be surprised in. A ground that has gone
  * degenerate or been kept for testimony is no longer a void you can see
- * against; ananda (interquartile volume) is the sign of health, never a gate.
+ * against; aperture (interquartile volume) is the sign of health, never a gate.
  */
 export const tendVoid = (g) => {
   const bad = admissible(g);
   if (bad) return { viable: false, reason: bad };
   if (g.kept) return { viable: false, reason: gap("kept_ground", { reason: "held for testimony" }) };
   const room = volume(g);
-  return { viable: room > 0, ananda: room };
+  return { viable: room > 0, aperture: room };
 };
 
 /**
@@ -164,7 +164,7 @@ export const cultivateField = (units, extent) => {
  * wide enough to absorb it, which is the ordinary case once a reader has
  * accumulated anything. Measured on a planted calm → elevated → turbulent
  * series over three seeds: the moved clearing found the spread transition 3/3,
- * surfeit 1/3, and ananda tracked it every time (0.5 → 1.2 → 2.5) while
+ * surfeit 1/3, and aperture tracked it every time (0.5 → 1.2 → 2.5) while
  * clearing did not. pattern() compares the whole quantile shape of the two
  * grounds, so a spread change displaces it. The two modes read different
  * failures of the same ground.
@@ -271,17 +271,17 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   let bornAt = null; // where THIS standing ground was first built — "release"'s own cadence needs it, separate from gEnd, which moves on every maintenance
   let clearings = 0;
   let tended = 0;
-  let anandaAtOpen = null;
-  let anandaSeries = []; // sampled every act, per region — the sign as a series, not two samples (SEED.md §8)
+  let apertureAtOpen = null;
+  let apertureSeries = []; // sampled every act, per region — the sign as a series, not two samples (SEED.md §8)
   let actsThisRegion = 0; // exposed so a series' length is checkable against the region's own act count, not inferred
 
   // Awareness's own anchor (SEED.md §7): a ground held only to be tended,
-  // never judged through. No new aperture — same `window`, over the WHOLE
+  // never judged through. No wider opening — same `window`, over the WHOLE
   // accumulated extent from the very start of the material, never reset by
   // a region conceding. Parasitic-free: attention narrowing or its region
   // conceding leaves this reach untouched.
   let ambient = null;
-  const ambientAnanda = [];
+  const ambientAperture = [];
 
   // Regularity's own counter, held APART from `clearings` — opposite poles,
   // never one tally (SEED.md #8, Amendment II). Sampled once every roughly
@@ -293,7 +293,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   let sinceSlackSample = 0;
   const slackStride = Math.max(1, Math.round(window / hop));
 
-  let anandaReceived = null; // the flow: last region's close, carried into the next region's open
+  let apertureReceived = null; // the flow: last region's close, carried into the next region's open
   let regionOpenCarried = false; // the open warmth's provenance: carried past or own ground
 
   const buildAt = (start, end, s) => {
@@ -311,9 +311,9 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     const closing = tendVoid(g);
     regions.push({
       start: regionStart, end: i, tended,
-      anandaOpen: anandaAtOpen, anandaClose: closing.ananda,
-      opened: closing.ananda > anandaAtOpen, // widened = encounter; narrowed = extraction
-      ananda: Object.freeze(anandaSeries), // the sign as a series, not two samples (SEED.md §8)
+      apertureOpen: apertureAtOpen, apertureClose: closing.aperture,
+      opened: closing.aperture > apertureAtOpen, // widened = encounter; narrowed = extraction
+      aperture: Object.freeze(apertureSeries), // the sign as a series, not two samples (SEED.md §8)
       acts: actsThisRegion,
       clearedBy,
       // The open warmth's provenance: whether this region's present had a
@@ -329,11 +329,11 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     bornAt = null;
     clearings = 0;
     tended = 0;
-    anandaSeries = [];
+    apertureSeries = [];
     actsThisRegion = 0;
     belowFlags.length = 0;
     sinceSlackSample = 0;
-    anandaReceived = closing.ananda; // the warmth flows across the boundary
+    apertureReceived = closing.aperture; // the warmth flows across the boundary
   };
 
   for (const unit of units) {
@@ -345,15 +345,15 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
       if (!g) continue;
       gEnd = i;
       bornAt = i;
-      // ANANDA FLOWS: a region opens with the warmth the last region closed
+      // APERTURE FLOWS: a region opens with the warmth the last region closed
       // with — the reading's own settled past received by its present
       // (belief.js WORLDS.this). The past crosses TURN boundaries through the
       // register, so the first region of a later turn opens with the previous
       // turn's closing warmth, and only a region that received nothing opens
       // cold, against its own fresh ground: firstness is received, never
       // derived. Not a gate: tendVoid's viability still decides everything.
-      regionOpenCarried = carried != null || anandaReceived != null;
-      anandaAtOpen = carried ?? anandaReceived ?? tendVoid(g).ananda;
+      regionOpenCarried = carried != null || apertureReceived != null;
+      apertureAtOpen = carried ?? apertureReceived ?? tendVoid(g).aperture;
     }
 
     // Awareness's own anchor (SEED.md §7): rebuilt every act over the WHOLE
@@ -365,7 +365,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     if (awareness) {
       const ambientBuilt = buildAt(0, i, seed);
       ambient = ambientBuilt ? anchor(ambientBuilt) : ambient;
-      ambientAnanda.push(ambient ? tendVoid(ambient).ananda : null);
+      ambientAperture.push(ambient ? tendVoid(ambient).aperture : null);
     }
 
     let sum = 0;
@@ -405,7 +405,7 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     // happens here unconditionally, and what it returns is read twice —
     // once as the maintained ground, once as evidence about the old one.
     const maintained = buildAt(regionStart, i, seed);
-    anandaSeries.push(maintained ? tendVoid(maintained).ananda : tendVoid(g).ananda);
+    apertureSeries.push(maintained ? tendVoid(maintained).aperture : tendVoid(g).aperture);
     actsThisRegion++;
     let drift = null;
     if (wantsMoved && maintained && gEnd != null && gEnd < i) {
@@ -450,22 +450,22 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   }
 
   const last = g ?? buildAt(regionStart, material.length, seed);
-  const lastAnanda = last ? tendVoid(last).ananda : null;
+  const lastAperture = last ? tendVoid(last).aperture : null;
   // The last region opens with the warmth carried across the boundary — or its
   // own fresh ground, but only if it is genuinely the first (nothing carried
-  // AND nothing built in the loop). `anandaAtOpen` may be stale here: if the
+  // AND nothing built in the loop). `apertureAtOpen` may be stale here: if the
   // previous region's close consumed the last buildable unit, this region
   // never opened in the loop, so the carried close — from the last region or
   // from the prior turn's register — is what it opens with.
-  const lastOpen = anandaReceived ?? anandaAtOpen ?? carried;
+  const lastOpen = apertureReceived ?? apertureAtOpen ?? carried;
   const lastOpenCarried =
-    anandaReceived != null || (anandaAtOpen != null && regionOpenCarried) || (anandaAtOpen == null && carried != null);
+    apertureReceived != null || (apertureAtOpen != null && regionOpenCarried) || (apertureAtOpen == null && carried != null);
   regions.push({
     start: regionStart, end: material.length, tended,
-    anandaOpen: lastOpen, anandaClose: lastAnanda,
-    ananda: Object.freeze(anandaSeries),
+    apertureOpen: lastOpen, apertureClose: lastAperture,
+    aperture: Object.freeze(apertureSeries),
     acts: actsThisRegion,
-    opened: lastAnanda != null && lastOpen != null ? lastAnanda > lastOpen : null,
+    opened: lastAperture != null && lastOpen != null ? lastAperture > lastOpen : null,
     clearedBy: null, // the last region is ended by the material running out, not by a failure
     openedFrom: lastOpenCarried ? "carried" : "own",
   });
@@ -496,17 +496,17 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
     // was asked for. `ambientGround` is exposed so a caller (or a test) can
     // confirm the anchor refuses to be perceived through: `difference(x,
     // ambientGround)` gaps `anchor_ground`.
-    ambientAnanda: awareness ? Object.freeze(ambientAnanda) : null,
+    ambientAperture: awareness ? Object.freeze(ambientAperture) : null,
     ambientGround: awareness ? ambient : null,
     // The register the next turn receives: the reader's own settled past
     // (one closing warmth — never a rollup of the trail) plus the
     // measurement's own declared choice (the perturbation). The host holds
     // the sequence of turns; this is what it hands forward. A register built
     // on a different perturbation is refused, never mixed (SEED.md #6).
-    close: lastAnanda,
+    close: lastAperture,
     register: Object.freeze({
       giver,
-      close: lastAnanda,
+      close: lastAperture,
       perturbation,
     }),
   };

@@ -31,7 +31,7 @@ const traceMaterial = (label, text) => {
     const material = causal.slice(0, readChunks);
     if (material.length < WINDOW + 2) { prevReadChunks = readChunks; continue; }
 
-    const seed = p * 104729 + 7; // large prime step, same fix as ananda-run.mjs
+    const seed = p * 104729 + 7; // large prime step, same fix as aperture-run.mjs
     const g = ground({ material, draws: DRAWS, window: WINDOW, seed });
     if (isGap(g)) { prevReadChunks = readChunks; continue; }
 

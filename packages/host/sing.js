@@ -30,10 +30,10 @@
 // `no_candidate`, and singRun stops there. A reader whose memory stops
 // pointing at anything new has stopped, and the run records that it did.
 //
-// ANANDA is reported as the volume (nul's IQR) over the ground the belief
-// movements have built so far — the same primitives ananda-run.mjs uses,
+// APERTURE is reported as the volume (nul's IQR) over the ground the belief
+// movements have built so far — the same primitives aperture-run.mjs uses,
 // "never a gate, never a score". The series is computed on request
-// (anandaSeries) so the loop itself never consults it as a decision.
+// (apertureSeries) so the loop itself never consults it as a decision.
 //
 // SING: the reading's own material, spoken from where the reader now stands —
 // generation/standpoint's emitScoped over the live wave, the perished past
@@ -107,7 +107,7 @@ export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha 
     refused: [],          // passages redundant against the reader
     censored: [],         // movement real, place not given
     gaps: [],             // passes that moved nothing at all
-    moves: [],            // belief movement per committed pass, for ananda
+    moves: [],            // belief movement per committed pass, for aperture
     pass: 0,
     lastPreserved: null,  // the span the reader most recently kept — the next query
   };
@@ -229,16 +229,16 @@ export const singRun = (singer, { passes }) => {
 };
 
 /**
- * Ananda per committed pass: the volume (nul's interquartile range) of the
+ * Aperture per committed pass: the volume (nul's interquartile range) of the
  * ground the belief movements have built up to that pass. `window`, `draws`
  * and `seed` are declared — they are the ground's own resolutions. A pass
  * with fewer than `window` movements has no ground yet and reports null
  * rather than a fabricated warmth.
  */
-export const anandaSeries = (moves, { window, draws, seed }) => {
-  if (!Number.isInteger(window) || window < 2) throw new TypeError("sing: ananda window is declared, never defaulted");
-  if (!Number.isInteger(draws) || draws < 2) throw new TypeError("sing: ananda draws is declared, never defaulted");
-  if (!Number.isInteger(seed)) throw new TypeError("sing: ananda seed is declared");
+export const apertureSeries = (moves, { window, draws, seed }) => {
+  if (!Number.isInteger(window) || window < 2) throw new TypeError("sing: aperture window is declared, never defaulted");
+  if (!Number.isInteger(draws) || draws < 2) throw new TypeError("sing: aperture draws is declared, never defaulted");
+  if (!Number.isInteger(seed)) throw new TypeError("sing: aperture seed is declared");
   return moves.map((_, k) => {
     const series = moves.slice(0, k + 1);
     if (series.length < window) return null;

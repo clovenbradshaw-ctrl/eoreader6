@@ -281,15 +281,15 @@ const defOnCandidate = (docSeries, occ, spec) => {
   const g = { samples: samples.sort((a, b) => a - b), draws: spec.draws, window: spec.window };
 
   // ② SIG · Void · Tending — is there room left to be surprised in?
-  const ananda = volume(g);
-  if (!(ananda > 0)) return { verdict: "gap", gap: "ground_zero_width" };
+  const aperture = volume(g);
+  if (!(aperture > 0)) return { verdict: "gap", gap: "ground_zero_width" };
 
   const below = g.samples.filter((s) => s < observed).length;
   if (observed > g.samples[g.samples.length - 1])
-    return { verdict: "clumped", observed, ananda, extent: k };      // ⑦ DEF, censored above
+    return { verdict: "clumped", observed, aperture, extent: k };      // ⑦ DEF, censored above
   if (observed < g.samples[0])
-    return { verdict: "regular", observed, ananda, extent: k };      // ⑦ DEF, censored below — a finding
-  return { verdict: "placed", rank: below / spec.draws, observed, ananda, extent: k }; // ⑧ EVA
+    return { verdict: "regular", observed, aperture, extent: k };      // ⑦ DEF, censored below — a finding
+  return { verdict: "placed", rank: below / spec.draws, observed, aperture, extent: k }; // ⑧ EVA
 };
 
 /**
@@ -350,7 +350,7 @@ export const discoverCast = (text, spec = SPEC) => {
     // measurement, not a thing to assume — the first draft assumed `above` and
     // was wrong by exactly one sign.
     const h = earnHeight(docSeries, occ, spec);
-    const row = { surface, count, extent: r.extent, reach: r.extent / spec.units, ananda: r.ananda, height: h.relation };
+    const row = { surface, count, extent: r.extent, reach: r.extent / spec.units, aperture: r.aperture, height: h.relation };
     (r.verdict === "clumped" ? clumped : regular).push(row);
   }
 

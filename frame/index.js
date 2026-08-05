@@ -40,15 +40,15 @@
 // against the same kind of nothing, with the engine's own trajectory handed in
 // as the material.
 //
-// ── ANANDA IS THE MATERIAL HERE, AND IT IS STILL NOT A SCORE ───────────────
+// ── APERTURE IS THE MATERIAL HERE, AND IT IS STILL NOT A SCORE ───────────────
 //
 // The scalar this organ projects per act is `volume` — the seed's vital sign,
 // the room left to be surprised in. SEED.md is emphatic that it is "Never a
 // gate, never a score: the warmth you check for," and that clause is not bent
 // here. A score would be a number reported as a verdict without a null. This
-// hands the ananda SERIES in as material to be perturbed like any other, and
+// hands the aperture SERIES in as material to be perturbed like any other, and
 // the verdict comes out of the same witness gate everything else passes
-// through. The gate is `witness`; ananda is what gets measured, not what
+// through. The gate is `witness`; aperture is what gets measured, not what
 // decides.
 //
 // The order of that series is real — the acts happened in that order — and
@@ -126,6 +126,14 @@ const isFrame = (f) => Boolean(f && Array.isArray(f.acts) && f.giver);
 /**
  * Put one of the engine's own acts in the record.
  *
+ * AN ACT NAMES ITS ORGAN, on the same line as it names its operator and its
+ * grain, and for the same reason: a record of acts is a claim about what
+ * happened, and an unattributed one cites nothing. This refusal is the record's
+ * own — it asks only that a name is THERE. Whether the name belongs to an organ
+ * this engine has earned is the roster's question and is refused a level up, in
+ * `emergence/declaration`, because a root organ depends on `nul` and on nothing
+ * else in the tree. Anonymity here, imposture there.
+ *
  * FIRSTNESS IS ENFORCED HERE AND NOWHERE ELSE, and it could not have been
  * enforced anywhere until something held a sequence. SEED.md #1: "The first
  * ground is received, never derived. A prior is a gift and must name its
@@ -140,7 +148,7 @@ const isFrame = (f) => Boolean(f && Array.isArray(f.acts) && f.giver);
  * units its giver's samples are in; a constructed ground's is in the
  * statistic's units over the material. They are not the same quantity and
  * putting them in one series is exactly the averaging SEED.md #5 refuses. It
- * did not fail loudly — the gift's ananda was simply larger than every act's,
+ * did not fail loudly — the gift's aperture was simply larger than every act's,
  * so a max-over-windows statistic read the GIFT at every window and the
  * engine's whole trajectory became invisible behind its own first ground.
  * Every reader looked identical, and both deaths read as health.
@@ -169,13 +177,14 @@ export const note = (frame, act) => {
   if (!act || typeof act !== "object") return gap("empty_material", { reason: "no act" });
   if (!act.op) return gap("undeclared", { what: "op", why: "an act that names no operator is not in the record" });
   if (!act.grain) return gap("undeclared", { what: "grain", why: "an act lands at a grain or it does not land" });
+  if (!act.organ) return gap("undeclared", { what: "organ", why: "an act that names no organ is not in the record" });
   if (!OPS.includes(act.op)) return gap("unknown_spec", { op: act.op });
   if (!GRAINS.includes(act.grain)) return gap("unknown_spec", { grain: act.grain });
 
   const bad = admissible(act.ground);
   if (bad) return bad;
 
-  const entry = { op: act.op, grain: act.grain };
+  const entry = { op: act.op, grain: act.grain, organ: act.organ };
 
   if (frame.origin === null) {
     if (!act.ground.provenance)
@@ -308,7 +317,7 @@ const placeGap = (a, b) => quantile(a.samples, 0.5) - quantile(b.samples, 0.5);
  * reader" needs. Two halves of one STATIONARY trajectory already sit slightly
  * apart, because they are different stretches of material and not merely
  * different seeds over one stretch — and a null that never splits cannot see
- * that. Measured, on five stationary readers whose ananda plainly does not
+ * that. Measured, on five stationary readers whose aperture plainly does not
  * drift, `level` returned `above` three times and `below` twice, every one of
  * them clearing its own reseeding threshold by three to six times. A coin,
  * reported confidently. Exactly SEED.md #6: "a bad perturbation fails
@@ -327,12 +336,12 @@ const placeGap = (a, b) => quantile(a.samples, 0.5) - quantile(b.samples, 0.5);
  * THE SIGN IS OWED THE SAME NULL, and is three-valued for the reason
  * `pattern.opened` is. `opened` here is the direction of the engine's own room:
  * the later half's ground sitting BELOW the earlier half's is the engine
- * closing — ananda declining act over act, which is SEED.md's second death
+ * closing — aperture declining act over act, which is SEED.md's second death
  * written as a number. Above is still encountering. Inside the null is no
  * direction sayable, which is a result (SEED.md #8) and never a quiet vote.
  *
  * Note what `opened` here is NOT. An earlier version of this organ read the
- * sign off `volume` — the ananda of a ground built over the whole trajectory
+ * sign off `volume` — the aperture of a ground built over the whole trajectory
  * against one over its first half — and reported a briskly closing reader as
  * `opened: true` on every seed. That number is the trajectory's SPREAD, and a
  * declining series covers more range than its own first half does. The spread

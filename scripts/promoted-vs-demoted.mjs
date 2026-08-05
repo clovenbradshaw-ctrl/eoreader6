@@ -260,7 +260,7 @@ console.log(`  pattern(before=ground)   -> ${isGap(patD) ? `gap "${patD.gap}"` :
 // ── layer C. WIDTH — the real trace, and why it gates everything ─────────────
 
 console.log("\n################ C. WIDTH — what a real level-1 reading actually passes on ################");
-console.log("The transcript's regime-sequence fed a handful of concluded regimes' anandas and");
+console.log("The transcript's regime-sequence fed a handful of concluded regimes' apertures and");
 console.log("collapsed. Same shape here, with the engine's own one-grain-up quantity:\n");
 
 const level1 = multiSpread([[1, 40], [6, 40], [1, 40], [6, 40]], 3);

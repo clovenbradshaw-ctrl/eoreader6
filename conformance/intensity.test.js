@@ -1,4 +1,4 @@
-// Intensity: the sign of ananda, and what it is actually tracking.
+// Intensity: the sign of aperture, and what it is actually tracking.
 //
 // Opened by reading Whitehead, Process and Reality II.3 ("The Order of Nature"),
 // the four grounds of 'order'. The third is a claim this engine can be asked
@@ -12,7 +12,7 @@
 // Both halves have organs here. Contrast held is `disagreement()` — SEED.md #6,
 // "censored differences are kept, not dropped." Dismissal into incompatibility
 // is `exceeds_witness`: the ground cannot place the component at all, so it
-// cannot enter feeling. Heightened intensity is `pattern().opened` — ananda
+// cannot enter feeling. Heightened intensity is `pattern().opened` — aperture
 // widening, the seed's sign of encounter over extraction.
 //
 // Asking it turned up something before the answer: the sign had no null.
@@ -25,7 +25,7 @@ const W = 5;
 const DRAWS = 256;
 const RESEEDS = 16;
 
-// A base with room in it: ananda 0.6 against a reseeding null of 0.2, so both
+// A base with room in it: aperture 0.6 against a reseeding null of 0.2, so both
 // halves of the sign are sayable. See the asymmetry test below for why that is
 // not the default case.
 const base = Array.from({ length: 40 }, (_, i) => i % 7);
@@ -110,7 +110,7 @@ test("the null the sign is measured against is never zero-width", () => {
 // ── an asymmetry that is not a bug, and must not be mistaken for one ─────────
 
 test("narrowing is unsayable from a ground with no room to lose", () => {
-  // `quiet`'s ananda is 0.2 and its own reseeding null is 0.2. The largest
+  // `quiet`'s aperture is 0.2 and its own reseeding null is 0.2. The largest
   // narrowing physically available — all the way to zero volume — is exactly the
   // null. So from such a ground the engine can report encounter and can never
   // report extraction, whatever happens. Not a defect of the sign: a real fact
@@ -120,7 +120,7 @@ test("narrowing is unsayable from a ground with no room to lose", () => {
   assert.ok(volume(before) > 0);
   const after = ground({ material: [...quiet, ...Array(20).fill(1)], draws: DRAWS, window: W });
   const p = pattern({ before, after, material: quiet, reseeds: RESEEDS });
-  assert.ok(volume(before) <= p.volumeNull, "quiet's ananda does not clear its own null");
+  assert.ok(volume(before) <= p.volumeNull, "quiet's aperture does not clear its own null");
   assert.notEqual(p.opened, false);
 });
 
@@ -138,7 +138,7 @@ test("Whitehead (iii) is refuted here: intensity tracks dismissal, not contrast 
   // it runs the wrong way. Whitehead's claim is that intensity rises from
   // components entering feeling AS CONTRAST and specifically NOT from their
   // dismissal as incompatible. Here dismissal is the only thing that reliably
-  // widens the ground: ananda responds to sheer exceedance — surfeit, the
+  // widens the ground: aperture responds to sheer exceedance — surfeit, the
   // reZero trigger — and barely responds to a contrast the engine holds.
   //
   // This is not a defect in `disagreement()`. It is what (iv) predicts of a
@@ -160,7 +160,7 @@ test("Whitehead (iii) is refuted here: intensity tracks dismissal, not contrast 
   //
   // Necessary but not sufficient, and the reason is structural: a ground is
   // built by PERTURBING material, and both perturbation families destroy order,
-  // so ananda — a property of that order-free null — cannot see order at any
+  // so aperture — a property of that order-free null — cannot see order at any
   // grain. Objectifying satisfactions gives a successor its components; it does
   // not give the successor a ground that can be surprised by how they are
   // arranged. See superject.test.js, "order is legible to the figure and

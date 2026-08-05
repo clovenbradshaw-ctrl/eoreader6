@@ -21,8 +21,8 @@ so that a candidate cannot look good by accident.
 | candidate | organ under test | verdict |
 |---|---|---|
 | `candidate:regime-mean` | atmosphere's causal re-zero tracker | **earned on real material**, with a caveat below |
-| `candidate:ananda-scaled` | ground volume as an uncertainty signal | **not earned** — mildly harmful everywhere |
-| `candidate:regime-ananda` | both at once | **not earned** — tracks regime-mean, always slightly worse |
+| `candidate:aperture-scaled` | ground volume as an uncertainty signal | **not earned** — mildly harmful everywhere |
+| `candidate:regime-aperture` | both at once | **not earned** — tracks regime-mean, always slightly worse |
 | `candidate:placement-rate` | the ground's failure-to-place rate as uncertainty | **not earned** — beats all baselines on real prose, but never beats regime-mean |
 
 ### regime-mean, on real prose
@@ -79,20 +79,20 @@ a half-blind detector. Both halves of that trade are real; neither is resolved
 here. Named, not patched, because patching it without a measurement would just
 be the earlier bug again.
 
-### ananda, as an uncertainty signal
+### aperture, as an uncertainty signal
 
-`SEED.md` calls ananda "the warmth you check for" and explicitly not a gate and
+`SEED.md` calls aperture "the warmth you check for" and explicitly not a gate and
 not a score. This did not try to make it one. It asked a narrower question — is
 ground volume *informative* about how uncertain the next step is — by holding
-the forecast centre identical to `baseline:last-value` and letting ananda
+the forecast centre identical to `baseline:last-value` and letting aperture
 modulate only the spread, entering as a dimensionless ratio to its own running
 mean so no scale constant was smuggled in.
 
-The answer is no. `candidate:ananda-scaled` is negative on every series in the
+The answer is no. `candidate:aperture-scaled` is negative on every series in the
 battery, including real material (−323,142 vs last-value). If ground volume
 carried no information the ratio would hover near 1 and the gain would sit near
 zero; it is consistently, mildly worse than that, so the modulation is adding
-noise. This does not touch ananda's role as a health sign. It refutes one
+noise. This does not touch aperture's role as a health sign. It refutes one
 specific use of it, which is the only thing that was tested.
 
 ### placement, as an uncertainty signal
@@ -122,7 +122,7 @@ the authorship SEED.md's relativity debt says this module does not have.
 
 `candidate:placement-rate` asks one narrow question: does the current regime's
 non-PLACED rate, entered as a ratio to its own running mean (the same
-dimensionless-bridge discipline as `candidate:ananda-scaled`), usefully
+dimensionless-bridge discipline as `candidate:aperture-scaled`), usefully
 modulate `candidate:regime-mean`'s spread? Gain against
 `baseline:moving-mean-6`, side by side with the candidate it must beat:
 
@@ -136,10 +136,10 @@ modulate `candidate:regime-mean`'s spread? Gain against
 
 **Not earned, but not harmful either.** On real prose it BEATS ALL FOUR
 BASELINES (+1.31M over moving-mean-6, +9.81M over last-value) — the only
-candidate besides `regime-mean` and `regime-ananda` to do so. It simply never
+candidate besides `regime-mean` and `regime-aperture` to do so. It simply never
 beats `regime-mean`, its own minimal contrast, on any series. The modulation
 costs a little everywhere and adds nothing anywhere, which is a weaker verdict
-than `ananda-scaled`'s (actively harmful) and still short of earning its place.
+than `aperture-scaled`'s (actively harmful) and still short of earning its place.
 
 The placement permutation null (tag positions destroyed, count held fixed, 8
 replicates) locates what information is actually there:

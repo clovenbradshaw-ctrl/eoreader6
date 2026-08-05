@@ -30,16 +30,16 @@ const SPEC = { window: 12, draws: 100, reseeds: 5, tolerance: 3, hop: 4, seed: 1
 test("awareness is opt-in — off by default, no ambient ground built", () => {
   const turn = runTurn({ material: homogeneous(1), ...SPEC });
   assert.ok(!isGap(turn));
-  assert.equal(turn.ambientAnanda, null);
+  assert.equal(turn.ambientAperture, null);
   assert.equal(turn.ambientGround, null);
 });
 
 test("the ambient ground's volume is sampled at every act", () => {
   const turn = runTurn({ material: homogeneous(1), ...SPEC, awareness: true });
   assert.ok(!isGap(turn));
-  assert.ok(turn.ambientAnanda.length > 0);
+  assert.ok(turn.ambientAperture.length > 0);
   // Every act samples SOME value from the ambient ground, once one exists.
-  const settled = turn.ambientAnanda.filter((v) => v !== null);
+  const settled = turn.ambientAperture.filter((v) => v !== null);
   assert.ok(settled.length > 0);
 });
 
@@ -65,12 +65,12 @@ test("the ambient reach is unaffected by attention's region conceding", () => {
     "the ambient ground's extent must exceed the current (post-concession) region's own extent");
 });
 
-// ── §8: ananda as a series ───────────────────────────────────────────────────
+// ── §8: aperture as a series ───────────────────────────────────────────────────
 
-test("a region's ananda series has length equal to its own act count", () => {
+test("a region's aperture series has length equal to its own act count", () => {
   const turn = runTurn({ material: homogeneous(2), ...SPEC });
   assert.ok(!isGap(turn));
-  for (const r of turn.regions) assert.equal(r.ananda.length, r.acts);
+  for (const r of turn.regions) assert.equal(r.aperture.length, r.acts);
 });
 
 test("the series is reported at equal prominence to opened, on every region", () => {
@@ -80,20 +80,20 @@ test("the series is reported at equal prominence to opened, on every region", ()
   assert.ok(!isGap(turn));
   assert.ok(turn.regions.length >= 2, "this material must concede at least once");
   for (const r of turn.regions) {
-    assert.ok(Array.isArray(r.ananda));
+    assert.ok(Array.isArray(r.aperture));
     assert.ok(r.opened === true || r.opened === false || r.opened === null);
   }
 });
 
-test("one direction only — the ananda series is never itself fed to a ground that re-enters the same region", () => {
+test("one direction only — the aperture series is never itself fed to a ground that re-enters the same region", () => {
   // Structural, not a runtime probe: turn.js never passes a region's own
-  // `ananda`/`anandaSeries` as `material` into `ground()`/`clearVoid()`. If it
+  // `aperture`/`apertureSeries` as `material` into `ground()`/`clearVoid()`. If it
   // did, the type checks (`incommensurate_extent`, `cites`) would refuse it
   // anyway, but the discipline is that it is never attempted.
   const src = new URL("../packages/engine/loops/turn.js", import.meta.url);
   const code = readFileSync(src, "utf8");
-  assert.ok(!/clearVoid\(\{\s*material:\s*anandaSeries/.test(code));
-  assert.ok(!/ground\(\{\s*material:\s*anandaSeries/.test(code));
+  assert.ok(!/clearVoid\(\{\s*material:\s*apertureSeries/.test(code));
+  assert.ok(!/ground\(\{\s*material:\s*apertureSeries/.test(code));
 });
 
 // ── §9: release before failure ──────────────────────────────────────────────

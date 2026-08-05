@@ -16,7 +16,7 @@ import { createTierStack, foldThrough, massIsConsistent, gammaFor } from "../pac
 import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
 import { projectReferents } from "../packages/engine/referents/index.js";
-import { resolveNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
+import { resolveAllNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
 
 const SENTENCES_PER_FRAME = 6;
 
@@ -86,10 +86,7 @@ surfaceToId.sort((a, b) => b[0].length - a[0].length);
 // someone else. Without this, referent-gated SVO kept 4 of 570 triples,
 // because in first-person narrative nearly every subject is a pronoun.
 const coref = JSON.parse(readFileSync(COREF_PATH, "utf8"));
-const narratorSource = coref.referents.find((r) => Array.isArray(r.narratorSpans) && r.narratorSpans.length);
-const { resolved: narratorSpans, unresolved: narratorGaps } = narratorSource
-  ? resolveNarratorSpans(text, `ref:narrator:${narratorSource.id}`, narratorSource.narratorSpans)
-  : { resolved: [], unresolved: [] };
+const { resolved: narratorSpans, unresolved: narratorGaps } = resolveAllNarratorSpans(text, coref.referents);
 
 let firstPersonBound = 0, firstPersonGapped = 0;
 

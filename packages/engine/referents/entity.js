@@ -171,7 +171,7 @@ export const clearEntityVoid = (state, surface) => clearVoidOverArrivals(state, 
 // ── ② SIG · Figure — is this being here, and is its ground fit to see against ─
 
 /**
- * Presence, and the room left to be surprised in. Ananda is the interquartile
+ * Presence, and the room left to be surprised in. Aperture is the interquartile
  * volume of the being's ground — never a gate, the warmth you check for.
  * A ground of zero width would clear anything put in front of it.
  */
@@ -179,7 +179,7 @@ export const senseEntity = (g) => {
   if (isGap(g)) return { viable: false, reason: g };
   const room = volume(g);
   if (!(room > 0)) return { viable: false, reason: gap("empty_material", { reason: "ground of zero width" }) };
-  return { viable: true, ananda: room, extent: g.extent };
+  return { viable: true, aperture: room, extent: g.extent };
 };
 
 // ── ⑦ DEF · Figure — where the being's ground fails ──────────────────────────
@@ -291,7 +291,7 @@ export const admitFromArrivals = (state, at) => {
       arrivals: at.slice(),
       extent: g.extent,
       censored: d.censored,
-      ananda: sensed.ananda,
+      aperture: sensed.aperture,
       bornAt: state.unit,
       moved: p.moved,
       censoredRank,    // magnitude reportable, place not — never filled with a guess
@@ -323,12 +323,12 @@ export const admitEntity = (state, surface) => {
  *
  *   by count   — frequency is not significance; that is how a reader ends up
  *                calling the commonest word the protagonist.
- *   by ananda  — SEED.md is explicit that ananda is "never a gate, never a
+ *   by aperture  — SEED.md is explicit that aperture is "never a gate, never a
  *                score: the warmth you check for." Sorting by it was measured
  *                here and is actively misleading: on `fi-11940` the top of an
- *                ananda-ranked register was entirely candidates sitting at
+ *                aperture-ranked register was entirely candidates sitting at
  *                exactly `minArrivals`, because a small extent gives a wide
- *                interquartile ground. Ranking by ananda ranks by rarity.
+ *                interquartile ground. Ranking by aperture ranks by rarity.
  *
  * Birth order is the one ordering a causal reader actually has. Anything that
  * wants a ranking must earn it from a ground, downstream, and say so.

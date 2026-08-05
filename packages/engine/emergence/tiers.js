@@ -201,7 +201,7 @@ const placeAgainstContinuation = (tier, surprise, arrivalTotal, alpha) => {
 
   // Inside what the prior could have produced by carrying on: real, placed,
   // and not a shift. `rank` is the fraction of null draws at least this large.
-  return { rank: d.rank, support: d.support, ananda: d.volume, passed: false };
+  return { rank: d.rank, support: d.support, aperture: d.volume, passed: false };
 };
 
 /**
@@ -213,7 +213,7 @@ export const observe = (tier, arrival, { alpha = 1 } = {}) => {
   for (const v of arrival.values()) arrivalTotal += v;
   if (arrivalTotal === 0)
     return {
-      surprise: null, passed: false, rank: null, censored: null, reZero: false, ananda: null, support: null,
+      surprise: null, passed: false, rank: null, censored: null, reZero: false, aperture: null, support: null,
       gap: gap("empty_material", { reason: "nothing arrived at this tier", tier: tier.name }),
     };
 
@@ -275,7 +275,7 @@ export const observe = (tier, arrival, { alpha = 1 } = {}) => {
     rank: placed.rank ?? null,
     censored: placed.censored ?? null,
     reZero: placed.reZero === true,
-    ananda: placed.ananda ?? null,
+    aperture: placed.aperture ?? null,
     support: placed.support ?? null,
     gap: placed.gap ?? null,
   };

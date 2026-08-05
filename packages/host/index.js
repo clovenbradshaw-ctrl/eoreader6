@@ -22,4 +22,4 @@ export {
 
 export { executePrompt } from "./surfer.js";
 
-export { createSinger, singPass, singRun, anandaSeries, sing } from "./sing.js";
+export { createSinger, singPass, singRun, apertureSeries, sing } from "./sing.js";

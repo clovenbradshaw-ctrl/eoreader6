@@ -61,6 +61,8 @@ export const GAP_TYPES = Object.freeze([
   "byte_mismatch", // emergence/field: a part declares a byte extent its own text does not fill — a lying address
   "overlapping_parts", // emergence/field: two parts of one source claim the same bytes
   "gap_between_parts", // emergence/field: a part begins before/after its predecessor ended — a missing part
+  "undeclared_organ", // emergence/declaration: an act by a name that is not on the roster — an organ this engine has not earned has no acts in the record
+  "undeclared_cell", // emergence/declaration: an organ acted outside the cell it declared, which is acting as something it is not
 ]);
 
 export const gap = (type, detail = {}) => {
@@ -734,7 +736,7 @@ export const reZero = (g, { material, seed }) =>
   ground({ ...g.spec, material, seed: seed ?? g.spec.seed + g.spec.draws, via: "reZero" });
 
 /**
- * Ananda is the room left to be surprised in. Interquartile, not range: range
+ * Aperture is the room left to be surprised in. Interquartile, not range: range
  * grows without bound in `draws`, which would make the vital sign partly a
  * measure of how many times we sampled.
  */
@@ -744,7 +746,7 @@ export const volume = (g) => (g?.samples?.length ? quantile(g.samples, 0.75) - q
  * The tails' own room. Interquartile is the middle's width; this is the
  * outer 90% — 0.95 minus 0.05, so the two move independently: the middle can
  * narrow while the tails hold, and the tails can spread while the middle
- * holds. Volume and tail span are companions, not copies; ananda that stayed
+ * holds. Volume and tail span are companions, not copies; aperture that stayed
  * still is no proof the tails did. Companion to `volume`, never a fourth
  * declared number — it is derived from the same samples.
  */

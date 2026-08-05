@@ -13,7 +13,7 @@ null).
 `packages/engine/perceiver/{audio,image,video}/material.js` are not stubs —
 they decode real media via system `ffmpeg` and reduce to genuine numeric
 series: RMS energy per audio frame, mean scanline luminance per image row,
-mean absolute frame-difference per video transition. `scripts/ananda-run.mjs`
+mean absolute frame-difference per video transition. `scripts/aperture-run.mjs`
 already dispatches any file to the right perceiver by extension and runs
 `nul`'s ground/pattern machinery generically. None of it had a conformance
 test, and no test media existed. This is that test.

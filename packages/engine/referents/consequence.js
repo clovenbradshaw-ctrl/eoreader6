@@ -102,7 +102,7 @@ const segregationTest = (atA, atB, { reseeds = 200, seed = 1013904223 } = {}) =>
  * OWN local surprisal (`.observed`, the mean of the reading's series AT those
  * specific positions) more than an arbitrary same-size random addition drawn
  * from elsewhere in the reading would? `volume(g)` is deliberately NOT this
- * statistic — SEED.md's own doctrine (senseEntity's header) is that ananda is
+ * statistic — SEED.md's own doctrine (senseEntity's header) is that aperture is
  * "never a gate," and measured here directly: `volume(g)` is a pure function
  * of the arrival COUNT and the reading's own series, resampled from a seed
  * keyed only on that count — it cannot see WHICH positions were asked about,

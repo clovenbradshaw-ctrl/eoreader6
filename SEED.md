@@ -125,7 +125,8 @@ already declared it.
 
 ## The sign of health
 
-**Ananda is the volume of the ground** — interquartile, not range, because range
+**Aperture is the volume of the ground** — `volume(g)`, the interquartile width
+of the ground's own samples, Q75 − Q25. Interquartile, not range, because range
 grows without bound in `draws` and a system could then look healthier by
 sampling more.
 
@@ -134,6 +135,10 @@ sign tells you which, and a system that measured pattern without the sign would
 call extraction health. Never a gate, never a score: the warmth you check for.
 
 Checked continuously, not at the ends. See Amendment VI.
+
+This quantity was called `ananda` until 2026-08-04. The name is superseded, not
+erased — see Amendment XVII for why a quantity may not be named after a state
+its measurement does not establish.
 
 ## The growth rule
 
@@ -146,12 +151,16 @@ re-earned here or does not come, including the good ones.
 
 Stated so it is not mistaken for done:
 
-- **The privileged frame is possible, not mandatory** — `frame` puts an act in
-  the record and measures a sequence of them, so the debt below is no longer
-  that the thing cannot be done. It is that nothing *requires* an organ to
-  record what it did. The "advisory" grep is still a lint wearing an
-  invariant's clothes, and it stays until an organ that fails to declare its
-  acts is refused rather than merely unaudited.
+- **The privileged frame is checked, not compulsory** — an act that names no
+  organ is now refused by the record, and a name that is not on the roster, or
+  an organ acting outside the cell it declared, is refused by
+  `emergence/declaration` (Amendment XVIII). What remains unearned is *compulsion*:
+  nothing forces an organ to declare at all, and an organ that never calls
+  `declare` still runs. The debt moved rather than closed, and it moved to the
+  host — whoever received the first prior holds the sequence, and a loop that
+  builds its own ground can never open one (#1, and `loops/turn`'s header
+  refuses a frame for exactly that reason). The "advisory" grep stays until
+  something makes the call mandatory rather than available.
 - **Reader-sclerosis is not separated from material-quiescence** — and cannot
   be, here. A ground is built by perturbing present material and the engine
   carries no state between acts, so it has nothing that could ossify
@@ -186,7 +195,7 @@ Stated so it is not mistaken for done:
 - **Firstness** — enforced. `frame.note` refuses an opening act whose ground
   names no giver, which was impossible while nothing held a sequence. The
   origin is held apart from the trajectory rather than averaged into it: a
-  gift's ananda is in its giver's units and an act's is in the statistic's, and
+  gift's aperture is in its giver's units and an act's is in the statistic's, and
   the first version of the organ mixed them and made every reader look
   identical.
 - **`level`** — built, in `nul`, and load-bearing for the growth rule. This
@@ -208,7 +217,7 @@ Stated so it is not mistaken for done:
   attention just built to judge material with: `loops/turn`'s `awareness`
   option maintains a second ground, `anchor()`-marked, rebuilt every act over
   the whole accumulated extent from the start of the material rather than over
-  attention's current region — no new aperture, the same declared `window`,
+  attention's current region — no wider opening, the same declared `window`,
   differing from attention by EXTENT alone. `nul`'s `difference()` refuses to
   perceive through it (`anchor_ground`), the same shape as `kept_ground`, so
   the anchor cannot become a second attention by accident. Evidence:
@@ -466,12 +475,12 @@ Three declared numbers still.
 
 *2026-08-01. Amends "The sign of health."*
 
-The clause reads "ananda is the volume of the ground … never a gate, never a
+The clause reads "aperture is the volume of the ground … never a gate, never a
 score: the warmth you check for." That stands entire. What does not stand is
 the **cardinality it implies** — that the sign is something read at the
 moments a claim is made.
 
-Read once at a region's open and once at its close, ananda is evidence
+Read once at a region's open and once at its close, aperture is evidence
 *about* a region. Read at every act, it is **material**: it can have a
 ground built over it, be perturbed, and be witnessed like anything else the
 engine reads. A vital sign taken twice is a before-and-after; taken
@@ -485,7 +494,7 @@ conditioning its own material is the contamination case, and it gaps.
 **No new declared number.** The sampling cadence is every act, and the acts
 are already enumerated by the loop. Three declared numbers still.
 
-Evidence: `loops/turn`'s per-region `ananda` series, `conformance/turn-flow.test.js`.
+Evidence: `loops/turn`'s per-region `aperture` series, `conformance/turn-flow.test.js`.
 
 **A tension, named rather than resolved.** The privileged-frame organ's own
 discipline keeps frame's *measurements* out of the trajectory frame measures
@@ -613,8 +622,8 @@ the choice of perturbation, so the register carries that choice — and refuses
 a past built on a different perturbation by type (`unknown_spec`), because two
 grounds built to different specs were never comparable (#5).
 
-**No fourth declared number.** `close` is one closing ananda, the same scalar
-the ananda flow already carried across regions; the register's perturbation is
+**No fourth declared number.** `close` is one closing aperture, the same scalar
+the aperture flow already carried across regions; the register's perturbation is
 the measurement owning a choice, not a resolution. Three declared numbers
 still.
 
@@ -901,6 +910,130 @@ mistaken for done, the way "Not yet earned" already does for the frame and
 for reader-sclerosis.
 
 Evidence: `conformance/locate.test.js`.
+
+### XVII — A quantity's name is a claim about what it is
+
+*2026-08-04. Amends "The sign of health."*
+
+`ananda` is now `aperture`, everywhere: 252 occurrences across 36 files, plus
+`scripts/ananda-run.mjs` → `scripts/aperture-run.mjs`. The measurement did not
+change. `volume(g)` is what it always was — Q75 − Q25 over the ground's samples
+— and every guardrail on it stands: never a gate, never a score, sampled
+continuously rather than concluded (Amendment VI).
+
+**Why the rename is doctrine and not taste.** *Ananda* means bliss. The
+identifier therefore asserted that an interquartile width is a state of the
+system, and no null in this repo establishes that. The definition beside it was
+honest, the comments were honest, and the word went on making a claim the
+measurement never earned. This is the same failure the cube's own refutation
+records from the other side: a name that survives its evidence keeps working on
+whoever reads it next. `aperture` names the opening and nothing else, and it
+carries its own guardrail — an aperture is set for what you are trying to see,
+never maximised, and widening one costs depth of field. The seed's tradeoff, in
+the noun.
+
+**The rule this generalises to.** *Ancestors may be cited in comments. They may
+not name quantities.* Whitehead, Bateson, Ramakrishna, Koestler, *E. coli* stay
+exactly where they are — in headers, as the record of where a mechanism came
+from, refutable in place (`conformance/intensity.test.js` refutes Whitehead
+(iii) by name). What changes is that no identifier may borrow a word whose
+ordinary meaning asserts more than the statistic under it. A header cites a
+source. An identifier makes a claim.
+
+**Two prose uses of "aperture" predated this and meant `window`** — "no new
+aperture, the same declared `window`", in this file and in `loops/turn.js`.
+Both now say "no wider opening", because the reach of the present is `window`
+and has been since the three declared numbers. One word, one referent.
+
+**No new declared number**, and no behaviour changed: 670 conformance tests,
+666 passing, the same two failures as before the rename (one an absent sibling
+prior, one recorded in "Not yet earned").
+
+**Still affective, and left standing rather than quietly fixed**: "the warmth
+you check for" is quoted verbatim by Amendment VI, so replacing it here would
+make that amendment misquote its own source. The phrase is prose about how to
+read the number, not the number's name, which is the distinction this amendment
+draws. It stays until something supersedes VI.
+
+### XVIII — An act names the organ that performed it
+
+*2026-08-04. Amends "Not yet earned", the privileged-frame debt.*
+
+Two refusals at two levels, and neither does the other's job:
+
+- **The record refuses anonymity.** `frame.note` refuses an act carrying no
+  `organ`, the same shape as its existing refusals for `op` and `grain`, and
+  the act carries the name into the trail. It never asks whether the name is
+  real, because `frame` depends on `nul` and on nothing else in the tree.
+- **The roster refuses imposture.** `emergence/declaration` — DEF · Ground,
+  the same cell as `perceiver/text/admit` and the same sentence one grain over:
+  a prior must name its giver, an act must name its organ. A name that is not
+  on the roster is `undeclared_organ`. An organ acting outside the cell it
+  declared is `undeclared_cell`, and the gap says which cell it left, in the
+  algebra's own vocabulary.
+
+**The match is exact, on purpose.** The roster's convention is already one id
+per act — `nul/core`, `nul/witness` and `nul/rezero` are three ids for one
+module. An organ that genuinely performs two acts says so in the roster, where
+`emergence/coverage` can see it, rather than in a runtime argument nothing
+reports.
+
+**The full grid does one piece of work here** that a partial one could not: an
+act at any occupied cell has an organ to be attributed to, so attribution never
+falls back to a gap. That is the first load-bearing consequence of 27/27, and
+it is a small one — the grid's fullness remains a fact about a roster, not
+evidence about a capability.
+
+**What this does NOT earn, stated so it is not mistaken for done**: declaration
+is available, not mandatory. Compulsion belongs to the host, for the reason
+above. `conformance/declaration.test.js`'s last test holds that gap open and
+will fail the day it closes, which is the only mechanism this file has for
+keeping "Not yet earned" honest.
+
+**No new declared number.** This organ measures nothing; it refuses. Two new
+gap types (`undeclared_organ`, `undeclared_cell`), no thresholds — a refusal
+that needed one would be a measurement wearing a type error's clothes (#7).
+
+Evidence: `conformance/declaration.test.js` (10 tests), `conformance/frame.test.js`.
+
+### XIX — A full grid is not a completeness claim, and needed a different honesty check
+
+*2026-08-04. Supersedes a `coverage.test.js` assertion, dated 2026-07-31 or
+earlier, that the instrument's own occupancy report admits an unearned cell.*
+
+That test asserted `report.empty.length > 0` — *"the report admits unearned
+cells; a perfect grid would be a lie"* — and it was right when it was written.
+The 2026-08-04 terrain commits (`DEF·Pattern`, `REC·Pattern`, `SYN·Ground`)
+filled the grid to 27/27, and the assertion started failing exactly as
+designed: it caught its own premise going false. It was not deleted. Deleting
+a red assertion because the code moved on is the one move this file's own
+growth rule forbids — an organ is re-earned or it does not come, and a check
+is not exempt from that for being inconvenient.
+
+**Why 27/27 is not evidence of anything**, and this is worth stating plainly
+because the number invites the opposite reading: the cube was measured as a
+content *classifier* and refuted — 95.7% of cell assignments survived
+shuffling the words inside 2,527 paragraphs (CUBE.md). It survives here only
+as a placement instrument and a dispatch key. A full grid is a fact about the
+roster — every declared cell has an organ — and says nothing about whether the
+engine can do anything the grid did not already know how to name. Watch for
+the sentence "we have all nine terrains" doing work in an argument. It cannot.
+
+**The replacement invariant moves the honesty check to where it now belongs.**
+The grid can no longer be the place that admits what is unearned, because it
+has no room left to admit it in. "Not yet earned" already is that place — it
+existed before the grid filled and does not depend on the grid staying
+partial. `coverage.test.js` now asserts that section is non-empty, by reading
+SEED.md directly, the same discipline `conformance/seed.test.js` already uses
+for the doctrine's presence. If every debt on that list is ever closed, the
+honest response is not to delete this test either. It is to go looking for
+the next one, the way Amendment XVIII's own last test does at one level down.
+
+No new declared number; no organ changed. One test rewritten, its old
+assertion recorded here rather than silently dropped, because a test that
+disappears without a record is the same failure as a name that outlives its
+evidence (Amendment XVII) — a claim nobody can check against what it used to
+say.
 
 ## The instrument
 

@@ -131,7 +131,7 @@ test("the run-length null has real width — a degenerate sequence is not silent
 
 // ── §5: equanimity — a closed region is as reportable as an open one ────────
 
-test("readAtmosphere reports anandaOpen/anandaClose/opened with the same prominence turn.js and surf.js already do", () => {
+test("readAtmosphere reports apertureOpen/apertureClose/opened with the same prominence turn.js and surf.js already do", () => {
   const next = rng(9);
   const series = [];
   for (let i = 0; i < 200; i++) series.push(10 + next());
@@ -140,7 +140,7 @@ test("readAtmosphere reports anandaOpen/anandaClose/opened with the same promine
   assert.ok(!isGap(r));
   assert.ok(r.regions.length >= 2, "this material must concede at least once, or the test asserts nothing");
   for (const region of r.regions) {
-    assert.ok("anandaOpen" in region && "anandaClose" in region, "open and close are reported at equal prominence");
+    assert.ok("apertureOpen" in region && "apertureClose" in region, "open and close are reported at equal prominence");
     assert.ok(region.opened === true || region.opened === false || region.opened === null, "null is a third outcome, never folded into either");
   }
 });

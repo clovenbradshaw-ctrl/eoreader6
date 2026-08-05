@@ -61,18 +61,55 @@ the verb vocabulary (L2).
 
 ## Where the climb honestly stops
 
-- **First-person events are unmeasurable by the surface-anchored vocab.**
-  "rushed", "fled", "become" follow `I`, not a name, so they never enter the
-  measured vocabulary. The episode's `I`-adjacent verbs *are* measurable
-  (beheld, started, escaped, threw, remained…) but none is "rushed".
-- **The narrator prior covers only the creature's tale.** Three spans
-  (Walton/Victor/Creature is declared in the prior's comment; only the
-  creature's 3 spans exist in the file). Victor's and Walton's "I" are 453
-  typed gaps. The flee scene is not even attributed to Victor.
+- **First-person events are unmeasurable by the surface-anchored vocab, and
+  this is a SEPARATE gate from who "I" is.** `discoverRelationVocab`
+  (`perceiver/text/relations.js`) admits a verb candidate only when it
+  follows a token `extractSurfaces` already found — a capitalised run — never
+  a pronoun. "rushed", "fled" follow `I`, not a surface, so they cannot enter
+  the measured vocabulary no matter whose voice `I` resolves to. This limit
+  is unchanged by the fix below and cannot be, without a different admission
+  rule than the one II.1 and this ladder's own L2 already argue for (measured
+  recurrence after a candidate the text itself supplies, never a hand list —
+  "rushed" recurs after `I`, not after a name, in this book).
+- **The narrator prior covered only the creature's tale — closed 2026-08-04,
+  measured, and it did NOT fix the flee query.** This section originally read
+  "Victor's and Walton's 'I' are 453 typed gaps. The flee scene is not even
+  attributed to Victor," implying attribution was the missing piece. It was
+  half right: `eoPriors/priors/coref/pg84-frankenstein.json` now carries
+  `narratorSpans` for `walton` and `victor` too, chained end-to-end against
+  the book's own frame seams (Letters 1–4 → Chapter 1's first line → the
+  creature's existing spans, unchanged → resumed at "The being finished
+  speaking" → "Walton, _in continuation._" → the close), and
+  `resolveAllNarratorSpans` (new; `perceiver/text/narrator.js`) fixed a real
+  bug — the three scripts that consumed this prior each called
+  `coref.referents.find(r => r.narratorSpans...)`, which silently used only
+  the FIRST referent carrying spans and dropped the rest, so adding Victor
+  and Walton to the file alone would have changed nothing. Controlled
+  before/after, identical script and book, only the prior swapped:
+
+  | | before | after |
+  |---|---|---|
+  | narrator spans resolved | 3 | **7**, 0 unresolved |
+  | policy A: bound by scope / typed gaps | 136 / 453 | **589 / 0** |
+  | policy B: bound by scope / typed gaps | 104 / 265 | **369 / 0** |
+
+  Every narrator-attribution typed gap in the book closed — Victor's and
+  Walton's "I" now resolve everywhere, including through the one nested case
+  (the creature's closing speech, quoted inside Walton's own final letter:
+  `resolveAllNarratorSpans` sorts narrowest-span-first so the quotation
+  resolves to the creature, not to Walton, who merely contains it). And the
+  flee query, re-run against the fixed prior: **still `relation covers: NO`**.
+  `narrator scope: victor` now shows correctly at that byte — attribution
+  works — and the relation is still absent, because "rushed" never entered
+  the vocabulary in either run, for the reason in the bullet above. The two
+  limits are independent, not two symptoms of one cause; closing one is real
+  and measured and left the other exactly where it was.
 - Both limits are **witness-shaped**: they resolve by receiving a prior with
   a giver, never by deriving (II.2). The flee answer is a scene, not an
   entity — the prior that reaches it is a fold prior (a distribution over a
   scene), which is the eoPriors shape: priorMass → Void, priorBond → Field.
+  Closing it needs a different admission rule for the vocabulary gate, not
+  another prior of this shape.
 
 ## Ladder or helix
 

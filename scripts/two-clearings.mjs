@@ -4,7 +4,7 @@
 // Turn 1 cleared on surfeit only. Burstiness is a max-over-windows statistic,
 // so surfeit sees LEVEL shifts and is blind to SPREAD shifts: on a planted
 // two-regime series it caught the level change and missed the variance change,
-// while ananda (the ground's interquartile volume) tracked the missed one
+// while aperture (the ground's interquartile volume) tracked the missed one
 // exactly. turn.js now also clears on `moved` — pattern() against the ground's
 // own reseeding null. This script asks three questions in order, and the first
 // one can kill the second two:
@@ -20,7 +20,7 @@
 //
 //   2. THE PLANTED TEST. calm -> elevated (level shift) -> turbulent (spread
 //      shift at the SAME level). Surfeit should catch the first and miss the
-//      second. If `moved` catches the second, it is reading what ananda reads.
+//      second. If `moved` catches the second, it is reading what aperture reads.
 //
 //   3. THE EXTERNAL REFERENCE. Frankenstein's 24 real chapter boundaries,
 //      against a chance baseline computed by drawing boundary sets of the same
@@ -134,13 +134,13 @@ const rotationNull = (found, truth, w, extent, step = 1) => {
 
 const boundariesOf = (turn) => turn.events.filter((e) => e.op === "REC").map((e) => e.at);
 
-const anandaLine = (turn) => {
+const apertureLine = (turn) => {
   const opened = turn.regions.filter((r) => r.opened === true).length;
   const scored = turn.regions.filter((r) => r.opened !== null).length;
   const trace = turn.regions
-    .map((r) => (r.anandaClose == null ? "—" : r.anandaClose.toFixed(2)))
+    .map((r) => (r.apertureClose == null ? "—" : r.apertureClose.toFixed(2)))
     .join(" → ");
-  return `ananda ${trace}   opened ${opened}/${scored}`;
+  return `aperture ${trace}   opened ${opened}/${scored}`;
 };
 
 const score = (turn, truth, spec, extent) => {
@@ -173,7 +173,7 @@ const report = (label, turn, { truth, spec, extent } = {}) => {
   }
   console.log(line.join("  "));
   console.log(`    at: [${found.join(", ")}]`);
-  console.log(`    ${anandaLine(turn)}`);
+  console.log(`    ${apertureLine(turn)}`);
   if (Object.keys(turn.driftGaps).length) console.log(`    pattern gaps: ${JSON.stringify(turn.driftGaps)}`);
   return s;
 };
@@ -210,7 +210,7 @@ runAll("three regimes, SHUFFLED", shuffled(threeRegimes(3), 71), SPEC, null);
 // ── 2. the planted test ─────────────────────────────────────────────────────
 
 console.log("\n\n################ 2. PLANTED — level shift at 120, SPREAD shift at 240 ################");
-console.log("Surfeit caught 120 and missed 240 in turn 1. Ananda tracked 240 (0.5 → 1.2 → 2.5).");
+console.log("Surfeit caught 120 and missed 240 in turn 1. Aperture tracked 240 (0.5 → 1.2 → 2.5).");
 runAll("three regimes", threeRegimes(3), SPEC, [120, 240]);
 
 // ── 3. the external reference ───────────────────────────────────────────────

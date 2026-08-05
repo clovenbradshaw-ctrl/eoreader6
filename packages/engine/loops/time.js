@@ -2,7 +2,7 @@
 // the SAME material, read successively — more of the real thing seen each
 // pass, same document, same identity throughout. This is the reader-
 // assimilation loop (K passes). Extracted out of what was an unnamed loop
-// inside scripts/ananda-run.mjs — same mechanism, now a first-class,
+// inside scripts/aperture-run.mjs — same mechanism, now a first-class,
 // reusable thing instead of one script's private implementation detail.
 
 import { ground, pattern, volume, isGap } from "../../../nul/index.js";
@@ -61,7 +61,7 @@ export const timeLoop = ({ reduce, units, passes, window, draws, reseeds }) => {
         : { moved: pr.moved, opened: pr.opened, displacement: pr.displacement, reseedNull: pr.reseedNull, grewBy: pr.grewBy };
     }
 
-    results.push({ pass: p, fraction, chunks: material.length, ananda: volume(g), pattern: patternResult, ground: g });
+    results.push({ pass: p, fraction, chunks: material.length, aperture: volume(g), pattern: patternResult, ground: g });
     prevGround = g;
     prevMaterial = material;
   }

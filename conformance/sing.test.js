@@ -17,7 +17,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createSession } from "../packages/host/corpus.js";
-import { createSinger, singPass, singRun, anandaSeries, sing } from "../packages/host/sing.js";
+import { createSinger, singPass, singRun, apertureSeries, sing } from "../packages/host/sing.js";
 import { isGap } from "../nul/index.js";
 
 // Declared, as the loop demands.
@@ -141,16 +141,16 @@ test("the pass sequence is deterministic in its declared seed", () => {
   );
 });
 
-test("ananda is the volume of the ground the movements have built — null before there is a ground, never a gate", () => {
+test("aperture is the volume of the ground the movements have built — null before there is a ground, never a gate", () => {
   const moves = [0.4, 1.1, 2.6, 0.8, 1.4];
-  const out = anandaSeries(moves, { window: 3, draws: 8, seed: SEED });
+  const out = apertureSeries(moves, { window: 3, draws: 8, seed: SEED });
   assert.equal(out[0], null, "fewer than window movements: no ground, honestly");
   assert.equal(out[1], null);
   for (let k = 2; k < out.length; k++) {
     assert.equal(typeof out[k], "number", `a ground exists from the ${k + 1}th movement onward`);
     assert.ok(out[k] >= 0, "volume is non-negative");
   }
-  assert.throws(() => anandaSeries(moves, { window: 3, draws: 8 }), /seed is declared/);
+  assert.throws(() => apertureSeries(moves, { window: 3, draws: 8 }), /seed is declared/);
 });
 
 test("SING — the reading speaks from where it stands, stamped imagined", () => {

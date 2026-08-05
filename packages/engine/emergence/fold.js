@@ -122,7 +122,7 @@ const asRegion = (here) => {
  * Its ground is grown over `material[0..here.start]` — its actual world,
  * everything that has settled behind it, which is all a standpoint is made of.
  *
- * Returns { here, ground, projection, reach, ananda } or a gap. `projection`
+ * Returns { here, ground, projection, reach, aperture } or a gap. `projection`
  * has one row per window-position in the WHOLE material, each labelled `past`,
  * `within` or `horizon`, and placed or censored. Nothing is dropped: a
  * censored row still reports its magnitude, and only its place is missing.
@@ -200,7 +200,7 @@ export const fold = ({ material, here, window, draws, seed = 0, perturbation = "
      * the indeterminacy is a number rather than a remark.
      */
     undecided: projection.filter((p) => p.relation === "contemporary").length,
-    ananda: volume(g),
+    aperture: volume(g),
     spec: Object.freeze({ window, draws, seed, perturbation, of: `n${material.length}` }),
     provenance: Object.freeze({ giver: "emergence/fold", here: Object.freeze(region) }),
   });

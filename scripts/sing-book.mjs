@@ -21,7 +21,7 @@ const SELECTION = "mode"; // the song's choice of next form
 import { readFileSync } from "node:fs";
 import { createSession, admitChunked } from "../packages/host/corpus.js";
 import { stripContainer, splitSentences } from "../packages/engine/perceiver/text/spans.js";
-import { createSinger, singRun, anandaSeries, sing } from "../packages/host/sing.js";
+import { createSinger, singRun, apertureSeries, sing } from "../packages/host/sing.js";
 import { extractSurfaces } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
 import { discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
@@ -65,10 +65,10 @@ const strongest = run.strongest.map((e) => `    ${e.edge} (${e.weight.toFixed(3)
 console.log(`what the reader now believes most strongly:\n${strongest}`);
 console.log("");
 
-// Ananda: the volume of the ground the movements have built — reported, never
+// Aperture: the volume of the ground the movements have built — reported, never
 // consulted as a gate.
-const moods = anandaSeries(run.moves, { window: 6, draws: 16, seed: SEED });
-console.log("ananda (volume of the ground so far, per committed pass):");
+const moods = apertureSeries(run.moves, { window: 6, draws: 16, seed: SEED });
+console.log("aperture (volume of the ground so far, per committed pass):");
 console.log("  " + moods.map((v) => (v === null ? "." : v.toFixed(3))).join(" "));
 console.log("");
 

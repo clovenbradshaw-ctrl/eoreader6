@@ -43,8 +43,26 @@ test("empty cells are open questions in the algebra's own vocabulary", () => {
     assert.equal(c.terrain, derived.terrain, `${c.op}·${c.grain} terrain comes from the algebra`);
     assert.equal(c.stance, derived.stance, `${c.op}·${c.grain} stance comes from the algebra`);
   }
-  // The instrument's honest self-report: only Ground is fully earned.
-  assert.ok(report.empty.length > 0, "the report admits unearned cells — a perfect grid would be a lie");
+  // No assertion that report.empty is non-empty — SEED.md Amendment XVI
+  // supersedes that check. The grid filled to 27/27 on 2026-08-04 and a test
+  // that required an empty cell to exist would have started asserting
+  // something false about the roster, which is worse than asserting nothing.
+});
+
+// The grid can no longer be the place that admits what is unearned — it has
+// no room left to admit it in. SEED.md's "Not yet earned" section is, and
+// this is the replacement invariant Amendment XVI names: a full grid is a
+// fact about the roster, never a claim that nothing remains open. If this
+// ever fails, the honest fix is a new "Not yet earned" bullet, not deleting
+// the test.
+test("a full grid does not mean nothing is left unearned — SEED.md still names open debts", () => {
+  const seed = readFileSync(join(ROOT, "SEED.md"), "utf8");
+  const start = seed.indexOf("\n## Not yet earned");
+  assert.ok(start !== -1, "SEED.md still has a \"Not yet earned\" section");
+  const end = seed.indexOf("\n## ", start + 1);
+  const section = seed.slice(start, end === -1 ? undefined : end);
+  const bullets = section.match(/^- \*\*/gm) ?? [];
+  assert.ok(bullets.length > 0, "the section names at least one open debt, even with the grid full");
 });
 
 // ── occupied cells are derived, and the roster is fully reported ─────────────

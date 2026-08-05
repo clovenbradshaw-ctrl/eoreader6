@@ -25,11 +25,11 @@
 //       ground. So the gain measures exactly one thing — whether the re-zero
 //       boundaries are real.
 //
-//   candidate:ananda-scaled vs  baseline:last-value
+//   candidate:aperture-scaled vs  baseline:last-value
 //       Identical centre (the most recent value). The ONLY difference is the
 //       spread. So the gain measures exactly one thing — whether the volume of
 //       the ground carries information about how uncertain the next step is.
-//       SEED.md calls ananda "the warmth you check for" and explicitly not a
+//       SEED.md calls aperture "the warmth you check for" and explicitly not a
 //       gate or a score; this does not make it one. It asks a narrower
 //       question: is it INFORMATIVE. A thing can be informative and still
 //       never be a gate.
@@ -68,11 +68,11 @@
 //       The size of the load carried LESS than the fact of the load. Do not
 //       silently retry it; the code was reverted. See RESULTS.md.
 //
-// On not smuggling in a constant. The ananda candidate needs ground volume
+// On not smuggling in a constant. The aperture candidate needs ground volume
 // (on the scale of windowed means) to modulate a one-step spread (on the scale
 // of first differences), and any hand-picked bridge between those two scales
 // would be precisely the hand-set constant that baselines.js and nul both
-// refuse. So the bridge is derived: ananda enters only as a RATIO to its own
+// refuse. So the bridge is derived: aperture enters only as a RATIO to its own
 // running mean, which is dimensionless, and multiplies a spread the data
 // supplied. If ground volume carries no information the ratio hovers near 1,
 // the candidate collapses onto last-value, and the gain goes to approximately
@@ -260,13 +260,13 @@ export const holonGatedRegimeMean = ({ window, draws, tolerance, reseeds, seed =
 };
 
 /**
- * ananda as an uncertainty signal. Centre is the most recent value — identical
+ * aperture as an uncertainty signal. Centre is the most recent value — identical
  * to baseline:last-value — so the entire difference between them is the spread.
  */
-export const anandaScaled = ({ window, draws, seed = 0 }) => {
-  const history_ananda = [];
+export const apertureScaled = ({ window, draws, seed = 0 }) => {
+  const history_aperture = [];
   return {
-    id: "candidate:ananda-scaled",
+    id: "candidate:aperture-scaled",
     // Nothing to align: this candidate holds no index into history, only a
     // running mean that is allowed to start empty and fill.
     prime: () => {},
@@ -275,53 +275,53 @@ export const anandaScaled = ({ window, draws, seed = 0 }) => {
       const base = stdev(diffs(history));
       const g = ground({ material: history, draws, window, seed });
       const a = isGap(g) ? null : volume(g);
-      if (a == null || history_ananda.length === 0) return gaussianOrPoint(centre, base);
-      const ratio = a / mean(history_ananda);
+      if (a == null || history_aperture.length === 0) return gaussianOrPoint(centre, base);
+      const ratio = a / mean(history_aperture);
       if (!Number.isFinite(ratio) || ratio <= 0) return gaussianOrPoint(centre, base);
       return gaussianOrPoint(centre, base * ratio);
     },
     observe: (_x, history) => {
-      // The running mean ananda is compared against must not include the
+      // The running mean aperture is compared against must not include the
       // current step's own value, or the ratio is centred by construction and
       // the candidate silently becomes last-value again.
       const g = ground({ material: history, draws, window, seed });
-      if (!isGap(g)) history_ananda.push(volume(g));
+      if (!isGap(g)) history_aperture.push(volume(g));
     },
-    state: () => ({ anandaObservations: history_ananda.length }),
+    state: () => ({ apertureObservations: history_aperture.length }),
   };
 };
 
 /**
- * Both organs at once: regime-relative centre, ananda-modulated spread. This
+ * Both organs at once: regime-relative centre, aperture-modulated spread. This
  * is NOT a minimal contrast against anything, and is included only so a
  * combined result can be compared to the two isolated ones — if it beats both,
  * the organs are carrying independent information; if it beats neither, at
  * least one of them was doing nothing the other was not.
  */
-export const regimeAnanda = ({ window, draws, tolerance, seed = 0 }) => {
+export const regimeAperture = ({ window, draws, tolerance, seed = 0 }) => {
   const tracker = createRegimeTracker({ window, draws, tolerance, seed });
-  const history_ananda = [];
+  const history_aperture = [];
   return {
-    id: "candidate:regime-ananda",
+    id: "candidate:regime-aperture",
     prime: (warmupHistory) => {
       for (const x of warmupHistory) {
         const step = tracker.push(x);
-        if (step.ananda != null) history_ananda.push(step.ananda);
+        if (step.aperture != null) history_aperture.push(step.aperture);
       }
     },
     predict: (history) => {
       const slice = history.slice(tracker.regimeStart);
       const centre = slice.length < 2 ? history[history.length - 1] : mean(slice);
       const base = slice.length < 2 ? stdev(diffs(history)) : stdev(slice);
-      const a = tracker.ananda;
-      if (a == null || history_ananda.length === 0) return gaussianOrPoint(centre, base);
-      const ratio = a / mean(history_ananda);
+      const a = tracker.aperture;
+      if (a == null || history_aperture.length === 0) return gaussianOrPoint(centre, base);
+      const ratio = a / mean(history_aperture);
       if (!Number.isFinite(ratio) || ratio <= 0) return gaussianOrPoint(centre, base);
       return gaussianOrPoint(centre, base * ratio);
     },
     observe: (x) => {
       const step = tracker.push(x);
-      if (step.ananda != null) history_ananda.push(step.ananda);
+      if (step.aperture != null) history_aperture.push(step.aperture);
       return step;
     },
     state: () => ({ regimeStart: tracker.regimeStart, rezeroCount: tracker.rezeroCount }),
@@ -383,7 +383,7 @@ const placementCandidate = ({ window, draws, tolerance, seed = 0, id, unplacedOf
  * uncertainty signal. Centre and base spread are candidate:regime-mean's,
  * unmodified; the ONLY difference is a second multiplier on the spread — the
  * current regime's non-PLACED rate entered as a ratio to its own running mean,
- * the same dimensionless-bridge discipline as candidate:ananda-scaled, and for
+ * the same dimensionless-bridge discipline as candidate:aperture-scaled, and for
  * the same reason: a hand-picked multiplier would be exactly the smuggled
  * constant baselines.js and nul both refuse.
  *
@@ -468,8 +468,8 @@ export const boundaryControl = (boundaries, id = "candidate:boundary-null") => {
 export const defaultCandidates = ({ window, draws, tolerance, seed = 0 }) => [
   regimeMean({ window, draws, tolerance, seed }),
   regimeMean({ window, draws, tolerance, seed, statistic: "windowMean" }),
-  anandaScaled({ window, draws, seed }),
-  regimeAnanda({ window, draws, tolerance, seed }),
+  apertureScaled({ window, draws, seed }),
+  regimeAperture({ window, draws, tolerance, seed }),
   placementRate({ window, draws, tolerance, seed }),
   // candidate:holon-gated-regime-mean was tried and measured out — see the
   // dead-end note on holonGatedRegimeMean above. Not wired in.

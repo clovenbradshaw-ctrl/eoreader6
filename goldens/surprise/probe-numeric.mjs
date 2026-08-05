@@ -9,7 +9,7 @@ const report = (name, series, note) => {
   const window = Math.max(2, Math.min(3, Math.floor(series.length / 3)));
   const g = ground({ material: series, draws: 200, window, seed: 1 });
   if (isGap(g)) { console.log("  ground:", g.gap); return; }
-  console.log("  volume (ananda):", g.samples[Math.floor(g.samples.length * 0.75)] - g.samples[Math.floor(g.samples.length * 0.25)]);
+  console.log("  volume (aperture):", g.samples[Math.floor(g.samples.length * 0.75)] - g.samples[Math.floor(g.samples.length * 0.25)]);
   // score the single largest windowed mean against the ground
   let best = -Infinity, at = -1;
   for (let i = 0; i + window <= series.length; i++) {

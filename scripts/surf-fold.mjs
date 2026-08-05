@@ -1,7 +1,7 @@
 // eoreader6 · surf-fold — the ride, its coordinate divisions, and the universe
 // projected from the standpoints they yield. Run on real material.
 //
-// Same harness shape as ananda-run.mjs and the same commitment: only the
+// Same harness shape as aperture-run.mjs and the same commitment: only the
 // perceiver differs, so this reads a novel, a recording, a spreadsheet or a
 // frame sequence by the same operation.
 //
@@ -117,7 +117,7 @@ export const summarize = ({ kind, path, chunks, reading, divisions, folds, freed
   lines.push(`  folds:  ${folds.length} standpoints projected`);
   for (const f of folds) {
     const { placed, beyond, beneath, total } = f.reach;
-    lines.push(`    here [${f.here.start},${f.here.end}): placed ${placed} · beyond ${beyond} · beneath ${beneath} of ${total} · undecided ${f.undecided} · ananda ${f.ananda.toFixed(4)}`);
+    lines.push(`    here [${f.here.start},${f.here.end}): placed ${placed} · beyond ${beyond} · beneath ${beneath} of ${total} · undecided ${f.undecided} · aperture ${f.aperture.toFixed(4)}`);
   }
 
   if (freedom && !isGap(freedom)) {

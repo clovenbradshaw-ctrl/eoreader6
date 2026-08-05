@@ -109,7 +109,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   let g = null;
   let clearings = 0;
   let tended = 0;
-  let anandaAtOpen = null; // equanimity toward what arises and passes (SEED.md §5): a closed region is reported with the same prominence as an open one
+  let apertureAtOpen = null; // equanimity toward what arises and passes (SEED.md §5): a closed region is reported with the same prominence as an open one
 
   const groundFrom = (start, end) => {
     if (end - start < window + 2) return null;
@@ -121,7 +121,7 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
     if (!g) {
       g = groundFrom(regionStart, i);
       if (!g) continue;
-      anandaAtOpen = volume(g);
+      apertureAtOpen = volume(g);
     }
 
     // The observation must be commensurate with the ground's own statistic:
@@ -150,18 +150,18 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
         // not earned, because an open value was never sampled) is a third
         // outcome — never folded into either (SEED.md §5). Reported with the
         // same prominence a still-open region gets below.
-        const closingAnanda = volume(g);
+        const closingAperture = volume(g);
         regions.push({
           start: regionStart, end: i, tended,
-          anandaOpen: anandaAtOpen, anandaClose: closingAnanda,
-          opened: anandaAtOpen != null ? closingAnanda > anandaAtOpen : null,
+          apertureOpen: apertureAtOpen, apertureClose: closingAperture,
+          opened: apertureAtOpen != null ? closingAperture > apertureAtOpen : null,
         });
         events.push({ at: i, op: "REC", domain: REC_GROUND.domain, terrain: REC_GROUND.terrain, stance: REC_GROUND.stance, reason: "ground conceded after repeated clearing" });
         regionStart = i;
         g = null;
         clearings = 0;
         tended = 0;
-        anandaAtOpen = null;
+        apertureAtOpen = null;
       }
     } else {
       // EVA · Tending — the ground holds; maintain it against the new material
@@ -173,14 +173,14 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   }
 
   const last = g ?? groundFrom(regionStart, material.length);
-  const lastAnanda = last ? volume(last) : null;
+  const lastAperture = last ? volume(last) : null;
   // The final region is closed by the material running out, not by a
   // failure — as reportable a result as one that closed on a clearing, and
   // not a worse read than one that is still open (SEED.md §5).
   regions.push({
     start: regionStart, end: material.length, tended,
-    anandaOpen: anandaAtOpen, anandaClose: lastAnanda,
-    opened: anandaAtOpen != null && lastAnanda != null ? lastAnanda > anandaAtOpen : null,
+    apertureOpen: apertureAtOpen, apertureClose: lastAperture,
+    opened: apertureAtOpen != null && lastAperture != null ? lastAperture > apertureAtOpen : null,
   });
 
   return { regions, events, clearingCount: events.filter((e) => e.op === "DEF").length, rezeroCount: events.filter((e) => e.op === "REC").length };
@@ -290,7 +290,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
         regimeStart,
         rezeroed: false,
         placement: gap("no_ground", { why: "less material has arrived than one window of reach", arrived: t, window }),
-        ananda: g ? volume(g) : null,
+        aperture: g ? volume(g) : null,
         finding: null,
       };
 
@@ -301,7 +301,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
         regimeStart,
         rezeroed: false,
         placement: gap("no_ground", { why: "no ground could be built over the region so far", regimeStart, upTo: t - window }),
-        ananda: null,
+        aperture: null,
         finding: null,
       };
 
@@ -376,7 +376,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
       regimeStart,
       rezeroed,
       placement: rezeroed ? PLACEMENT.OTHER : strained ? PLACEMENT.STRAINED : PLACEMENT.PLACED,
-      ananda: g ? volume(g) : null,
+      aperture: g ? volume(g) : null,
       finding,
     };
   };
@@ -389,7 +389,7 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
     get rezeroCount() {
       return rezeroCount;
     },
-    get ananda() {
+    get aperture() {
       return g ? volume(g) : null;
     },
   };

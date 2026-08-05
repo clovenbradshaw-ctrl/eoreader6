@@ -170,7 +170,7 @@ test("a nexus is not stationary, so the growth rule cannot yet be asked of it", 
 test("order is legible to the figure and marginal in the intensity", () => {
   // This is why wiring the superject did not flip intensity.test.js. A ground is
   // built by PERTURBING material, and both available perturbation families —
-  // shuffle and resample — destroy order. So ananda, being a property of that
+  // shuffle and resample — destroy order. So aperture, being a property of that
   // order-free null, barely moves when the material is reordered: across 32
   // orderings its spread is at best comparable to what mere reseeding does to
   // it. The figure's statistic, measured on the real ordered material, moves

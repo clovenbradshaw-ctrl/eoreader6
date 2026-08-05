@@ -17,12 +17,12 @@ import { ground, difference, pattern, reZero, volume, burstiness, disagreement, 
 const W = 5;
 const quiet = [1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 0, 2, 1, 0, 1, 2, 0, 1, 1, 2];
 const bursty = [...quiet, 9, 9, 9, 9, 9];
-// A ground whose ananda clears its own reseeding null, so the sign has both
+// A ground whose aperture clears its own reseeding null, so the sign has both
 // halves available. `quiet` has only the widening half.
 const roomy = Array.from({ length: 40 }, (_, i) => i % 7);
 
 test("the vital sign is not a measure of how many times we sampled", () => {
-  // Range grows without bound in `draws`; interquartile does not. If ananda were
+  // Range grows without bound in `draws`; interquartile does not. If aperture were
   // the range, a system could look healthier by sampling more.
   const vs = [64, 256, 1024, 4096].map((draws) => volume(ground({ material: quiet, draws, window: W })));
   for (const v of vs) assert.ok(Math.abs(v - vs[0]) < 0.05, `volume drifts with draws: ${vs.join(", ")}`);
@@ -82,7 +82,7 @@ test("narrowing the ground is still a pattern — that one is extraction", () =>
   // also stopped reading as a pattern at all once the null grew with extent —
   // 2 is a value quiet already contains, so continuing quiet by drawing from
   // itself produces that displacement and more. So the case needs a ground with
-  // room to lose: quiet's ananda (0.2) does not exceed its own reseeding null
+  // room to lose: quiet's aperture (0.2) does not exceed its own reseeding null
   // (0.2), and narrowing is not sayable from it. See intensity.test.js.
   // The tail saturates toward roomy's MAXIMUM, not its mean. Filling with the
   // mean (3) narrows the volume but does not move the shape further than
