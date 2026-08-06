@@ -1,0 +1,5014 @@
+{
+  "opts": {
+    "minPrevalence": 0.15,
+    "minKindSize": 3,
+    "permutations": 40,
+    "quantile": 0.95,
+    "reseeds": 6,
+    "seed": 42
+  },
+  "dipRatio": 0.4,
+  "maxSpanLen": 4,
+  "window": 6,
+  "docsProcessed": 100,
+  "topVerbs": [
+    "'s",
+    "''",
+    "will",
+    "has",
+    "at",
+    "may",
+    "are",
+    "with"
+  ],
+  "results": [
+    {
+      "verb": "'s",
+      "fillerCount": 0,
+      "kinds": []
+    },
+    {
+      "verb": "''",
+      "fillerCount": 0,
+      "kinds": []
+    },
+    {
+      "verb": "will",
+      "fillerCount": 50,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:will:filler:allow|filler:assess|filler:become|filler:begin|filler:calculate|filler:continue|filler:ensure|filler:expire|filler:generate|filler:hold|filler:increase|filler:incur|filler:issue|filler:meet|filler:notify|filler:occur|filler:pay|filler:post|filler:result|filler:revoke|filler:send|filler:set|filler:submit|filler:take",
+          "label": "pos:after_len1",
+          "population": "tp-verb-island:will",
+          "members": [
+            "filler:allow",
+            "filler:assess",
+            "filler:become",
+            "filler:begin",
+            "filler:calculate",
+            "filler:continue",
+            "filler:ensure",
+            "filler:expire",
+            "filler:generate",
+            "filler:hold",
+            "filler:increase",
+            "filler:incur",
+            "filler:issue",
+            "filler:meet",
+            "filler:notify",
+            "filler:occur",
+            "filler:pay",
+            "filler:post",
+            "filler:result",
+            "filler:revoke",
+            "filler:send",
+            "filler:set",
+            "filler:submit",
+            "filler:take"
+          ],
+          "core": {
+            "field_id": "pos:after_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.3998943236714975,
+              "min": 0.2817028985507246,
+              "max": 0.439915458937198,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.5854166666666666,
+              "min": 0.375,
+              "max": 0.6666666666666666,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (0.7777777777777779)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:will",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:notify|filler:calculate|filler:expire|filler:set|filler:generate|filler:pay|filler:incur|filler:result|filler:hold|filler:continue|filler:assess|filler:ensure|filler:issue|filler:occur|filler:allow|filler:increase|filler:meet|filler:submit|filler:send|filler:become|filler:begin|filler:post|filler:take|filler:revoke",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:24",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "kind:tp-verb-island:will:filler:assess whether fda|filler:coastwise trade|filler:confidential use|filler:director of owcp|filler:generate this amount|filler:icr package|filler:issue another federal register|filler:issue invoices|filler:take place",
+          "label": "multiword",
+          "population": "tp-verb-island:will",
+          "members": [
+            "filler:assess whether fda",
+            "filler:coastwise trade",
+            "filler:confidential use",
+            "filler:director of owcp",
+            "filler:generate this amount",
+            "filler:icr package",
+            "filler:issue another federal register",
+            "filler:issue invoices",
+            "filler:take place"
+          ],
+          "core": {
+            "field_id": "multiword",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 0.8055555555555556,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 0.8055555555555556,
+              "threshold": 0.4450231481481479,
+              "min": 0.2037037037037037,
+              "max": 0.5833333333333334,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.3388888888888886,
+              "min": 0,
+              "max": 0.4444444444444444,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (0.7222222222222222)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:will",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:director of owcp|filler:icr package|filler:coastwise trade|filler:take place|filler:assess whether fda|filler:issue invoices|filler:generate this amount|filler:confidential use|filler:issue another federal register",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:9",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:hold",
+          "label": "hold",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:continue",
+          "label": "continue",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "id": "filler:use",
+          "label": "use",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 14
+            },
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:va",
+          "label": "VA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:assess",
+          "label": "assess",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:ensure",
+          "label": "ensure",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:issue",
+          "label": "issue",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:act",
+          "label": "Act",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 2
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:occur",
+          "label": "occur",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:take place",
+          "label": "take place",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:there",
+          "label": "There",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:allow",
+          "label": "allow",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:increase",
+          "label": "increase",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:ad",
+          "label": "AD",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 10
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:meet",
+          "label": "meet",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:cbp",
+          "label": "CBP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:submit",
+          "label": "submit",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:collections",
+          "label": "collections",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:send",
+          "label": "send",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:become",
+          "label": "become",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:begin",
+          "label": "begin",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:post",
+          "label": "post",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:commission",
+          "label": "Commission",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:take",
+          "label": "take",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:revoke",
+          "label": "revoke",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:operator",
+          "label": "operator",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:operators",
+          "label": "operators",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:owcp",
+          "label": "OWCP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 20
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:notify",
+          "label": "notify",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:director of owcp",
+          "label": "Director of OWCP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:applicant",
+          "label": "applicant",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:calculate",
+          "label": "calculate",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:expire",
+          "label": "expire",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:assess whether fda",
+          "label": "assess whether FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:set",
+          "label": "set",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:fda",
+          "label": "FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 29
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:issue invoices",
+          "label": "issue invoices",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 12
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:invoice",
+          "label": "invoice",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:generate",
+          "label": "generate",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "id": "filler:generate this amount",
+          "label": "generate this amount",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:pay",
+          "label": "pay",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:incur",
+          "label": "incur",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:result",
+          "label": "result",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:confidential use",
+          "label": "confidential use",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:faa",
+          "label": "FAA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:epa",
+          "label": "EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 25
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:icr package",
+          "label": "ICR package",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 7
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:issue another federal register",
+          "label": "issue another Federal Register",
+          "attributes": [
+            {
+              "field_id": "pos:after_len4",
+              "value_type": "boolean",
+              "count": 7
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:coastwise trade",
+          "label": "coastwise trade",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:procedures",
+          "label": "procedures",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "verb": "has",
+      "fillerCount": 32,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:has:filler:access|filler:agreed|filler:attained|filler:committed|filler:delivered|filler:demonstrated|filler:established|filler:failed|filler:jurisdiction.|filler:met|filler:notified|filler:partnered|filler:prepared",
+          "label": "pos:after_len1",
+          "population": "tp-verb-island:has",
+          "members": [
+            "filler:access",
+            "filler:agreed",
+            "filler:attained",
+            "filler:committed",
+            "filler:delivered",
+            "filler:demonstrated",
+            "filler:established",
+            "filler:failed",
+            "filler:jurisdiction.",
+            "filler:met",
+            "filler:notified",
+            "filler:partnered",
+            "filler:prepared"
+          ],
+          "core": {
+            "field_id": "pos:after_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 0.9230769230769231,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 0.9230769230769231,
+              "threshold": 0.36538461538461536,
+              "min": 0.23717948717948714,
+              "max": 0.37179487179487164,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.542307692307692,
+              "min": 0.23076923076923078,
+              "max": 0.6923076923076923,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "empty_material",
+              "reason": "no null samples"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:has",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:attained|filler:demonstrated|filler:agreed|filler:established|filler:jurisdiction.|filler:prepared|filler:failed|filler:notified|filler:partnered|filler:delivered|filler:access|filler:committed|filler:met",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:13",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:person",
+          "label": "person",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:prepared",
+          "label": "prepared",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:fda",
+          "label": "FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 33
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:faa",
+          "label": "FAA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:failed",
+          "label": "failed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:notified",
+          "label": "notified",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:partnered",
+          "label": "partnered",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "id": "filler:delivered",
+          "label": "delivered",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:department",
+          "label": "Department",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:applicant",
+          "label": "applicant",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:commission",
+          "label": "Commission",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:access",
+          "label": "access",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:committed",
+          "label": "committed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:met",
+          "label": "met",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:business",
+          "label": "business",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:demonstrated",
+          "label": "demonstrated",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:fd c act",
+          "label": "FD C Act",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:epa",
+          "label": "EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 33
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:identified concerns",
+          "label": "identified concerns",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 12
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:pmn substances epa",
+          "label": "PMN substances EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:pmn substance epa",
+          "label": "PMN substance EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:analogous chemical substances epa",
+          "label": "analogous chemical substances EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 7
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:agreed",
+          "label": "agreed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:substance",
+          "label": "substance",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:established",
+          "label": "established",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:indian tribe",
+          "label": "Indian tribe",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:jurisdiction.",
+          "label": "jurisdiction.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:demonstrated that a tribe",
+          "label": "demonstrated that a tribe",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:validation branch faa",
+          "label": "Validation Branch FAA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:attained",
+          "label": "Attained",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:strategy in the sip",
+          "label": "strategy in the SIP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:marad",
+          "label": "MARAD",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 10
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "verb": "at",
+      "fillerCount": 34,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:at:filler:defined|filler:deposit|filler:email|filler:estimate|filler:held|filler:mail|filler:mmpa|filler:occur|filler:participation|filler:pending|filler:person|filler:posted|filler:rd|filler:set|filler:support",
+          "label": "pos:before_len1",
+          "population": "tp-verb-island:at",
+          "members": [
+            "filler:defined",
+            "filler:deposit",
+            "filler:email",
+            "filler:estimate",
+            "filler:held",
+            "filler:mail",
+            "filler:mmpa",
+            "filler:occur",
+            "filler:participation",
+            "filler:pending",
+            "filler:person",
+            "filler:posted",
+            "filler:rd",
+            "filler:set",
+            "filler:support"
+          ],
+          "core": {
+            "field_id": "pos:before_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 0.7904761904761904,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 0.7904761904761904,
+              "threshold": 0.363095238095238,
+              "min": 0.23492063492063486,
+              "max": 0.4174603174603174,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.6033333333333332,
+              "min": 0.2,
+              "max": 0.6666666666666666,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "observed": 0.7904761904761904,
+              "threshold": 0.5215264550264549,
+              "min": 0.5085714285714287,
+              "max": 0.5217460317460316,
+              "pValue": 0,
+              "passed": true
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:at",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:support|filler:participation|filler:mmpa|filler:rd|filler:deposit|filler:pending|filler:estimate|filler:defined|filler:occur|filler:email|filler:mail|filler:held|filler:posted|filler:person|filler:set",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:15",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "kind:tp-verb-island:at:filler:ad.easa.europa.eu. 4|filler:consumer education|filler:nara visit|filler:notify epa|filler:operator insurance is needed|filler:payment portal|filler:place of business|filler:prasearch once|filler:reference room|filler:rr and mp|filler:see rd|filler:take place|filler:toll free",
+          "label": "multiword",
+          "population": "tp-verb-island:at",
+          "members": [
+            "filler:ad.easa.europa.eu. 4",
+            "filler:consumer education",
+            "filler:nara visit",
+            "filler:notify epa",
+            "filler:operator insurance is needed",
+            "filler:payment portal",
+            "filler:place of business",
+            "filler:prasearch once",
+            "filler:reference room",
+            "filler:rr and mp",
+            "filler:see rd",
+            "filler:take place",
+            "filler:toll free"
+          ],
+          "core": {
+            "field_id": "multiword",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 0.6324786324786323,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 0.6324786324786323,
+              "threshold": 0.3757478632478631,
+              "min": 0.217948717948718,
+              "max": 0.4198717948717949,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.542307692307692,
+              "min": 0.07692307692307693,
+              "max": 0.6153846153846154,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (0.6549145299145299)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:at",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:place of business|filler:ad.easa.europa.eu. 4|filler:rr and mp|filler:nara visit|filler:operator insurance is needed|filler:notify epa|filler:toll free|filler:take place|filler:payment portal|filler:consumer education|filler:prasearch once|filler:reference room|filler:see rd",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:13",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:support",
+          "label": "Support",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:toll free",
+          "label": "toll free",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:email",
+          "label": "email",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "id": "filler:reference room",
+          "label": "Reference Room",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:mail",
+          "label": "mail",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:participation",
+          "label": "Participation",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:mmpa",
+          "label": "MMPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:held",
+          "label": "held",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:posted",
+          "label": "posted",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:person",
+          "label": "person",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "filler:nara visit",
+          "label": "NARA visit",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:take place",
+          "label": "take place",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:primary",
+          "label": "primary",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:set",
+          "label": "set",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:deposit",
+          "label": "deposit",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:operator insurance is needed",
+          "label": "Operator Insurance is Needed",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:sec.",
+          "label": "Sec.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 9
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:rd",
+          "label": "RD",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 11
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:see rd",
+          "label": "See RD",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:fda",
+          "label": "FDA",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 10
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:payment portal",
+          "label": "Payment Portal",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 12
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:consumer education",
+          "label": "Consumer Education",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:pending",
+          "label": "pending",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:estimate",
+          "label": "estimate",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:place of business",
+          "label": "place of business",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:notify epa",
+          "label": "notify EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:defined",
+          "label": "defined",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:occur",
+          "label": "occur",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:concentrations",
+          "label": "concentrations",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "id": "filler:greater",
+          "label": "greater",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:prasearch once",
+          "label": "PRASearch Once",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:ad.easa.europa.eu. 4",
+          "label": "ad.easa.europa.eu. 4",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:urc",
+          "label": "URC",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:rr and mp",
+          "label": "RR and MP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 8
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "verb": "may",
+      "fillerCount": 48,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:may:filler:attend|filler:charge|filler:conduct|filler:contact|filler:disclose|filler:enter|filler:examine|filler:find|filler:grant|filler:increase|filler:issue|filler:occur|filler:present|filler:publish|filler:qualify|filler:result|filler:send|filler:submit|filler:take|filler:use|filler:view|filler:withdraw",
+          "label": "pos:after_len1",
+          "population": "tp-verb-island:may",
+          "members": [
+            "filler:attend",
+            "filler:charge",
+            "filler:conduct",
+            "filler:contact",
+            "filler:disclose",
+            "filler:enter",
+            "filler:examine",
+            "filler:find",
+            "filler:grant",
+            "filler:increase",
+            "filler:issue",
+            "filler:occur",
+            "filler:present",
+            "filler:publish",
+            "filler:qualify",
+            "filler:result",
+            "filler:send",
+            "filler:submit",
+            "filler:take",
+            "filler:use",
+            "filler:view",
+            "filler:withdraw"
+          ],
+          "core": {
+            "field_id": "pos:after_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.4091991341991341,
+              "min": 0.26262626262626265,
+              "max": 0.41197691197691194,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.5477272727272725,
+              "min": 0.2727272727272727,
+              "max": 0.5909090909090909,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "empty_material",
+              "reason": "no null samples"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:may",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:increase|filler:charge|filler:qualify|filler:conduct|filler:grant|filler:occur|filler:present|filler:publish|filler:disclose|filler:contact|filler:submit|filler:issue|filler:send|filler:use|filler:attend|filler:take|filler:examine|filler:find|filler:view|filler:enter|filler:result|filler:withdraw",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:22",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:submit",
+          "label": "submit",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "id": "filler:issue",
+          "label": "issue",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "filler:dial 711 tty tdd",
+          "label": "dial 711 TTY TDD",
+          "attributes": [
+            {
+              "field_id": "pos:after_len4",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:speech disability",
+          "label": "speech disability",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:send",
+          "label": "send",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:va",
+          "label": "VA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 8
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:use",
+          "label": "use",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:attend",
+          "label": "attend",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:take",
+          "label": "take",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "id": "filler:fda",
+          "label": "FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:obtain publicly",
+          "label": "obtain publicly",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:examine",
+          "label": "examine",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "id": "filler:find",
+          "label": "find",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 10
+            }
+          ]
+        },
+        {
+          "id": "filler:view",
+          "label": "view",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 15
+            }
+          ]
+        },
+        {
+          "id": "filler:enter",
+          "label": "enter",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:traveler",
+          "label": "traveler",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:commission",
+          "label": "Commission",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:result",
+          "label": "result",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:operator",
+          "label": "operator",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:withdraw",
+          "label": "withdraw",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:owcp",
+          "label": "OWCP",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 14
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:applicant",
+          "label": "applicant",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 9
+            }
+          ]
+        },
+        {
+          "id": "filler:increase",
+          "label": "increase",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:payment",
+          "label": "payment",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "id": "filler:charge",
+          "label": "charge",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "id": "filler:institution",
+          "label": "institution",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "id": "filler:qualify",
+          "label": "qualify",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:fy 2027 fda",
+          "label": "FY 2027 FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:conduct",
+          "label": "conduct",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:grant",
+          "label": "grant",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:occur",
+          "label": "occur",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:aquatic organisms",
+          "label": "aquatic organisms",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 8
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:present",
+          "label": "present",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 11
+            }
+          ]
+        },
+        {
+          "id": "filler:reasoned evaluation the substances",
+          "label": "reasoned evaluation the substances",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:reasoned evaluation the substance",
+          "label": "reasoned evaluation the substance",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 8
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:osha hazard communication standard",
+          "label": "OSHA Hazard Communication Standard",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 14
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:cause acute toxicity",
+          "label": "cause acute toxicity",
+          "attributes": [
+            {
+              "field_id": "pos:after_len3",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:cause specific",
+          "label": "cause specific",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:publish",
+          "label": "publish",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:disclose",
+          "label": "disclose",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:dot",
+          "label": "DOT",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:contact",
+          "label": "contact",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:epa",
+          "label": "EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:gsa",
+          "label": "GSA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:applicant or recipient",
+          "label": "applicant or recipient",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:complainant",
+          "label": "complainant",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:coast guard",
+          "label": "Coast Guard",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:interested parties",
+          "label": "Interested parties",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "verb": "are",
+      "fillerCount": 54,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:are:filler:adjustments|filler:applicants|filler:collecting|filler:funds|filler:hours|filler:materials|filler:persons|filler:snurs|filler:weight",
+          "label": "pos:before_len1",
+          "population": "tp-verb-island:are",
+          "members": [
+            "filler:adjustments",
+            "filler:applicants",
+            "filler:collecting",
+            "filler:funds",
+            "filler:hours",
+            "filler:materials",
+            "filler:persons",
+            "filler:snurs",
+            "filler:weight"
+          ],
+          "core": {
+            "field_id": "pos:before_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.5277777777777778,
+              "min": 0.25,
+              "max": 0.6944444444444444,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.4444444444444444,
+              "min": 0,
+              "max": 0.4444444444444444,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "empty_material",
+              "reason": "no null samples"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:are",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:adjustments|filler:snurs|filler:weight|filler:persons|filler:materials|filler:collecting|filler:hours|filler:funds|filler:applicants",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:9",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "kind:tp-verb-island:are:filler:cleared settled|filler:deaf deafblind hard|filler:electronic payment options|filler:feasible ftes|filler:fiscal years|filler:fte amounts|filler:fully paid.|filler:generated utilizing|filler:leave categories|filler:note only full payments|filler:reasonably likely|filler:resource needs forecast algorithms|filler:still reasonably represented",
+          "label": "multiword",
+          "population": "tp-verb-island:are",
+          "members": [
+            "filler:cleared settled",
+            "filler:deaf deafblind hard",
+            "filler:electronic payment options",
+            "filler:feasible ftes",
+            "filler:fiscal years",
+            "filler:fte amounts",
+            "filler:fully paid.",
+            "filler:generated utilizing",
+            "filler:leave categories",
+            "filler:note only full payments",
+            "filler:reasonably likely",
+            "filler:resource needs forecast algorithms",
+            "filler:still reasonably represented"
+          ],
+          "core": {
+            "field_id": "multiword",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.5384615384615384,
+              "min": 0.28205128205128205,
+              "max": 0.5448717948717948,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.38846153846153825,
+              "min": 0,
+              "max": 0.46153846153846156,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (1)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:are",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:leave categories|filler:reasonably likely|filler:still reasonably represented|filler:deaf deafblind hard|filler:cleared settled|filler:generated utilizing|filler:resource needs forecast algorithms|filler:fte amounts|filler:feasible ftes|filler:fiscal years|filler:note only full payments|filler:electronic payment options|filler:fully paid.",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:13",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "kind:tp-verb-island:are:filler:accepted|filler:added|filler:adjusted|filler:applicable|filler:available.|filler:blind|filler:classified|filler:confidential|filler:consistent|filler:converted|filler:designed|filler:detailed|filler:displayed|filler:effective|filler:encouraged|filler:encouraged.|filler:established|filler:exempt|filler:held|filler:identified|filler:invited|filler:likely|filler:limited|filler:met|filler:met.|filler:retained|filler:satisfied|filler:scheduled|filler:specific",
+          "label": "pos:after_len1",
+          "population": "tp-verb-island:are",
+          "members": [
+            "filler:accepted",
+            "filler:added",
+            "filler:adjusted",
+            "filler:applicable",
+            "filler:available.",
+            "filler:blind",
+            "filler:classified",
+            "filler:confidential",
+            "filler:consistent",
+            "filler:converted",
+            "filler:designed",
+            "filler:detailed",
+            "filler:displayed",
+            "filler:effective",
+            "filler:encouraged",
+            "filler:encouraged.",
+            "filler:established",
+            "filler:exempt",
+            "filler:held",
+            "filler:identified",
+            "filler:invited",
+            "filler:likely",
+            "filler:limited",
+            "filler:met",
+            "filler:met.",
+            "filler:retained",
+            "filler:satisfied",
+            "filler:scheduled",
+            "filler:specific"
+          ],
+          "core": {
+            "field_id": "pos:after_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.47370689655172404,
+              "min": 0.33251231527093594,
+              "max": 0.49261083743842365,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.7258620689655172,
+              "min": 0.41379310344827586,
+              "max": 0.7586206896551724,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 3 null samples equal (1)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:are",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:applicable|filler:specific|filler:confidential|filler:met.|filler:met|filler:classified|filler:identified|filler:scheduled|filler:designed|filler:consistent|filler:encouraged|filler:encouraged.|filler:established|filler:likely|filler:invited|filler:held|filler:retained|filler:effective|filler:adjusted|filler:converted|filler:displayed|filler:accepted|filler:satisfied|filler:available.|filler:limited|filler:detailed|filler:added|filler:exempt|filler:blind",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:after_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:29",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:there",
+          "label": "There",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 16
+            },
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:met.",
+          "label": "met.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:met",
+          "label": "met",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:classified",
+          "label": "classified",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:identified",
+          "label": "identified",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:scheduled",
+          "label": "scheduled",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:designed",
+          "label": "designed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:consistent",
+          "label": "consistent",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:deaf deafblind hard",
+          "label": "deaf deafblind hard",
+          "attributes": [
+            {
+              "field_id": "pos:after_len3",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:encouraged",
+          "label": "encouraged",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:encouraged.",
+          "label": "encouraged.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:necessary",
+          "label": "necessary",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:established",
+          "label": "established",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:likely",
+          "label": "likely",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 16
+            }
+          ]
+        },
+        {
+          "id": "filler:invited",
+          "label": "invited",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:held",
+          "label": "held",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:cleared settled",
+          "label": "cleared settled",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:retained",
+          "label": "retained",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:effective",
+          "label": "effective",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 15
+            }
+          ]
+        },
+        {
+          "id": "filler:generated utilizing",
+          "label": "generated utilizing",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:resource needs forecast algorithms",
+          "label": "resource needs forecast algorithms",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:funds",
+          "label": "funds",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:adjusted",
+          "label": "adjusted",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:fte amounts",
+          "label": "FTE amounts",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:converted",
+          "label": "converted",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:feasible ftes",
+          "label": "feasible FTEs",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:fiscal years",
+          "label": "fiscal years",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:applicants",
+          "label": "Applicants",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:displayed",
+          "label": "displayed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:accepted",
+          "label": "accepted",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "filler:note only full payments",
+          "label": "Note Only full payments",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 12
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:electronic payment options",
+          "label": "Electronic payment options",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 12
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:fully paid.",
+          "label": "fully paid.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 13
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:adjustments",
+          "label": "adjustments",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:satisfied",
+          "label": "satisfied",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:leave categories",
+          "label": "leave categories",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:derived",
+          "label": "derived",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 2
+            }
+          ]
+        },
+        {
+          "id": "filler:available.",
+          "label": "available.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:limited",
+          "label": "limited",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:detailed",
+          "label": "detailed",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:added",
+          "label": "added",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:exempt",
+          "label": "exempt",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:blind",
+          "label": "BLIND",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 10
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:snurs",
+          "label": "SNURs",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:weight",
+          "label": "weight",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:reasonably likely",
+          "label": "reasonably likely",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 14
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:persons",
+          "label": "persons",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "id": "filler:applicable",
+          "label": "applicable",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 15
+            }
+          ]
+        },
+        {
+          "id": "filler:specific",
+          "label": "specific",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:materials",
+          "label": "materials",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:collecting",
+          "label": "collecting",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 7
+            }
+          ]
+        },
+        {
+          "id": "filler:still reasonably represented",
+          "label": "still reasonably represented",
+          "attributes": [
+            {
+              "field_id": "pos:after_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:hours",
+          "label": "hours",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:confidential",
+          "label": "confidential",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "verb": "with",
+      "fillerCount": 59,
+      "kinds": [
+        {
+          "id": "kind:tp-verb-island:with:filler:accordance|filler:applicants|filler:assist|filler:complies|filler:comply|filler:connection|filler:consistent|filler:consulted|filler:demonstrate|filler:deposit|filler:employment|filler:inconsistent|filler:linked|filler:noncompliance|filler:operators|filler:partnered|filler:problems|filler:register|filler:retained",
+          "label": "pos:before_len1",
+          "population": "tp-verb-island:with",
+          "members": [
+            "filler:accordance",
+            "filler:applicants",
+            "filler:assist",
+            "filler:complies",
+            "filler:comply",
+            "filler:connection",
+            "filler:consistent",
+            "filler:consulted",
+            "filler:demonstrate",
+            "filler:deposit",
+            "filler:employment",
+            "filler:inconsistent",
+            "filler:linked",
+            "filler:noncompliance",
+            "filler:operators",
+            "filler:partnered",
+            "filler:problems",
+            "filler:register",
+            "filler:retained"
+          ],
+          "core": {
+            "field_id": "pos:before_len1",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 1,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 1,
+              "threshold": 0.3340155945419103,
+              "min": 0.25536062378167645,
+              "max": 0.34844054580896694,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.47368421052631576,
+              "min": 0.21052631578947367,
+              "max": 0.5263157894736842,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (0.7339181286549707)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:with",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:connection|filler:operators|filler:employment|filler:retained|filler:applicants|filler:inconsistent|filler:register|filler:noncompliance|filler:consulted|filler:assist|filler:complies|filler:linked|filler:demonstrate|filler:accordance|filler:comply|filler:consistent|filler:problems|filler:partnered|filler:deposit",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:pos:before_len1",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:19",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        },
+        {
+          "id": "kind:tp-verb-island:with:filler:ad comply|filler:bilateral agreement|filler:carbopolycyclic sulfocarboxylate|filler:certificate of documentation|filler:congress charges the faa|filler:customers in connection|filler:european union aviation safety|filler:fully comply|filler:heteromonocyclic salt|filler:maintenance of contact|filler:making filings|filler:niosh-certified respirator|filler:ownership agreement|filler:promoting safe flight|filler:proposal is consistent|filler:recipient is complying|filler:rel- 2r 3s 2|filler:roving cbpo engages|filler:service providers prospective landlords|filler:submittal to the epa|filler:sulfonium salt|filler:supporting documentation",
+          "label": "multiword",
+          "population": "tp-verb-island:with",
+          "members": [
+            "filler:ad comply",
+            "filler:bilateral agreement",
+            "filler:carbopolycyclic sulfocarboxylate",
+            "filler:certificate of documentation",
+            "filler:congress charges the faa",
+            "filler:customers in connection",
+            "filler:european union aviation safety",
+            "filler:fully comply",
+            "filler:heteromonocyclic salt",
+            "filler:maintenance of contact",
+            "filler:making filings",
+            "filler:niosh-certified respirator",
+            "filler:ownership agreement",
+            "filler:promoting safe flight",
+            "filler:proposal is consistent",
+            "filler:recipient is complying",
+            "filler:rel- 2r 3s 2",
+            "filler:roving cbpo engages",
+            "filler:service providers prospective landlords",
+            "filler:submittal to the epa",
+            "filler:sulfonium salt",
+            "filler:supporting documentation"
+          ],
+          "core": {
+            "field_id": "multiword",
+            "value_type": "boolean",
+            "prevalence": 1
+          },
+          "cohesion": 0.7922077922077922,
+          "height": "above",
+          "heightGate": {
+            "existence": {
+              "observed": 0.7922077922077922,
+              "threshold": 0.3176226551226551,
+              "min": 0.2582972582972583,
+              "max": 0.34992784992785,
+              "pValue": 0,
+              "passed": true
+            },
+            "constraint": {
+              "observed": 1,
+              "threshold": 0.5,
+              "min": 0.22727272727272727,
+              "max": 0.5454545454545454,
+              "pValue": 0,
+              "passed": true
+            },
+            "relation": "above",
+            "searched": {
+              "gap": "degenerate_ground",
+              "reason": "all 1 null samples equal (0.6338383838383836)"
+            },
+            "warrant": "key"
+          },
+          "operator_chain": {
+            "operator_epoch": "eo-2026-07",
+            "chain": [
+              "SIG",
+              "CON",
+              "EVA",
+              "DEF",
+              "INS",
+              "SYN"
+            ],
+            "stages": [
+              {
+                "operator": "SIG",
+                "target": "population:tp-verb-island:with",
+                "height": 0
+              },
+              {
+                "operator": "CON",
+                "target": "candidate:filler:ownership agreement|filler:niosh-certified respirator|filler:congress charges the faa|filler:ad comply|filler:european union aviation safety|filler:proposal is consistent|filler:making filings|filler:service providers prospective landlords|filler:maintenance of contact|filler:bilateral agreement|filler:promoting safe flight|filler:roving cbpo engages|filler:customers in connection|filler:fully comply|filler:rel- 2r 3s 2|filler:carbopolycyclic sulfocarboxylate|filler:heteromonocyclic salt|filler:sulfonium salt|filler:submittal to the epa|filler:recipient is complying|filler:certificate of documentation|filler:supporting documentation",
+                "height": null
+              },
+              {
+                "operator": "EVA",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "DEF",
+                "target": "kind:multiword",
+                "height": "above"
+              },
+              {
+                "operator": "INS",
+                "target": "members:22",
+                "height": "below"
+              },
+              {
+                "operator": "SYN",
+                "target": "vocabulary",
+                "height": null
+              }
+            ]
+          }
+        }
+      ],
+      "records": [
+        {
+          "id": "filler:accordance",
+          "label": "accordance",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 75
+            }
+          ]
+        },
+        {
+          "id": "filler:making filings",
+          "label": "making filings",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:comply",
+          "label": "comply",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 32
+            }
+          ]
+        },
+        {
+          "id": "filler:notification",
+          "label": "notification",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:respect",
+          "label": "respect",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 40
+            }
+          ]
+        },
+        {
+          "id": "filler:consistent",
+          "label": "consistent",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 32
+            }
+          ]
+        },
+        {
+          "id": "filler:indian",
+          "label": "Indian",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:service providers prospective landlords",
+          "label": "service providers prospective landlords",
+          "attributes": [
+            {
+              "field_id": "pos:after_len4",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:maintenance of contact",
+          "label": "maintenance of contact",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:problems",
+          "label": "problems",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:bilateral agreement",
+          "label": "bilateral agreement",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:promoting safe flight",
+          "label": "promoting safe flight",
+          "attributes": [
+            {
+              "field_id": "pos:after_len3",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:congress charges the faa",
+          "label": "Congress charges the FAA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:ad comply",
+          "label": "AD Comply",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:european union aviation safety",
+          "label": "European Union Aviation Safety",
+          "attributes": [
+            {
+              "field_id": "pos:after_len4",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:disabilities.",
+          "label": "disabilities.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:roving cbpo engages",
+          "label": "roving CBPO engages",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:partnered",
+          "label": "partnered",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 13
+            }
+          ]
+        },
+        {
+          "id": "filler:deposit",
+          "label": "deposit",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 8
+            }
+          ]
+        },
+        {
+          "id": "filler:connection",
+          "label": "connection",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:customers in connection",
+          "label": "customers in connection",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:change",
+          "label": "change",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 2
+            },
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:regard",
+          "label": "regard",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:owcp",
+          "label": "OWCP",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 2
+            },
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:operators",
+          "label": "operators",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:employment",
+          "label": "employment",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:sec.",
+          "label": "Sec.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:retained",
+          "label": "retained",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:applicants",
+          "label": "applicants",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:proposal is consistent",
+          "label": "Proposal is consistent",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:inconsistent",
+          "label": "inconsistent",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 12
+            }
+          ]
+        },
+        {
+          "id": "filler:respondent",
+          "label": "Respondent",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 6
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:respondent.",
+          "label": "Respondent.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:dr.",
+          "label": "Dr.",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:disabilities",
+          "label": "disabilities",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:payment",
+          "label": "payment",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 14
+            }
+          ]
+        },
+        {
+          "id": "filler:register",
+          "label": "register",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:fda",
+          "label": "FDA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:noncompliance",
+          "label": "noncompliance",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:nrc",
+          "label": "NRC",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 7
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:consulted",
+          "label": "consulted",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 3
+            }
+          ]
+        },
+        {
+          "id": "filler:clinical",
+          "label": "Clinical",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:fully comply",
+          "label": "fully comply",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:ownership agreement",
+          "label": "Ownership Agreement",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:tsca",
+          "label": "TSCA",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:assist",
+          "label": "assist",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 6
+            }
+          ]
+        },
+        {
+          "id": "filler:rel- 2r 3s 2",
+          "label": "rel- 2R 3S 2",
+          "attributes": [
+            {
+              "field_id": "pos:after_len4",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:niosh-certified respirator",
+          "label": "NIOSH-certified respirator",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 3
+            },
+            {
+              "field_id": "capitalized",
+              "value_type": "boolean",
+              "count": 1
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:carbopolycyclic sulfocarboxylate",
+          "label": "carbopolycyclic sulfocarboxylate",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 8
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:heteromonocyclic salt",
+          "label": "heteromonocyclic salt",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:sulfonium salt",
+          "label": "sulfonium salt",
+          "attributes": [
+            {
+              "field_id": "pos:before_len2",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:complies",
+          "label": "complies",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:submittal to the epa",
+          "label": "submittal to the EPA",
+          "attributes": [
+            {
+              "field_id": "pos:before_len4",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:recipient is complying",
+          "label": "recipient is complying",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 4
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:linked",
+          "label": "linked",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 4
+            }
+          ]
+        },
+        {
+          "id": "filler:certificate of documentation",
+          "label": "certificate of documentation",
+          "attributes": [
+            {
+              "field_id": "pos:before_len3",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:supporting documentation",
+          "label": "supporting documentation",
+          "attributes": [
+            {
+              "field_id": "pos:after_len2",
+              "value_type": "boolean",
+              "count": 5
+            },
+            {
+              "field_id": "multiword",
+              "value_type": "boolean",
+              "count": 1
+            }
+          ]
+        },
+        {
+          "id": "filler:demonstrate",
+          "label": "demonstrate",
+          "attributes": [
+            {
+              "field_id": "pos:before_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        },
+        {
+          "id": "filler:specificity",
+          "label": "specificity",
+          "attributes": [
+            {
+              "field_id": "pos:after_len1",
+              "value_type": "boolean",
+              "count": 5
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
