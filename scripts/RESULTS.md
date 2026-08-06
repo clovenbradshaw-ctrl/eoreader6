@@ -284,3 +284,107 @@ D1 (Frankenstein) is unrun here and D4 (civic re-measurement) needs it first.
 
 Fixtures: `scripts/adversarial/fixtures/nashville-uhs-executive-summary-2025.txt`,
 `scripts/adversarial/fixtures/nashville-uhs-full-report-2025.txt`.
+
+## Assembly A: the terrain census — pre-registered prediction, read
+
+`node scripts/terrain-census.mjs`. Spec 11 §3 commits, in advance, to: **Link,
+Kind, Network, and Paradigm will vary by more than an order of magnitude
+across the four declared sources; Entity, Field, and the reading channels
+will vary by less than 2×.** Recorded here as the spec fixed it, before this
+run — spec 11 was committed (792d5a5) well before this script existed.
+
+**Two of the four declared sources are gaps, not two of four measured.**
+narrative-high-SVO (War and Peace) and adversarial-civic (a real
+deposition/transcript) could not be obtained this session — general web
+fetch is restricted (nashville.gov, courtlistener.com, congress.gov, and
+gutenberg.org all reject the CONNECT at the proxy level; see the entry
+above). What follows is Frankenstein vs. the two Nashville UHS documents
+only — half the design, not the whole test.
+
+**The causal ladder here is a simplified reproduction of `read-ladder.mjs`,
+missing narrator/first-person scope resolution** (that script's
+`resolveAllNarratorSpans` needs a per-book eoPriors coref file this repo
+does not ship, and hand-building one for a new civic fixture is exactly the
+porting spec 11 §1 forbids). First-person pronouns never resolve to a
+referent here, on any source. This mechanically lowers Frankenstein's
+Link/Network/Kind/Lens counts below what `read-ladder.mjs` itself would
+report on the same text; it does not touch the Nashville documents, which
+are third-person throughout.
+
+| terrain | Frankenstein (3392 sent.) | UHS Full Report (1825 sent.) | UHS Exec. Summary (212 sent.) | ratio (Full Report ÷ Frankenstein) |
+|---|---|---|---|---|
+| Void | 61.9 /1000 | 64.7 /1000 | 113.2 /1000 | 1.0× |
+| Entity | 14.7 /1000 | 6.6 /1000 | 0.0 /1000 | 0.4× (2.2× apart) |
+| Kind | 0 (0 kinds / 7 records) | 0 (0 kinds / 51 records) | GAP (2 records, &lt;minKindSize) | degenerate |
+| Field | 1000.0 /1000 | 1000.0 /1000 | 1000.0 /1000 | 1.0× (tautological — see below) |
+| **Link** | **1.5 /1000** (5/1654 stated) | **30.7 /1000** (56/1382 stated) | 4.7 /1000 (1/51 stated) | **20.9×** |
+| **Network** | **1.5 /1000** (5 edges) | **30.1 /1000** (55 edges) | 4.7 /1000 (1 edge) | **20.5×** |
+| Atmosphere | 0.6 /1000 (2 rezeros) | 0.5 /1000 (1 rezero) | 0.0 /1000 (0 rezeros) | 0.9× |
+| Lens | 0.3 /1000 (1 shift) | 13.2 /1000 (24 shifts) | 0.0 /1000 (0 shifts) | 45× |
+| Paradigm | GAP | GAP | GAP | untestable |
+
+**This does not cleanly confirm the prediction, and it does not cleanly
+refute it either — record it as it is, not as it was hoped.**
+
+- **Link/Network clear the ">10×" bar (20.9×, 20.5×) — but in the wrong
+  direction for the story F1 tells.** F1's own frame is that agentless civic
+  prose starves the SVO mouth. Instead, civic Link yield is 20× *richer* than
+  Frankenstein's, not poorer. The mechanism, read off the numbers rather than
+  assumed: Frankenstein's subjects and objects are mostly **pronouns** ("I
+  saw", "he said") — invisible to `relations.js`'s resolver regardless of
+  narrator-coref, because that resolver matches literal named surfaces only.
+  The Nashville documents' subjects and objects are mostly **repeated
+  institutional proper nouns** — "Metro", "MDHA", "the Housing Division" —
+  because, per Assembly D's own animacy argument, an organisation has no
+  pronoun to carry it forward, so its name must recur. That repetition is
+  exactly what makes it resolvable SVO. **Civic prose is not agentless in
+  the sense that starves Link; it is agentless in the sense that the
+  full-naming density Assembly D already predicts (Elizabeth Lavenza 2.7%,
+  Kurtz 4.6%, wire-service fixture 52.5%) feeds Link almost entirely with
+  organisations.** This sharpens Assembly D's stakes rather than weakening
+  them: without animacy gating, Link and Network on civic material are not
+  merely occasionally contaminated by a stray city name (the Frankenstein
+  pronoun-binding case) — they are **structurally built from institutional
+  names standing in subject/object position**, at 20× the rate of a novel.
+- **Entity misses "&lt;2×" by a small margin (2.2×), and Kind is degenerate
+  (0 kinds on both real sources at `minKindSize=3`, `minPrevalence=0.25`) —
+  neither confirms nor refutes anything at this sample size.** The
+  Exec. Summary's 0.0 Entity reading is a short-document floor effect
+  (`minArrivals=5` over 212 sentences), not a genre finding.
+- **Field's "&lt;2×" holds by construction, not by measurement.** Normalizing
+  every terrain per 1000 sentences makes Field — which *is* the sentence
+  count — exactly 1000.0/1000 on every source, always. This is a flaw in the
+  normalizing choice, not evidence Field is stable; a fair test would
+  normalize per 1000 words instead, or drop Field from the checked list
+  entirely. Recorded as a self-test gap in the census instrument itself.
+- **Lens's 45× swing is not independent evidence, and should not be read as
+  a "reading channels" failure.** This census's Lens number folds
+  `emergence/tiers.js` over the *same* node/edge arrivals Link produces —
+  it is mechanically downstream of Link's own 20× swing, not a second,
+  independent measurement. "The reading channels" spec 11 §3 means —
+  `recalled`/`activation`/`reach`/`novelty`, `emergence/activation.js`'s own
+  measured channels — are **not tested by this census at all**. Testing them
+  is Assembly B's job, not Assembly A's; until `readingRegime` exists there
+  is no wired path from raw text to those specific numbers, only to this
+  differently-sourced tier-fold.
+- **Paradigm is untestable, exactly as predicted going in** (§0's own
+  finding) — not a new result.
+
+**Reading against spec 11 §3's actual stop condition** — "if the channels
+*also* swing by an order of magnitude, the diagnosis is wrong" — the
+specific failure mode named is Entity/Field/the-reading-channels swinging
+like Link/Kind/Network/Paradigm do. Entity's 2.2× is short of "an order of
+magnitude"; Field's flatness is a normalization artifact, not a genuine
+data point; and the actual reading channels remain unmeasured. **On its own
+literal terms, this partial run does not trigger the named stop condition**
+— but it also does not deliver the clean confirmation the pre-registration
+hoped for, and the Link/Network direction reversal is a real complication
+of §0's narrative, not a rounding error. Two of four sources are still
+missing. This is recorded as a partial, honest result, not a green light.
+
+What this does not establish: anything about narrative-high-SVO or
+adversarial-civic (unmeasured), whether Kind would separate given more
+signal (Frankenstein's own 7 being-records may simply be too few for
+`minKindSize=3` regardless of genre), or whether "the reading channels" —
+once Assembly B actually wires them — hold to &lt;2× the way this census's
+proxy Lens number does not.
