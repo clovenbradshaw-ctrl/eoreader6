@@ -388,3 +388,77 @@ signal (Frankenstein's own 7 being-records may simply be too few for
 `minKindSize=3` regardless of genre), or whether "the reading channels" —
 once Assembly B actually wires them — hold to &lt;2× the way this census's
 proxy Lens number does not.
+
+## Assembly B: Atmosphere from `recalled` — refused by its own stated test
+
+`node scripts/reading-regime-frankenstein.mjs`. `packages/engine/loops/
+reading-regime.js::readingRegime` wires `emergence/activation.js`'s
+`recalled` channel into `loops/atmosphere.js`'s `createRegimeTracker`,
+exactly the seam spec 11 §4 describes — both halves already existed and had
+never been connected. Declared numbers matched to the existing precedent for
+this exact material (`scripts/activation-clearings.mjs`'s own SPEC): `window
+12, draws 200, tolerance 3, reseeds 5, seed 17`, `findOn: ["regularity"]`,
+100-word chunks (785 frames over the full committed `pg84-frankenstein.txt`,
+24 real chapter markers).
+
+**The result is clean, and it is the negative one spec 11 §4 names in
+advance as the refusal condition.**
+
+```
+rezero frames: 133, 255, 377, 499, 621, 743
+B1 — recall 3/24  precision 3/6  chance 4.16  ROTATED 4.6±0.9  p≈0.985
+B2 — shuffled (30 trials): mean 6.00 ± 0.00, range [6, 6]
+     p(shuffled >= real) ≈ 1.000 (30/30)
+```
+
+Two facts, and they point at the same cause. **The six rezero frames are
+spaced exactly 122 frames apart, every time** — not approximately, exactly.
+**Every one of 30 shuffled-order trials produced exactly 6 rezeros too**,
+mean 6.00, sd 0.00. Shuffling the frames changes what `recalled` measures at
+every position (recall is causal — a shuffled reading recomputes recall
+against a completely different reading history) and the rezero count did not
+move at all. This is not "the channel is somewhat weak." It is the channel
+carrying no information into this decision: 767 of 785 frames never leave
+`no_ground` — `groundFrom`'s own `10×window` minimum (120 frames at
+window=12) means every rezero resets the clock, and the very next ground
+built after ~120 frames of accumulation is, apparently, reliably narrow
+enough that the following few observations register as surfeit almost
+immediately regardless of their actual value. **785 ÷ 122 ≈ 6.4** — the
+observed rezero count is arithmetic on the total length and the minimum
+ground size, not a reading of the material.
+
+**Per spec 11 §4's own pre-registered refusal condition** — "If regime
+boundaries from `recalled` land at the rate the slack-run null predicts, the
+channel is a boundary detector and not an Atmosphere, and it should stay a
+detector. Record that and stop; do not proceed to C." — **that is exactly
+what this is.** No parameter search was run looking for a better result:
+the declared numbers are the ones this project's own prior work already
+established for this material, and re-deriving different ones until a
+rezero count looked meaningful would be the same failure this file exists to
+refuse elsewhere.
+
+**What this does establish, and what it does not.** The seam itself is
+sound engineering — causal (conformance/reading-regime.test.js's prefix-
+stability test), refuses an undeclared channel, and its documented trigger
+condition (sustained clearings against an established ground) fires when
+by-construction satisfied and never fires when nothing recurs. `emergence/
+activation.js` now has an engine-module importer, closing the SEED.md
+growth-rule violation §0/F2 named — that checkpoint is real regardless of
+this result. What is refuted is narrower and specific: `recalled`, fed
+through `createRegimeTracker` at these declared numbers, on this material,
+does not produce a content-sensitive Atmosphere — it produces a metronome
+set by the minimum-ground-size constant. Not tested here and worth naming
+as the open question: whether a different `statistic` (`windowMean` instead
+of `burstiness`, which does not route censored-below to the slack channel —
+see atmosphere.js's own Amendment II discussion) or a smaller `window`
+changes this, since a metronome driven by `10×window` would metronome at a
+different rate, not stop metronoming, under either change — meaning the
+fix, if there is one, is unlikely to be a parameter retune of this same
+mechanism.
+
+**Per spec 11 §4's explicit instruction, Assembly C (the Lens from channel
+disagreement, which depends on B) does not proceed from this result as
+specified.** A Lens built over disagreement between two regime trackers
+inherits whichever of them is a metronome; two metronomes at different
+periods would produce a "disagreement series" with no reading-act content
+in it at all.
