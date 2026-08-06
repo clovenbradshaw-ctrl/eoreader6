@@ -96,6 +96,43 @@ The pairing of `el-36248` with `el-30613` is deliberate: one reference, one
 language, two translation registers, very different match rates. That
 difference is a measurement, not noise.
 
+## The read step's own finding: recall without discrimination (fi-11940)
+
+`read.mjs` running `fi-11940` end to end scores `13/19` recall — unique named
+characters recovered — against a chance ceiling the same run computes
+alongside it: `mean 0.08, p95 1, max 1` over 400 trials. The reader clears
+chance by roughly two orders of magnitude. Sitting right next to that number,
+in the same JSON, is `precision 0.052` (14/269) — read as a scoreboard, that
+looks like a failing grade on the same fixture.
+
+It is not the same measurement, and treating it as one would be the mistake.
+`registerSize` is 269 because Finnish's case system means the discovery step
+is watching recurrence, not recognizing names. `sillä`, `minä`, `se`, `on`,
+`siinä` — pronouns, the copula, adverbial particles — recur across a
+407-unit read far more reliably than any single case-inflected name-form
+does. This is the same gap `missingPrior` already names for this fixture
+(`finnish_case_paradigm`, 15 grammatical cases): `Juhani` fragments into
+`Juhani`/`Juhanin`/`Juhania`/`Juhanille`/..., so no single surface
+accumulates the frequency a Western name would, while every one of those
+grammatical particles is, by construction, un-inflected and maximally
+recurrent. The 13 real hits are real — `lauri`, `aapo`, `eero`, `juhani`,
+`simeoni`, `timo`, `tuomas`, `valko` among them — found by the same
+self-similarity mechanism, at a rate chance would not produce once in 400
+trials.
+
+What the low precision measures is that recurrence alone individuates a
+Finnish function word exactly as confidently as it individuates a Finnish
+character, because agglutination makes closed-class words the *most*
+recurrent surfaces in the material, not the least. Read this way, `fi-11940`
+is not "the engine fails on Finnish" — it is the dual of the nameless-referent
+table above. That table documents six ways surface form fails to **confirm**
+a correct referent (Traditional/Simplified, Attic/demotic, name order,
+shared surnames, ...). This is the case where recurrence with no name-string
+prior cannot **discriminate** a referent from a grammatical particle. Both
+are findings about this fixture, not a scoreboard to chase to zero by tuning
+against it: the fix is a closed-class prior, scored against its own golden,
+and belongs to CON · Pattern, not to relaxing this one's matcher.
+
 ## Handling notes
 
 - **Strip PG boilerplate before measuring.** Whole-file script ratios are
