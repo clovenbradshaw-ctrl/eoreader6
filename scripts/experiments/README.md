@@ -92,6 +92,23 @@ do better without reintroducing a hand-typed grammar by another route.
    copy-paste, not from grammar) and were chunking together as false
    "multiword" units — a shape-based filter catches most of these, not all.
 
+7. **`role-fold-verb-island` + `resolveSpanRole` extended to instance-level
+   resolution** — `resolve-span-role.mjs` binds each real INSTANCE of a
+   structurally ambiguous filler to an already-evidenced kind via
+   `activation.js`'s one-hop causal recall, direct sibling to
+   `pronouns.js::resolvePronouns`. Full account in `FINDINGS.md` §5-6.
+
+8. **`role-fold-cross-lingual.mjs`** — every mechanism above was measured
+   only against English; tested the same verb-island approach against
+   verified French/German/Finnish legal text. Confirmed a real, predicted
+   defect (`extractSurfaces`'s capitalisation gate false-positives at 44×
+   the French rate on German, because German capitalises every common noun,
+   not just names) and confirmed `induceKinds` itself reaches
+   `height=above` at 73-100% regardless of language once candidates reach
+   it — the mouth is language-specific by construction, the organ isn't.
+   Full account, including a real corpus-mislabeling defect found and
+   worked around along the way, in `FINDINGS.md` §8-9.
+
 ## The throughline
 
 Every mechanism that reached `height=above` withheld abstraction until
@@ -122,8 +139,15 @@ Reproduce any script directly, e.g.:
 ```
 node scripts/experiments/role-fold-verb-island.mjs <pocket-dir> [docLimit] [topNVerbs]
 node scripts/experiments/role-fold-tp-chunk.mjs <pocket-dir> [docLimit] [topNVerbs]
+node scripts/experiments/resolve-span-role.mjs <pocket-dir> [docLimit]
+LIVE_PRIORS_DIR=<path> node scripts/experiments/role-fold-cross-lingual.mjs
 ```
-Pocket used throughout: `live_priors/06-government-legal/federal-register-fulltext`
+Pocket used for 1-6: `live_priors/06-government-legal/federal-register-fulltext`
 (600 real US Federal Register Rule/Proposed-Rule/Notice documents, fetched
 and disclosed in that repo's own commit history) — a sibling repo, not
-committed here.
+committed here. Pocket used for 8 (cross-lingual):
+`live_priors/06-government-legal/world-legislation/{us,fr,de,fi}` — verified
+in-language before use; `live_priors/11-multi-language/gutenberg-non-en` was
+tried first and found mislabeled at scale (`FINDINGS.md` §8), disclosed
+there rather than fixed here (a `live_priors` defect, not this repo's to
+silently patch).
