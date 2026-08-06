@@ -1,50 +1,52 @@
 {
   "region": "academic-papers",
   "priorGiver": "Universal Dependencies UD_English-EWT",
-  "mergeThreshold": 0.6,
+  "note": "udCrossReference is informational — every kind here is already legitimate via its own selfName and structuralLabel, independent of whether it also matches a UD tag",
+  "crossReferenceThreshold": 0.6,
+  "nullPermutations": 200,
+  "nullQuantile": 0.95,
+  "nullSeed": 42,
+  "candidatePoolSize": 874,
   "kindsChecked": 24,
-  "mergedCount": 8,
+  "crossReferencedCount": 8,
+  "nullSignificantCount": 4,
   "nominalRescuedCount": 4,
-  "unmergedCount": 16,
+  "noCrossReferenceCount": 16,
   "results": [
     {
       "source": "tp-chunk",
       "verb": "with",
-      "kindLabel": "pos:after_len1",
+      "selfName": "Attention/convolutional/it.",
+      "structuralLabel": "pos:after_len1",
       "memberCount": 4,
-      "udCoveredCount": 2,
-      "topTag": "NOUN",
-      "share": 0.889,
-      "nominalShare": 0.889,
-      "effectiveTag": "NOUN",
-      "effectiveShare": 0.889,
-      "distribution": {
-        "NOUN": 0.889,
-        "VERB": 0.056,
-        "X": 0.056
-      },
       "sampleMembers": [
         "Attention",
         "convolutional",
         "it.",
         "respect"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 2,
+        "tag": "NOUN",
+        "share": 0.889,
+        "rawTag": "NOUN",
+        "rawShare": 0.889,
+        "distribution": {
+          "NOUN": 0.889,
+          "VERB": 0.056,
+          "X": 0.056
+        },
+        "nullPValue": 0.154,
+        "nullThreshold": 1,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "tp-chunk",
       "verb": "are",
-      "kindLabel": "pos:after_len1",
+      "selfName": "combined/concatenated/created",
+      "structuralLabel": "pos:after_len1",
       "memberCount": 9,
-      "udCoveredCount": 6,
-      "topTag": "VERB",
-      "share": 0.833,
-      "nominalShare": 0,
-      "effectiveTag": "VERB",
-      "effectiveShare": 0.833,
-      "distribution": {
-        "VERB": 0.833,
-        "ADJ": 0.167
-      },
       "sampleMembers": [
         "combined",
         "concatenated",
@@ -54,26 +56,28 @@
         "drawn",
         "initialized",
         "ready"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 6,
+        "tag": "VERB",
+        "share": 0.833,
+        "rawTag": "VERB",
+        "rawShare": 0.833,
+        "distribution": {
+          "VERB": 0.833,
+          "ADJ": 0.167
+        },
+        "nullPValue": 0.01,
+        "nullThreshold": 0.721,
+        "beatsRandomGrouping": true
+      }
     },
     {
       "source": "verb-island",
       "verb": "are",
-      "kindLabel": "pos:near_before",
+      "selfName": "architectures/attention/bias",
+      "structuralLabel": "pos:near_before",
       "memberCount": 41,
-      "udCoveredCount": 26,
-      "topTag": "NOUN",
-      "share": 0.764,
-      "nominalShare": 0.785,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.785,
-      "distribution": {
-        "NOUN": 0.764,
-        "ADJ": 0.136,
-        "ADV": 0.042,
-        "VERB": 0.037,
-        "PROPN": 0.021
-      },
       "sampleMembers": [
         "architectures",
         "attention",
@@ -83,27 +87,31 @@
         "columns",
         "convolutional",
         "current"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 26,
+        "tag": "NOUN+PROPN",
+        "share": 0.785,
+        "rawTag": "NOUN",
+        "rawShare": 0.764,
+        "distribution": {
+          "NOUN": 0.764,
+          "ADJ": 0.136,
+          "ADV": 0.042,
+          "VERB": 0.037,
+          "PROPN": 0.021
+        },
+        "nullPValue": 0,
+        "nullThreshold": 0.58,
+        "beatsRandomGrouping": true
+      }
     },
     {
       "source": "verb-island",
       "verb": "are",
-      "kindLabel": "pos:far_after",
+      "selfName": "case/channels/data",
+      "structuralLabel": "pos:far_after",
       "memberCount": 21,
-      "udCoveredCount": 17,
-      "topTag": "NOUN",
-      "share": 0.652,
-      "nominalShare": 0.656,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.656,
-      "distribution": {
-        "NOUN": 0.652,
-        "ADV": 0.176,
-        "VERB": 0.108,
-        "ADJ": 0.059,
-        "PROPN": 0.005,
-        "PRON": 0
-      },
       "sampleMembers": [
         "case",
         "channels",
@@ -113,25 +121,32 @@
         "element",
         "elements",
         "functions"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 17,
+        "tag": "NOUN+PROPN",
+        "share": 0.656,
+        "rawTag": "NOUN",
+        "rawShare": 0.652,
+        "distribution": {
+          "NOUN": 0.652,
+          "ADV": 0.176,
+          "VERB": 0.108,
+          "ADJ": 0.059,
+          "PROPN": 0.005,
+          "PRON": 0
+        },
+        "nullPValue": 0.045,
+        "nullThreshold": 0.644,
+        "beatsRandomGrouping": true
+      }
     },
     {
       "source": "tp-chunk",
       "verb": "block",
-      "kindLabel": "pos:before_len1",
+      "selfName": "convolutional/dense/first",
+      "structuralLabel": "pos:before_len1",
       "memberCount": 8,
-      "udCoveredCount": 4,
-      "topTag": "ADJ",
-      "share": 0.656,
-      "nominalShare": 0.253,
-      "effectiveTag": "ADJ",
-      "effectiveShare": 0.656,
-      "distribution": {
-        "ADJ": 0.656,
-        "NOUN": 0.19,
-        "ADV": 0.091,
-        "PROPN": 0.063
-      },
       "sampleMembers": [
         "convolutional",
         "dense",
@@ -141,32 +156,30 @@
         "ResNeXt",
         "transition",
         "vgg"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 4,
+        "tag": "ADJ",
+        "share": 0.656,
+        "rawTag": "ADJ",
+        "rawShare": 0.656,
+        "distribution": {
+          "ADJ": 0.656,
+          "NOUN": 0.19,
+          "ADV": 0.091,
+          "PROPN": 0.063
+        },
+        "nullPValue": 0.189,
+        "nullThreshold": 0.796,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "can",
-      "kindLabel": "pos:far_after",
+      "selfName": "accuracy/algorithms/attention",
+      "structuralLabel": "pos:far_after",
       "memberCount": 52,
-      "udCoveredCount": 35,
-      "topTag": "NOUN",
-      "share": 0.604,
-      "nominalShare": 0.621,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.621,
-      "distribution": {
-        "NOUN": 0.604,
-        "ADJ": 0.154,
-        "VERB": 0.101,
-        "ADV": 0.079,
-        "NUM": 0.021,
-        "ADP": 0.02,
-        "PROPN": 0.017,
-        "PRON": 0.003,
-        "INTJ": 0.001,
-        "X": 0,
-        "DET": 0
-      },
       "sampleMembers": [
         "accuracy",
         "algorithms",
@@ -176,25 +189,37 @@
         "CNNs",
         "complexity",
         "computation"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 35,
+        "tag": "NOUN+PROPN",
+        "share": 0.621,
+        "rawTag": "NOUN",
+        "rawShare": 0.604,
+        "distribution": {
+          "NOUN": 0.604,
+          "ADJ": 0.154,
+          "VERB": 0.101,
+          "ADV": 0.079,
+          "NUM": 0.021,
+          "ADP": 0.02,
+          "PROPN": 0.017,
+          "PRON": 0.003,
+          "INTJ": 0.001,
+          "X": 0,
+          "DET": 0
+        },
+        "nullPValue": 0.025,
+        "nullThreshold": 0.579,
+        "beatsRandomGrouping": true
+      }
     },
     {
       "source": "tp-chunk",
       "verb": "on",
-      "kindLabel": "pos:before_len1",
+      "selfName": "Based/created/depend",
+      "structuralLabel": "pos:before_len1",
       "memberCount": 9,
-      "udCoveredCount": 7,
-      "topTag": "VERB",
-      "share": 0.609,
-      "nominalShare": 0.231,
-      "effectiveTag": "VERB",
-      "effectiveShare": 0.609,
-      "distribution": {
-        "VERB": 0.609,
-        "NOUN": 0.231,
-        "ADV": 0.129,
-        "ADJ": 0.032
-      },
       "sampleMembers": [
         "Based",
         "created",
@@ -204,25 +229,30 @@
         "operate",
         "padding",
         "parameters"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 7,
+        "tag": "VERB",
+        "share": 0.609,
+        "rawTag": "VERB",
+        "rawShare": 0.609,
+        "distribution": {
+          "VERB": 0.609,
+          "NOUN": 0.231,
+          "ADV": 0.129,
+          "ADJ": 0.032
+        },
+        "nullPValue": 0.239,
+        "nullThreshold": 0.794,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "model",
-      "kindLabel": "pos:far_before",
+      "selfName": "AlexNet/batch/BNLeNet",
+      "structuralLabel": "pos:far_before",
       "memberCount": 22,
-      "udCoveredCount": 8,
-      "topTag": "NOUN",
-      "share": 0.586,
-      "nominalShare": 0.601,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.601,
-      "distribution": {
-        "NOUN": 0.586,
-        "VERB": 0.275,
-        "ADV": 0.124,
-        "PROPN": 0.015
-      },
       "sampleMembers": [
         "AlexNet",
         "batch",
@@ -232,27 +262,30 @@
         "data",
         "defined",
         "DenseNet"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 8,
+        "tag": "NOUN+PROPN",
+        "share": 0.601,
+        "rawTag": "NOUN",
+        "rawShare": 0.586,
+        "distribution": {
+          "NOUN": 0.586,
+          "VERB": 0.275,
+          "ADV": 0.124,
+          "PROPN": 0.015
+        },
+        "nullPValue": 0.055,
+        "nullThreshold": 0.605,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "model",
-      "kindLabel": "pos:far_after",
+      "selfName": "access/attention/better",
+      "structuralLabel": "pos:far_after",
       "memberCount": 12,
-      "udCoveredCount": 7,
-      "topTag": "NOUN",
-      "share": 0.593,
-      "nominalShare": 0.593,
-      "effectiveTag": "NOUN",
-      "effectiveShare": 0.593,
-      "distribution": {
-        "NOUN": 0.593,
-        "VERB": 0.235,
-        "ADJ": 0.111,
-        "ADV": 0.033,
-        "X": 0.028,
-        "PRON": 0.001
-      },
       "sampleMembers": [
         "access",
         "attention",
@@ -262,30 +295,32 @@
         "needs",
         "summary",
         "textrm"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 7,
+        "tag": "NOUN",
+        "share": 0.593,
+        "rawTag": "NOUN",
+        "rawShare": 0.593,
+        "distribution": {
+          "NOUN": 0.593,
+          "VERB": 0.235,
+          "ADJ": 0.111,
+          "ADV": 0.033,
+          "X": 0.028,
+          "PRON": 0.001
+        },
+        "nullPValue": 0.174,
+        "nullThreshold": 0.75,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "all",
-      "kindLabel": "pos:near_after",
+      "selfName": "CPU/data/deep",
+      "structuralLabel": "pos:near_after",
       "memberCount": 27,
-      "udCoveredCount": 21,
-      "topTag": "NOUN",
-      "share": 0.54,
-      "nominalShare": 0.545,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.545,
-      "distribution": {
-        "NOUN": 0.54,
-        "VERB": 0.298,
-        "ADJ": 0.097,
-        "ADP": 0.037,
-        "ADV": 0.021,
-        "PROPN": 0.005,
-        "SCONJ": 0.002,
-        "PRON": 0.001,
-        "X": 0
-      },
       "sampleMembers": [
         "CPU",
         "data",
@@ -295,32 +330,35 @@
         "gpus",
         "image",
         "kernels"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 21,
+        "tag": "NOUN+PROPN",
+        "share": 0.545,
+        "rawTag": "NOUN",
+        "rawShare": 0.54,
+        "distribution": {
+          "NOUN": 0.54,
+          "VERB": 0.298,
+          "ADJ": 0.097,
+          "ADP": 0.037,
+          "ADV": 0.021,
+          "PROPN": 0.005,
+          "SCONJ": 0.002,
+          "PRON": 0.001,
+          "X": 0
+        },
+        "nullPValue": 0.184,
+        "nullThreshold": 0.611,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "can",
-      "kindLabel": "pos:near_after",
+      "selfName": "access/accomplished/add",
+      "structuralLabel": "pos:near_after",
       "memberCount": 46,
-      "udCoveredCount": 39,
-      "topTag": "VERB",
-      "share": 0.543,
-      "nominalShare": 0.146,
-      "effectiveTag": "VERB",
-      "effectiveShare": 0.543,
-      "distribution": {
-        "VERB": 0.543,
-        "ADV": 0.237,
-        "NOUN": 0.144,
-        "ADJ": 0.059,
-        "DET": 0.008,
-        "X": 0.005,
-        "PROPN": 0.002,
-        "AUX": 0.001,
-        "ADP": 0,
-        "PRON": 0,
-        "SCONJ": 0
-      },
       "sampleMembers": [
         "access",
         "accomplished",
@@ -330,26 +368,37 @@
         "arbitrary",
         "assign",
         "average"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 39,
+        "tag": "VERB",
+        "share": 0.543,
+        "rawTag": "VERB",
+        "rawShare": 0.543,
+        "distribution": {
+          "VERB": 0.543,
+          "ADV": 0.237,
+          "NOUN": 0.144,
+          "ADJ": 0.059,
+          "DET": 0.008,
+          "X": 0.005,
+          "PROPN": 0.002,
+          "AUX": 0.001,
+          "ADP": 0,
+          "PRON": 0,
+          "SCONJ": 0
+        },
+        "nullPValue": 0.095,
+        "nullThreshold": 0.557,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "model",
-      "kindLabel": "pos:near_after",
+      "selfName": "based/class./classes",
+      "structuralLabel": "pos:near_after",
       "memberCount": 16,
-      "udCoveredCount": 10,
-      "topTag": "NOUN",
-      "share": 0.375,
-      "nominalShare": 0.501,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.501,
-      "distribution": {
-        "NOUN": 0.375,
-        "VERB": 0.287,
-        "PROPN": 0.125,
-        "ADJ": 0.112,
-        "ADV": 0.1
-      },
       "sampleMembers": [
         "based",
         "class.",
@@ -359,30 +408,31 @@
         "hence",
         "instantiating",
         "label"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 10,
+        "tag": "NOUN+PROPN",
+        "share": 0.501,
+        "rawTag": "NOUN",
+        "rawShare": 0.375,
+        "distribution": {
+          "NOUN": 0.375,
+          "VERB": 0.287,
+          "PROPN": 0.125,
+          "ADJ": 0.112,
+          "ADV": 0.1
+        },
+        "nullPValue": 0.299,
+        "nullThreshold": 0.657,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "or",
-      "kindLabel": "pos:near_after",
+      "selfName": "average/batch/close",
+      "structuralLabel": "pos:near_after",
       "memberCount": 28,
-      "udCoveredCount": 20,
-      "topTag": "NOUN",
-      "share": 0.494,
-      "nominalShare": 0.494,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.494,
-      "distribution": {
-        "NOUN": 0.494,
-        "ADV": 0.201,
-        "ADJ": 0.16,
-        "VERB": 0.088,
-        "NUM": 0.036,
-        "X": 0.013,
-        "PRON": 0.005,
-        "AUX": 0.002,
-        "PROPN": 0.001
-      },
       "sampleMembers": [
         "average",
         "batch",
@@ -392,27 +442,35 @@
         "convolution",
         "convolutional",
         "cpu"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 20,
+        "tag": "NOUN+PROPN",
+        "share": 0.494,
+        "rawTag": "NOUN",
+        "rawShare": 0.494,
+        "distribution": {
+          "NOUN": 0.494,
+          "ADV": 0.201,
+          "ADJ": 0.16,
+          "VERB": 0.088,
+          "NUM": 0.036,
+          "X": 0.013,
+          "PRON": 0.005,
+          "AUX": 0.002,
+          "PROPN": 0.001
+        },
+        "nullPValue": 0.289,
+        "nullThreshold": 0.628,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "with",
-      "kindLabel": "pos:near_before",
+      "selfName": "attention.init/blk.init/compared",
+      "structuralLabel": "pos:near_before",
       "memberCount": 16,
-      "udCoveredCount": 11,
-      "topTag": "VERB",
-      "share": 0.493,
-      "nominalShare": 0.325,
-      "effectiveTag": "VERB",
-      "effectiveShare": 0.493,
-      "distribution": {
-        "VERB": 0.493,
-        "NOUN": 0.325,
-        "ADJ": 0.093,
-        "ADV": 0.081,
-        "ADP": 0.004,
-        "X": 0.004
-      },
       "sampleMembers": [
         "attention.init",
         "blk.init",
@@ -422,28 +480,32 @@
         "dealing",
         "elements",
         "encoder--decoder"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 11,
+        "tag": "VERB",
+        "share": 0.493,
+        "rawTag": "VERB",
+        "rawShare": 0.493,
+        "distribution": {
+          "VERB": 0.493,
+          "NOUN": 0.325,
+          "ADJ": 0.093,
+          "ADV": 0.081,
+          "ADP": 0.004,
+          "X": 0.004
+        },
+        "nullPValue": 0.413,
+        "nullThreshold": 0.673,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "with",
-      "kindLabel": "pos:far_before",
+      "selfName": "able/across/also",
+      "structuralLabel": "pos:far_before",
       "memberCount": 54,
-      "udCoveredCount": 41,
-      "topTag": "NOUN",
-      "share": 0.417,
-      "nominalShare": 0.489,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.489,
-      "distribution": {
-        "NOUN": 0.417,
-        "VERB": 0.26,
-        "ADV": 0.144,
-        "PROPN": 0.072,
-        "ADJ": 0.059,
-        "ADP": 0.031,
-        "SCONJ": 0.017
-      },
       "sampleMembers": [
         "able",
         "across",
@@ -453,32 +515,33 @@
         "axis",
         "begin",
         "channel"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 41,
+        "tag": "NOUN+PROPN",
+        "share": 0.489,
+        "rawTag": "NOUN",
+        "rawShare": 0.417,
+        "distribution": {
+          "NOUN": 0.417,
+          "VERB": 0.26,
+          "ADV": 0.144,
+          "PROPN": 0.072,
+          "ADJ": 0.059,
+          "ADP": 0.031,
+          "SCONJ": 0.017
+        },
+        "nullPValue": 0.308,
+        "nullThreshold": 0.601,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "with",
-      "kindLabel": "pos:near_after",
+      "selfName": "additional/AlexNet/associated",
+      "structuralLabel": "pos:near_after",
       "memberCount": 100,
-      "udCoveredCount": 65,
-      "topTag": "NOUN",
-      "share": 0.474,
-      "nominalShare": 0.485,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.485,
-      "distribution": {
-        "NOUN": 0.474,
-        "ADJ": 0.231,
-        "VERB": 0.164,
-        "ADV": 0.074,
-        "NUM": 0.041,
-        "PROPN": 0.01,
-        "X": 0.003,
-        "PRON": 0.002,
-        "AUX": 0.001,
-        "INTJ": 0,
-        "DET": 0
-      },
       "sampleMembers": [
         "additional",
         "AlexNet",
@@ -488,56 +551,69 @@
         "batch",
         "BatchNorm",
         "branch"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 65,
+        "tag": "NOUN+PROPN",
+        "share": 0.485,
+        "rawTag": "NOUN",
+        "rawShare": 0.474,
+        "distribution": {
+          "NOUN": 0.474,
+          "ADJ": 0.231,
+          "VERB": 0.164,
+          "ADV": 0.074,
+          "NUM": 0.041,
+          "PROPN": 0.01,
+          "X": 0.003,
+          "PRON": 0.002,
+          "AUX": 0.001,
+          "INTJ": 0,
+          "DET": 0
+        },
+        "nullPValue": 0.214,
+        "nullThreshold": 0.545,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "all",
-      "kindLabel": "pos:near_before",
+      "selfName": "encoder/far/method",
+      "structuralLabel": "pos:near_before",
       "memberCount": 5,
-      "udCoveredCount": 4,
-      "topTag": "NOUN",
-      "share": 0.482,
-      "nominalShare": 0.482,
-      "effectiveTag": "NOUN",
-      "effectiveShare": 0.482,
-      "distribution": {
-        "NOUN": 0.482,
-        "ADV": 0.229,
-        "SCONJ": 0.142,
-        "ADP": 0.108,
-        "ADJ": 0.021,
-        "VERB": 0.018
-      },
       "sampleMembers": [
         "encoder",
         "far",
         "method",
         "until",
         "values"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 4,
+        "tag": "NOUN",
+        "share": 0.482,
+        "rawTag": "NOUN",
+        "rawShare": 0.482,
+        "distribution": {
+          "NOUN": 0.482,
+          "ADV": 0.229,
+          "SCONJ": 0.142,
+          "ADP": 0.108,
+          "ADJ": 0.021,
+          "VERB": 0.018
+        },
+        "nullPValue": 0.701,
+        "nullThreshold": 1,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "block",
-      "kindLabel": "pos:far_after",
+      "selfName": "blk/called/channels",
+      "structuralLabel": "pos:far_after",
       "memberCount": 21,
-      "udCoveredCount": 11,
-      "topTag": "NOUN",
-      "share": 0.469,
-      "nominalShare": 0.472,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.472,
-      "distribution": {
-        "NOUN": 0.469,
-        "ADJ": 0.33,
-        "VERB": 0.091,
-        "NUM": 0.066,
-        "ADV": 0.033,
-        "PRON": 0.008,
-        "PROPN": 0.003,
-        "X": 0
-      },
       "sampleMembers": [
         "blk",
         "called",
@@ -547,30 +623,34 @@
         "convolutional",
         "dense",
         "fig"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 11,
+        "tag": "NOUN+PROPN",
+        "share": 0.472,
+        "rawTag": "NOUN",
+        "rawShare": 0.469,
+        "distribution": {
+          "NOUN": 0.469,
+          "ADJ": 0.33,
+          "VERB": 0.091,
+          "NUM": 0.066,
+          "ADV": 0.033,
+          "PRON": 0.008,
+          "PROPN": 0.003,
+          "X": 0
+        },
+        "nullPValue": 0.433,
+        "nullThreshold": 0.642,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "on",
-      "kindLabel": "pos:near_after",
+      "selfName": "accuracy/AlexNet/attention",
+      "structuralLabel": "pos:near_after",
       "memberCount": 56,
-      "udCoveredCount": 35,
-      "topTag": "NOUN",
-      "share": 0.436,
-      "nominalShare": 0.459,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.459,
-      "distribution": {
-        "NOUN": 0.436,
-        "ADJ": 0.282,
-        "ADV": 0.105,
-        "VERB": 0.101,
-        "NUM": 0.049,
-        "PROPN": 0.023,
-        "PRON": 0.003,
-        "INTJ": 0.001,
-        "X": 0
-      },
       "sampleMembers": [
         "accuracy",
         "AlexNet",
@@ -580,27 +660,35 @@
         "batch",
         "channel",
         "citet"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 35,
+        "tag": "NOUN+PROPN",
+        "share": 0.459,
+        "rawTag": "NOUN",
+        "rawShare": 0.436,
+        "distribution": {
+          "NOUN": 0.436,
+          "ADJ": 0.282,
+          "ADV": 0.105,
+          "VERB": 0.101,
+          "NUM": 0.049,
+          "PROPN": 0.023,
+          "PRON": 0.003,
+          "INTJ": 0.001,
+          "X": 0
+        },
+        "nullPValue": 0.453,
+        "nullThreshold": 0.569,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "all",
-      "kindLabel": "pos:far_after",
+      "selfName": "across/batch/class",
+      "structuralLabel": "pos:far_after",
       "memberCount": 9,
-      "udCoveredCount": 9,
-      "topTag": "NOUN",
-      "share": 0.4,
-      "nominalShare": 0.448,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.448,
-      "distribution": {
-        "NOUN": 0.4,
-        "ADJ": 0.173,
-        "ADV": 0.171,
-        "VERB": 0.109,
-        "ADP": 0.1,
-        "PROPN": 0.048
-      },
       "sampleMembers": [
         "across",
         "batch",
@@ -610,31 +698,32 @@
         "network",
         "now",
         "return"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 9,
+        "tag": "NOUN+PROPN",
+        "share": 0.448,
+        "rawTag": "NOUN",
+        "rawShare": 0.4,
+        "distribution": {
+          "NOUN": 0.4,
+          "ADJ": 0.173,
+          "ADV": 0.171,
+          "VERB": 0.109,
+          "ADP": 0.1,
+          "PROPN": 0.048
+        },
+        "nullPValue": 0.642,
+        "nullThreshold": 0.78,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "on",
-      "kindLabel": "pos:near_before",
+      "selfName": "algorithms/already/assumptions",
+      "structuralLabel": "pos:near_before",
       "memberCount": 59,
-      "udCoveredCount": 44,
-      "topTag": "NOUN",
-      "share": 0.422,
-      "nominalShare": 0.43,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.43,
-      "distribution": {
-        "NOUN": 0.422,
-        "VERB": 0.309,
-        "ADV": 0.172,
-        "ADJ": 0.056,
-        "PRON": 0.023,
-        "PROPN": 0.007,
-        "DET": 0.005,
-        "INTJ": 0.005,
-        "AUX": 0.001,
-        "X": 0
-      },
       "sampleMembers": [
         "algorithms",
         "already",
@@ -644,31 +733,36 @@
         "classifier",
         "columns",
         "Concatenate"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 44,
+        "tag": "NOUN+PROPN",
+        "share": 0.43,
+        "rawTag": "NOUN",
+        "rawShare": 0.422,
+        "distribution": {
+          "NOUN": 0.422,
+          "VERB": 0.309,
+          "ADV": 0.172,
+          "ADJ": 0.056,
+          "PRON": 0.023,
+          "PROPN": 0.007,
+          "DET": 0.005,
+          "INTJ": 0.005,
+          "AUX": 0.001,
+          "X": 0
+        },
+        "nullPValue": 0.567,
+        "nullThreshold": 0.549,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "block",
-      "kindLabel": "pos:near_after",
+      "selfName": "class/classes/convs",
+      "structuralLabel": "pos:near_after",
       "memberCount": 13,
-      "udCoveredCount": 9,
-      "topTag": "NOUN",
-      "share": 0.373,
-      "nominalShare": 0.386,
-      "effectiveTag": "NOUN+PROPN",
-      "effectiveShare": 0.386,
-      "distribution": {
-        "NOUN": 0.373,
-        "VERB": 0.172,
-        "ADV": 0.134,
-        "ADJ": 0.112,
-        "NUM": 0.111,
-        "ADP": 0.078,
-        "PROPN": 0.013,
-        "AUX": 0.005,
-        "X": 0.001,
-        "PRON": 0.001
-      },
       "sampleMembers": [
         "class",
         "classes",
@@ -678,27 +772,36 @@
         "kernel",
         "numref",
         "out"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 9,
+        "tag": "NOUN+PROPN",
+        "share": 0.386,
+        "rawTag": "NOUN",
+        "rawShare": 0.373,
+        "distribution": {
+          "NOUN": 0.373,
+          "VERB": 0.172,
+          "ADV": 0.134,
+          "ADJ": 0.112,
+          "NUM": 0.111,
+          "ADP": 0.078,
+          "PROPN": 0.013,
+          "AUX": 0.005,
+          "X": 0.001,
+          "PRON": 0.001
+        },
+        "nullPValue": 0.746,
+        "nullThreshold": 0.712,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "are",
-      "kindLabel": "pos:far_before",
+      "selfName": "Check/deep/end",
+      "structuralLabel": "pos:far_before",
       "memberCount": 18,
-      "udCoveredCount": 14,
-      "topTag": "ADV",
-      "share": 0.324,
-      "nominalShare": 0.303,
-      "effectiveTag": "ADV",
-      "effectiveShare": 0.324,
-      "distribution": {
-        "ADV": 0.324,
-        "NOUN": 0.302,
-        "VERB": 0.265,
-        "ADJ": 0.105,
-        "INTJ": 0.003,
-        "PROPN": 0.001
-      },
       "sampleMembers": [
         "Check",
         "deep",
@@ -708,33 +811,32 @@
         "fig",
         "fully",
         "However"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 14,
+        "tag": "ADV",
+        "share": 0.324,
+        "rawTag": "ADV",
+        "rawShare": 0.324,
+        "distribution": {
+          "ADV": 0.324,
+          "NOUN": 0.302,
+          "VERB": 0.265,
+          "ADJ": 0.105,
+          "INTJ": 0.003,
+          "PROPN": 0.001
+        },
+        "nullPValue": 0.94,
+        "nullThreshold": 0.688,
+        "beatsRandomGrouping": false
+      }
     },
     {
       "source": "verb-island",
       "verb": "are",
-      "kindLabel": "pos:near_after",
+      "selfName": "actually/added/also",
+      "structuralLabel": "pos:near_after",
       "memberCount": 69,
-      "udCoveredCount": 58,
-      "topTag": "ADJ",
-      "share": 0.277,
-      "nominalShare": 0.172,
-      "effectiveTag": "ADJ",
-      "effectiveShare": 0.277,
-      "distribution": {
-        "ADJ": 0.277,
-        "VERB": 0.258,
-        "ADV": 0.214,
-        "NOUN": 0.171,
-        "NUM": 0.047,
-        "PRON": 0.013,
-        "SCONJ": 0.012,
-        "ADP": 0.005,
-        "PROPN": 0.001,
-        "X": 0.001,
-        "AUX": 0.001,
-        "DET": 0
-      },
       "sampleMembers": [
         "actually",
         "added",
@@ -744,7 +846,31 @@
         "combined",
         "concatenated",
         "connected"
-      ]
+      ],
+      "udCrossReference": {
+        "covered": 58,
+        "tag": "ADJ",
+        "share": 0.277,
+        "rawTag": "ADJ",
+        "rawShare": 0.277,
+        "distribution": {
+          "ADJ": 0.277,
+          "VERB": 0.258,
+          "ADV": 0.214,
+          "NOUN": 0.171,
+          "NUM": 0.047,
+          "PRON": 0.013,
+          "SCONJ": 0.012,
+          "ADP": 0.005,
+          "PROPN": 0.001,
+          "X": 0.001,
+          "AUX": 0.001,
+          "DET": 0
+        },
+        "nullPValue": 0.995,
+        "nullThreshold": 0.55,
+        "beatsRandomGrouping": false
+      }
     }
   ]
 }
