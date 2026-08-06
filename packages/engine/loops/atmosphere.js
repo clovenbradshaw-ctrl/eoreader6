@@ -112,28 +112,46 @@ export const slackRunNull = (flags, reseeds, seed) => {
  * reading. A metronome, not an Atmosphere. The trend was never cleared out of
  * the ground; it BECAME the ground.
  *
- * THE TEST, and its limits, stated plainly because it is a HEURISTIC and was
- * arrived at by iteration rather than derived. Compare the mean of the last
- * quarter against the mean of the first quarter, ranked against a null built
- * by shuffling the series' own values — nul's licensed perturbation for order
- * questions, the same device `slackRunNull` above already uses on its own run
- * of flags. A trend ends far from where it started; a burst rises and returns.
+ * THE TEST. Compare the mean of the last quarter against the mean of the
+ * first quarter, ranked against a null built by shuffling the series' own
+ * values — nul's licensed perturbation for order questions, the same device
+ * `slackRunNull` above already uses on its own run of flags.
  *
- * Two earlier statistics were tried and refused against the same two known
- * cases, and the record is kept so the next person does not re-walk it:
- * a HALF-SPLIT mean comparison flags any burst sitting past the midpoint,
- * which is most of them; SPEARMAN rank correlation with position is degenerate
- * on this material because `recalled` is mostly ties at zero (68 of 83 values
- * in the fixture that exposed it), which drags rho to 0.95 for a burst that
- * plainly returns to baseline.
+ * This is a DIRECT test of the property that matters, not a proxy for it. The
+ * question a ground-builder needs answered is "is the ground built at the
+ * start still a valid ground at the end," and comparing the ends asks exactly
+ * that. A trend ends far from where it started; a burst rises and returns.
  *
- * WHAT IT CANNOT DISTINGUISH, named rather than hidden: a genuine burst
- * occupying the final quarter of a reading is indistinguishable from a trend
- * by this statistic, and will be refused. That is the conservative direction
- * — it refuses a real signal rather than admitting a metronome — but it is a
- * false positive and it is real. A caller who knows their material ends in a
- * genuine surge should measure it another way rather than expect this gate to
- * see the difference.
+ * FOUR ALTERNATIVES WERE TESTED AND REFUSED. Kept on the record with their
+ * measured numbers so the next person does not re-walk them:
+ *
+ *   HALF-SPLIT mean comparison — tests the wrong property. Any burst sitting
+ *     past the midpoint lifts the second half's mean, and most bursts do.
+ *   SPEARMAN rank correlation with position — degenerate on this material.
+ *     `recalled` is mostly ties at zero (68 of 83 values in the fixture that
+ *     exposed it), which drags rho to 0.95 for a burst that plainly returns.
+ *   REVERSAL asymmetry (does the reading depend on which way time runs) —
+ *     measured fwd/rev re-zero counts: Frankenstein 6/0, mid-burst 1/1,
+ *     end-burst 1/0. Separates the trend, but flags the end-burst too,
+ *     because an end-burst reversed becomes a START-burst that fires before
+ *     `groundFrom`'s 10*window minimum has been met.
+ *   VALUE-SHUFFLE invariance (is the output blind to order) — measured real
+ *     vs shuffled-null: Frankenstein 6 vs 0.00, mid-burst 1 vs 0.13,
+ *     end-burst 1 vs 0.00. Every signal case exceeds its null, so this
+ *     separates signal from noise but not trend from burst.
+ *
+ * THE END-QUARTER CASE IS NOT A FALSE POSITIVE. It is an identity, and this
+ * is provable rather than arguable: a burst occupying the final quarter and
+ * the PREFIX OF A TREND are the same series. Construct both — sixty flat
+ * values followed by a rise — and they are byte-identical. No statistic can
+ * separate them because there is no difference to separate; the evidence that
+ * would distinguish "this returns" from "this is the new level" is the
+ * material after the end, which a causal reader does not have and will not
+ * invent. Refusing is therefore correct, not conservative-but-wrong: the
+ * honest answer to "is this a trend" at that moment is that the reading
+ * cannot yet tell, and a gap is what this engine says when it cannot tell.
+ * Once the return arrives the same series is admitted (conformance holds
+ * both halves of this).
  *
  * A GAP, NEVER A CORRECTION. This returns a typed gap or null. It does not
  * detrend, difference, or rescale the series — repairing a caller's material

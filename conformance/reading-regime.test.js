@@ -147,6 +147,32 @@ test("ADMITS A BURST THAT RETURNS: the gate refuses trends, not the signal an At
   assert.equal(refused, undefined, "a burst that rises and returns is the signal, not a trend — refusing it defeats the gate's purpose");
 });
 
+test("A RISE STILL IN PROGRESS IS REFUSED, and admitted once the return arrives — the same series, one window later", async () => {
+  // Not a false positive: an identity. A burst occupying the final quarter and
+  // the PREFIX OF A TREND are byte-identical inputs, so no statistic can
+  // separate them — the evidence that would ("does it come back") is the
+  // material after the end, which a causal reader does not have. A gap is what
+  // this engine says when it cannot yet tell. The same values, once the return
+  // has actually been read, are admitted.
+  const { stationarityGap } = await import("../packages/engine/loops/atmosphere.js");
+  const flat = Array.from({ length: 60 }, () => 0);
+  const rise = [4, 6, 8, 10, 12, 14, 16, 18, 20];
+
+  const stillRising = [...flat, ...rise];
+  const returned = [...flat, ...rise, ...Array.from({ length: 60 }, () => 0)];
+
+  assert.equal(
+    stationarityGap(stillRising, { reseeds: 20, seed: 1 })?.gap,
+    "trending_material",
+    "a rise that has not yet returned is indistinguishable from a trend's prefix and must be refused",
+  );
+  assert.equal(
+    stationarityGap(returned, { reseeds: 20, seed: 1 }),
+    null,
+    "once the return is in the material, the same rise is a burst and must be admitted",
+  );
+});
+
 test("the refusal is a GAP, never a correction — the series is not detrended on the caller's behalf", async () => {
   const { stationarityGap } = await import("../packages/engine/loops/atmosphere.js");
   const rising = Array.from({ length: 60 }, (_, i) => i);
