@@ -10,6 +10,16 @@
 // EMPIRICAL tag distribution across every real context it was seen in,
 // never a single guess from one invented sentence.
 //
+// filler-occurrences.json IS nothing but corpus sentence excerpts — it
+// carries no result of its own, only the input the (external, not-committed)
+// POS-tagging pass needed. It is gitignored (goldens/agency-civic/data/
+// .gitignore) for exactly the reason eoPriors::pocket.js's Pocket@1 firewall
+// forbids a `sentence`/`text`/`excerpt` key: that content belongs with its
+// corpus, not duplicated into a committed golden. Regenerate it locally
+// whenever the downstream analysis needs it again; only the DERIVED output
+// of that analysis (goldens/agency-civic/data/pos-superposition.json — tag
+// distributions, no source text) is committed.
+//
 // Usage: node scripts/experiments/export-filler-occurrences.mjs <pocket-dir[,dir2,...]> [docLimit] [topNVerbs]
 
 import { readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from "node:fs";

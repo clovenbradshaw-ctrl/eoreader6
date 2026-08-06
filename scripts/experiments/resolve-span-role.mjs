@@ -146,7 +146,7 @@ export const resolveSpanRole = (sentences, { minActivation, minMargin, idfFloor,
         continue;
       }
 
-      bindings.push({ kind: topKind, sentenceOrder: sentence.order, word, activation: topScore, margin, sentence: sentence.text.slice(0, 160) });
+      bindings.push({ kind: topKind, sentenceOrder: sentence.order, word, activation: topScore, margin });
       // A resolved instance can prime later ones — but only via the same
       // recall/margin gate every other instance has to clear. Added to
       // THIS frame's evidence, not asserted globally.
@@ -175,16 +175,29 @@ let totalBindings = [];
 let totalGaps = [];
 const perWordKinds = new Map(); // word -> Set of kinds it actually resolved to, across real instances
 
-for (const file of files) {
+// Console-only lookup, deliberately never attached to a binding and never
+// written to disk — goldens/agency-civic/data is a committed artifact, and
+// a corpus's own sentence text is exactly what a Pocket firewall forbids
+// there (eoPriors::pocket.js's own forbidden-content-key list: text,
+// sentence, excerpt, quote, body, document, page, paragraph). The mechanism
+// itself only ever needs sentence.order (an opaque position), never the
+// text at that position, to do its job — printing a sample below, for a
+// human running this script interactively, is a display concern, not part
+// of the result.
+const sentenceTextByKey = new Map(); // `${fileIndex}#${order}` -> text
+
+for (let fi = 0; fi < files.length; fi++) {
+  const file = files[fi];
   const text = readFileSync(file, "utf8").replace(/^---\n[\s\S]*?\n---\n/, "");
   const sentences = splitSentences(text, { abbreviations: deriveAbbreviations(text) });
   if (!sentences.length) continue;
+  for (const s of sentences) sentenceTextByKey.set(`${fi}#${s.order}`, s.text.slice(0, 160));
   const { bindings, gaps } = resolveSpanRole(sentences, { minActivation: MIN_ACTIVATION, minMargin: MIN_MARGIN });
   for (const b of bindings) {
     if (!perWordKinds.has(b.word)) perWordKinds.set(b.word, new Set());
     perWordKinds.get(b.word).add(b.kind);
   }
-  totalBindings.push(...bindings);
+  totalBindings.push(...bindings.map((b) => ({ ...b, _fi: fi })));
   totalGaps.push(...gaps);
 }
 
@@ -201,10 +214,14 @@ console.log(`${splitWords.length} words resolved to BOTH kinds across different 
 for (const [word] of splitWords.slice(0, 15)) {
   const examples = totalBindings.filter((b) => b.word === word).slice(0, 2);
   console.log(`  "${word}":`);
-  for (const ex of examples) console.log(`    -> ${ex.kind}  (margin ${ex.margin.toFixed(2)}): "${ex.sentence}"`);
+  for (const ex of examples) console.log(`    -> ${ex.kind}  (margin ${ex.margin.toFixed(2)}): "${sentenceTextByKey.get(`${ex._fi}#${ex.sentenceOrder}`) ?? ""}"`);
 }
+
+// `_fi` was carried only for the console sample above — corpus-source
+// bookkeeping, not part of the result. Stripped before anything is written.
+const persistedBindings = totalBindings.map(({ _fi, ...b }) => b);
 
 mkdirSync(join(HERE, "..", "..", "goldens", "agency-civic", "data"), { recursive: true });
 const outPath = join(HERE, "..", "..", "goldens", "agency-civic", "data", "resolve-span-role.experiment.json");
-writeFileSync(outPath, JSON.stringify({ minActivation: MIN_ACTIVATION, minMargin: MIN_MARGIN, docsProcessed: files.length, bindingCount: totalBindings.length, gapCount: totalGaps.length, gapReasons, splitWordCount: splitWords.length, bindings: totalBindings, gaps: totalGaps.slice(0, 500) }, null, 2));
-console.log(`\nwrote ${outPath}`);
+writeFileSync(outPath, JSON.stringify({ minActivation: MIN_ACTIVATION, minMargin: MIN_MARGIN, docsProcessed: files.length, bindingCount: persistedBindings.length, gapCount: totalGaps.length, gapReasons, splitWordCount: splitWords.length, bindings: persistedBindings, gaps: totalGaps.slice(0, 500) }, null, 2));
+console.log(`\nwrote ${outPath} (no corpus sentence text persisted — samples above are console-only)`);
