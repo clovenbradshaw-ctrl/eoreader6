@@ -29,7 +29,17 @@
 // there). The merge-check doesn't care what discovered the cluster; it
 // only asks whether the cluster's members cohere on a real UD tag.
 //
-// Usage: node scripts/experiments/pos-merge-check.mjs [pos-prior.json]
+// REGION-SCOPED, NEVER POOLED. Each registry pair below comes from ONE
+// corpus region's own induction run, never merged across regions before
+// this check — pooling raw records across registers before clustering is
+// the exact mistake role-fold-kinds v1-v3 already made and refuted, and
+// pooling ACROSS registers (statutes with novels with source-code docs)
+// would be the same mistake at a coarser grain. What's shared across
+// regions is only the fixed external reference (POSPrior@1) each region's
+// own kinds are independently checked against — comparability through a
+// common anchor, never through flattening.
+//
+// Usage: node scripts/experiments/pos-merge-check.mjs [pos-prior.json] [verb-island.json] [tp-chunk.json] [output.json] [region-label]
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -105,9 +115,10 @@ const prior = loadPOSPrior(PRIOR_PATH);
 console.log(`loaded POSPrior@1: ${Object.keys(prior.forms).length.toLocaleString()} word forms, giver="${prior.giver}"\n`);
 
 // ── load both registries, check every surviving kind ──────────────────────
+const REGION = process.argv[6] || "government-legal";
 const REGISTRY_SOURCES = [
-  { path: join(HERE, "..", "..", "goldens", "agency-civic", "data", "role-fold-verb-island.experiment.json"), prefix: "verb-island" },
-  { path: join(HERE, "..", "..", "goldens", "agency-civic", "data", "role-fold-tp-chunk.experiment.json"), prefix: "tp-chunk" },
+  { path: process.argv[3] || join(HERE, "..", "..", "goldens", "agency-civic", "data", "role-fold-verb-island.experiment.json"), prefix: "verb-island" },
+  { path: process.argv[4] || join(HERE, "..", "..", "goldens", "agency-civic", "data", "role-fold-tp-chunk.experiment.json"), prefix: "tp-chunk" },
 ];
 
 const results = [];
@@ -140,7 +151,7 @@ for (const { path, prefix } of REGISTRY_SOURCES) {
 }
 
 results.sort((a, b) => b.effectiveShare - a.effectiveShare);
-console.log(`${results.length} surviving kinds checked against the UD reference\n`);
+console.log(`region: ${REGION} — ${results.length} surviving kinds checked against the UD reference\n`);
 
 const MERGE_THRESHOLD = 0.6;
 const merged = results.filter((r) => r.effectiveShare >= MERGE_THRESHOLD && r.udCoveredCount >= 2);
@@ -165,6 +176,6 @@ for (const r of unmerged.slice(0, 8)) {
 }
 
 mkdirSync(join(HERE, "..", "..", "goldens", "agency-civic", "data"), { recursive: true });
-const outPath = join(HERE, "..", "..", "goldens", "agency-civic", "data", "pos-merge-check.experiment.json");
-writeFileSync(outPath, JSON.stringify({ priorGiver: prior.giver, mergeThreshold: MERGE_THRESHOLD, kindsChecked: results.length, mergedCount: merged.length, nominalRescuedCount: nominalRescued, unmergedCount: unmerged.length, results }, null, 2));
+const outPath = process.argv[5] || join(HERE, "..", "..", "goldens", "agency-civic", "data", "pos-merge-check.experiment.json");
+writeFileSync(outPath, JSON.stringify({ region: REGION, priorGiver: prior.giver, mergeThreshold: MERGE_THRESHOLD, kindsChecked: results.length, mergedCount: merged.length, nominalRescuedCount: nominalRescued, unmergedCount: unmerged.length, results }, null, 2));
 console.log(`\nwrote ${outPath}`);
