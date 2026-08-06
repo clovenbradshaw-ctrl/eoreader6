@@ -16,8 +16,8 @@ import { resolveNarratorSpans } from "../packages/engine/perceiver/text/narrator
 import { surf, divide, standpointsOf } from "../packages/engine/loops/surf.js";
 import { isGap } from "../nul/index.js";
 
-const TEXT = "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF = "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF = "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const GOLDEN_PATH = "/Users/mlacy/Documents/Default Project/eoreader5/packages/engine/emergence/summary/golden/span-golden.json";
 
 const { text } = stripContainer(readFileSync(TEXT, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));

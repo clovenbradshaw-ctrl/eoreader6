@@ -16,8 +16,8 @@ import { stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { resolveNarratorSpans } from "../packages/engine/perceiver/text/narrator.js";
 import { createVoiceLog, enterVoice, exitVoice, voiceAt, voiceTransitions } from "../packages/engine/emergence/voice.js";
 
-const TEXT_PATH = "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 const coref = JSON.parse(readFileSync(COREF_PATH, "utf8"));

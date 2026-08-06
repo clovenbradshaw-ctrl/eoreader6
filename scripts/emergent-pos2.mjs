@@ -102,7 +102,7 @@ const run = async (label, path) => {
   return rows;
 };
 
-const a = await run("FRANKENSTEIN", "/Users/mlacy/Documents/Default Project/pg84.txt");
+const a = await run("FRANKENSTEIN", "scripts/adversarial/fixtures/pg84-frankenstein.txt");
 const b = await run("WAR AND PEACE", "/Users/mlacy/Downloads/pg2600.txt");
 
 // stability: does a word keep its place across two different books?

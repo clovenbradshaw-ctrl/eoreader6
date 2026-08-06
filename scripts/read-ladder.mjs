@@ -71,8 +71,8 @@ import { createGraph, readTriples, edgeKey, strongestEdges } from "../packages/e
 import { createTierStack, foldThrough, massIsConsistent, gammaFor } from "../packages/engine/emergence/tiers.js";
 import { readLinks, bindingTriples } from "../packages/engine/emergence/binding.js";
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = process.argv[3] || "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = process.argv[3] || "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const text = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
 const sentences = splitSentences(text);

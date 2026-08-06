@@ -27,8 +27,8 @@ import { readFileSync } from "node:fs";
 import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { resolveNarratorSpans } from "../packages/engine/perceiver/text/narrator.js";
 
-const TEXT_PATH = "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const GOLDEN_PATH = "/Users/mlacy/Documents/Default Project/eoreader5/packages/engine/emergence/summary/golden/span-golden.json";
 
 const SENTENCES_PER_FRAME = 4;

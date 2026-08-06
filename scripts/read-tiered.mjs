@@ -33,8 +33,8 @@ const WINDOW = 12;      // the reach of the present
 const DRAWS = 200;      // the resolution of testimony — finest rank sayable is 1/draws
 const TIER_SEED = 20260803; // the received stream; the engine holds no randomness
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = process.argv[3] || "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = process.argv[3] || "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 
 const sentences = splitSentences(text);

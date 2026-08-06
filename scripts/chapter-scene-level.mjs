@@ -94,5 +94,5 @@ const runFor = (label, path, sampleCount = 40) => {
   }
 };
 
-runFor("Frankenstein", "/Users/mlacy/Documents/Default Project/pg84.txt");
+runFor("Frankenstein", "scripts/adversarial/fixtures/pg84-frankenstein.txt");
 runFor("War and Peace", "/Users/mlacy/Downloads/pg2600.txt");

@@ -215,7 +215,7 @@ runAll("three regimes", threeRegimes(3), SPEC, [120, 240]);
 
 // ── 3. the external reference ───────────────────────────────────────────────
 
-const FRANKENSTEIN = process.argv[2] || "/home/user/eoreader4.2/tests/fixtures/frankenstein.txt";
+const FRANKENSTEIN = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const CHAPTER_RE = /^(?:CHAPTER|Chapter)\s+[IVXLC0-9]+/;
 const CHUNK = 100;
 

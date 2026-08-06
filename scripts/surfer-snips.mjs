@@ -35,7 +35,7 @@ import { executePrompt } from "../packages/host/surfer.js";
 import { stripContainer } from "../packages/engine/perceiver/text/spans.js";
 
 const DEFAULT_PATHS = [
-  "/Users/mlacy/Documents/Default Project/pg84.txt",
+  "scripts/adversarial/fixtures/pg84-frankenstein.txt",
   "/Users/mlacy/Downloads/pg2600.txt",
 ];
 const paths = process.argv.slice(2).filter((a) => !a.startsWith("--"));

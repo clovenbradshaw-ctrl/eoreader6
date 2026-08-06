@@ -58,7 +58,7 @@ const countsOf = (ws) => {
   return m;
 };
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 const sentences = splitSentences(text);
 

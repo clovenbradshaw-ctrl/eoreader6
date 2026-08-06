@@ -54,7 +54,7 @@ const traceMaterial = (label, text) => {
 
 const TEXTS = {
   "War and Peace": "/Users/mlacy/Downloads/pg2600.txt",
-  "Frankenstein": "/Users/mlacy/Documents/Default Project/pg84.txt",
+  "Frankenstein": "scripts/adversarial/fixtures/pg84-frankenstein.txt",
   "Garoa (Basque)": "/Users/mlacy/Documents/Default Project/eoreader4.2/tests/goldens/texts/basque-garoa.txt",
 };
 
