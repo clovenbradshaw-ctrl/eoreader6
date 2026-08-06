@@ -92,15 +92,26 @@ do better without reintroducing a hand-typed grammar by another route.
    copy-paste, not from grammar) and were chunking together as false
    "multiword" units — a shape-based filter catches most of these, not all.
 
-7. **`resolve-span-role.mjs`** (a separate, open PR — see below) proved a
-   span's role is a property of the *instance*, not the word: causal,
-   one-hop, activation-gated collapse, a direct sibling to
-   `perceiver/text/pronouns.js::resolvePronouns`, reusing
+7. **`resolve-span-role.mjs`** proved a span's role is a property of the
+   *instance*, not the word: causal, one-hop, activation-gated collapse, a
+   direct sibling to `perceiver/text/pronouns.js::resolvePronouns`, reusing
    `emergence/activation.js` unmodified. Its own registry, though, drew
    from only ONE saved experiment file and explicitly excluded multi-word
-   members ("single tokens only for this pass").
+   members ("single tokens only for this pass"). Full account in
+   `FINDINGS.md` §5-6.
 
-8. **`span-role-reader.mjs`** — composes items 5–7 into one reading tool
+8. **`role-fold-cross-lingual.mjs`** — every mechanism above was measured
+   only against English; tested the same verb-island approach against
+   verified French/German/Finnish legal text. Confirmed a real, predicted
+   defect (`extractSurfaces`'s capitalisation gate false-positives at 44×
+   the French rate on German, because German capitalises every common noun,
+   not just names) and confirmed `induceKinds` itself reaches
+   `height=above` at 73-100% regardless of language once candidates reach
+   it — the mouth is language-specific by construction, the organ isn't.
+   Full account, including a real corpus-mislabeling defect found and
+   worked around along the way, in `FINDINGS.md` §8-9.
+
+9. **`span-role-reader.mjs`** — composes items 5–7 into one reading tool
    instead of three disconnected one-shot scripts, and widens
    `resolve-span-role.mjs`'s registry along the one axis it named as the
    next step: pools **both** `role-fold-verb-island.experiment.json` and
@@ -140,6 +151,27 @@ do better without reintroducing a hand-typed grammar by another route.
    fillers were multi-word). A gap, reported as a result, same as
    everywhere else in this arc.
 
+10. **`eot-stream.mjs`** — composes items 5, 7, and `emergence/
+    people.js::understand()` into a live, append-only, revisable belief
+    ledger: per-population ("does this verb island already have a kind, or
+    does the material have to teach one?" via `understand()`, checked
+    against the first real `KindVocabulary@1` this codebase has had, built
+    from items 5/6's own `height=above` output) and per-instance ("does
+    this occurrence bind to a kind already evidenced?" via `resolveSpanRole`,
+    unmodified). Span identity is position-addressed (source + sentence +
+    char range, hashed) rather than content-addressed, so a later text
+    correction can supersede a belief without orphaning it — proven with a
+    self-check fixture before the real-document run trusts it. Explicitly
+    does not reuse `frame/index.js::note()` (built for commensurable
+    numeric perturbation sequences, not a heterogeneous belief stream — see
+    the script's own header for why forcing that reuse would repeat the
+    exact class of defect `eo-constitution` Article II.17 is about).
+    Run against 20 real US Code sections: both branches of `understand()`'s
+    decision genuinely exercised (2 populations matched the certified
+    prior, 13 triggered real fresh induction, 67 honestly reported as
+    insufficient material rather than forced through `induceKinds`' hard
+    `minKindSize` gate).
+
 ## The throughline
 
 Every mechanism that reached `height=above` withheld abstraction until
@@ -170,13 +202,21 @@ Reproduce any script directly, e.g.:
 ```
 node scripts/experiments/role-fold-verb-island.mjs <pocket-dir> [docLimit] [topNVerbs]
 node scripts/experiments/role-fold-tp-chunk.mjs <pocket-dir> [docLimit] [topNVerbs]
+node scripts/experiments/resolve-span-role.mjs <pocket-dir> [docLimit]
+LIVE_PRIORS_DIR=<path> node scripts/experiments/role-fold-cross-lingual.mjs
 node scripts/experiments/span-role-reader.mjs [pocket-dir] [docLimit]
+node scripts/experiments/eot-stream.mjs [pocket-dir] [docLimit] [topNVerbs]
 ```
-Pocket used throughout items 1–7: `live_priors/06-government-legal/federal-register-fulltext`
+Pocket used for items 1–7: `live_priors/06-government-legal/federal-register-fulltext`
 (600 real US Federal Register Rule/Proposed-Rule/Notice documents, fetched
 and disclosed in that repo's own commit history) — a sibling repo, not
-committed here. `span-role-reader.mjs` (item 8) defaults instead to
-`live_priors/06-government-legal/world-legislation/us` — a different, small,
-uncontested slice of the same sibling repo, used only to demonstrate the
-composed mechanism reading a real document end to end, not to make any
-claim about corpus completeness or scale.
+committed here. Pocket used for item 8 (cross-lingual):
+`live_priors/06-government-legal/world-legislation/{us,fr,de,fi}` — verified
+in-language before use; `live_priors/11-multi-language/gutenberg-non-en` was
+tried first and found mislabeled at scale (`FINDINGS.md` §8), disclosed
+there rather than fixed here (a `live_priors` defect, not this repo's to
+silently patch). `span-role-reader.mjs` (item 9) and `eot-stream.mjs`
+default instead to `live_priors/06-government-legal/world-legislation/us` —
+a different, small, uncontested slice of the same sibling repo, used only
+to demonstrate each composed mechanism reading a real document end to end,
+not to make any claim about corpus completeness or scale.
