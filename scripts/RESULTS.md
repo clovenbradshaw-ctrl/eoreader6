@@ -444,17 +444,69 @@ condition (sustained clearings against an established ground) fires when
 by-construction satisfied and never fires when nothing recurs. `emergence/
 activation.js` now has an engine-module importer, closing the SEED.md
 growth-rule violation §0/F2 named — that checkpoint is real regardless of
-this result. What is refuted is narrower and specific: `recalled`, fed
-through `createRegimeTracker` at these declared numbers, on this material,
-does not produce a content-sensitive Atmosphere — it produces a metronome
-set by the minimum-ground-size constant. Not tested here and worth naming
-as the open question: whether a different `statistic` (`windowMean` instead
-of `burstiness`, which does not route censored-below to the slack channel —
-see atmosphere.js's own Amendment II discussion) or a smaller `window`
-changes this, since a metronome driven by `10×window` would metronome at a
-different rate, not stop metronoming, under either change — meaning the
-fix, if there is one, is unlikely to be a parameter retune of this same
-mechanism.
+this result.
+
+### Three corrections, found by chasing the 122 rather than accepting it
+
+**(1) The clearing is one this file already measured at chance.**
+`createRegimeTracker`'s trigger is *surfeit* — `exceeds_witness` above the
+ground, accumulated to `tolerance`. This document's own headline table, at
+the top, records surfeit alone at **4/24, p≈0.84** against rotated chapters,
+and states it plainly: "surfeit alone is at chance." The clearing that works
+is `moved` — did the ground itself shift under maintenance — at **19/24,
+p≈0.000**. Spec 11 §4 specified `createRegimeTracker`, so Assembly B was
+built on the known-bad clearing. The refutation above is, in part, a
+rediscovery of a result already in this file.
+
+**(2) The series trends, which turns surfeit into a clock.** `recalled` is
+not stationary: it climbs from 0 through the first 15 frames to 124-127 by
+frame 140, because posting lists grow as the read proceeds — more prior
+frames exist to answer, so more answer. A ground built over a trailing
+window of a rising series is exceeded by what follows *structurally*,
+independent of content. Clearings accumulate, `tolerance` trips, the ground
+rebuilds at the new level, and the cycle repeats at a fixed period set by
+`groundFrom`'s `10×window` minimum: 785 ÷ 122 ≈ 6.4 re-zeros. This is why
+shuffling changes nothing — the trend is a property of *how much has been
+read*, not of what was read, so it survives any reordering intact. The
+ground was never cleared; the trend stayed in it and became it.
+
+**(3) The premise number does not reproduce on the committed fixture.**
+This document records `recalled` at **22/24 tight recall, 20/23 precision,
+p≈0.005** — the number spec 11's F2 rests on ("the strongest measured
+channel... is a refuted organ"). That run used
+`scripts/activation-clearings.mjs`'s default path,
+`/home/user/eoreader4.2/tests/fixtures/frankenstein.txt` — a **legacy-repo
+file that does not exist in this repository** (eoreader4.2 is frozen
+reference per the constitution's I.2; nothing is ported from it). Re-run
+against the fixture this repo actually commits
+(`scripts/adversarial/fixtures/pg84-frankenstein.txt`, 785 frames, 24
+markers, same spec):
+
+| channel | causal | tight | ROTATED (causal) |
+|---|---|---|---|
+| causal surprisal | 4/24 | 4/24 | p≈0.857 |
+| activation | 4/24 | 4/24 | p≈1.000 |
+| reach | 4/24 | 3/24 | p≈0.485 |
+| novelty | 3/24 | 2/24 | p≈0.760 |
+| **recalled** | **8/24** (5/5 prec) | 5/24 | **p≈0.046** |
+
+The *relative* claim survives cleanly — `recalled` is still the strongest of
+the five channels, and the only one clearing its rotation null. The
+*absolute* claim does not: 8/24 at p≈0.046, not 22/24 at p≈0.005. Whether
+the gap is the different text, different chunking, or drift in the code
+since that run is untested and should not be guessed at. **Every downstream
+statement resting on "22/24, p≈0.005" — including spec 11 §0's F2 — should
+be re-read against 8/24, p≈0.046 until the discrepancy is closed.**
+
+**What is actually open.** Not "is `recalled` usable" — through the `moved`
+clearing it already clears its null at p≈0.046 on this fixture, which is
+more than any other channel does. The open question is whether an Atmosphere
+can be built from it *at all*, given that the device spec 11 named
+(`createRegimeTracker`) uses the clearing this project measured at chance,
+and given that the series needs detrending before any ground over it is a
+ground rather than a lagging estimate of a slope. Both are structural, not
+parameter choices: a metronome driven by `10×window` retuned to a different
+`statistic` or `window` metronomes at a different rate, it does not stop.
 
 **Per spec 11 §4's explicit instruction, Assembly C (the Lens from channel
 disagreement, which depends on B) does not proceed from this result as
