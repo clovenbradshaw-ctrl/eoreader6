@@ -92,6 +92,54 @@ do better without reintroducing a hand-typed grammar by another route.
    copy-paste, not from grammar) and were chunking together as false
    "multiword" units — a shape-based filter catches most of these, not all.
 
+7. **`resolve-span-role.mjs`** (a separate, open PR — see below) proved a
+   span's role is a property of the *instance*, not the word: causal,
+   one-hop, activation-gated collapse, a direct sibling to
+   `perceiver/text/pronouns.js::resolvePronouns`, reusing
+   `emergence/activation.js` unmodified. Its own registry, though, drew
+   from only ONE saved experiment file and explicitly excluded multi-word
+   members ("single tokens only for this pass").
+
+8. **`span-role-reader.mjs`** — composes items 5–7 into one reading tool
+   instead of three disconnected one-shot scripts, and widens
+   `resolve-span-role.mjs`'s registry along the one axis it named as the
+   next step: pools **both** `role-fold-verb-island.experiment.json` and
+   `role-fold-tp-chunk.experiment.json`, and admits multi-word members.
+   Two real defects surfaced by actually running the widened registry, not
+   assumed in advance:
+   - Classifying by a surviving KIND's own label (does it say "before" or
+     "after"?) put every multi-word span at zero, because the ones that
+     reached `height=above` clustered under a position-agnostic
+     `"multiword"` label instead — "shares multiword" outscored position
+     as a cohesion signal for these, at this evidence scale. Fixed by
+     classifying each MEMBER by its own saved position-attribute counts
+     (already computed and stored per-record, e.g. `"take place"` carries
+     `pos:after_len2: 4`) instead of the kind's label — same measured
+     data, finer grain.
+   - `resolveSpanRole`'s own span DETECTION only ever scanned single
+     tokens, which would make every multi-word registry entry structurally
+     unreachable (present in the map, never once checked against a
+     document's actual spans) — not a resolution failure, a detection gap.
+     Fixed with a bounded sliding n-gram window; the causal
+     activation-recall collapse itself is untouched. A self-check inside
+     the script (a hand-built fixture, not a claim taken on faith) confirms
+     a real multi-word registry entry is actually detected before trusting
+     any real-document result.
+
+   Run against 20 real US Code sections (`live_priors/06-government-legal/
+   world-legislation/us` — a small, uncontested slice, chosen only to
+   demonstrate the composed mechanism end to end): 590 unambiguous markers
+   (55 multi-word) and 148 ambiguous targets (1 multi-word) in the widened
+   registry, 1,488 instance-level resolutions, 47 words resolving to both
+   kinds across different real instances. Zero of those resolutions were
+   multi-word — not a detection failure (the self-check confirms
+   detection works), but the registry's multi-word entries genuinely not
+   recurring verbatim in this particular 20-document pocket, consistent
+   with this arc's own prior finding that multi-word convergence is a
+   higher bar than single-token convergence (item 5: only 2/69 convergent
+   fillers were multi-word). A gap, reported as a result, same as
+   everywhere else in this arc.
+
 ## The throughline
 
 Every mechanism that reached `height=above` withheld abstraction until
@@ -122,8 +170,13 @@ Reproduce any script directly, e.g.:
 ```
 node scripts/experiments/role-fold-verb-island.mjs <pocket-dir> [docLimit] [topNVerbs]
 node scripts/experiments/role-fold-tp-chunk.mjs <pocket-dir> [docLimit] [topNVerbs]
+node scripts/experiments/span-role-reader.mjs [pocket-dir] [docLimit]
 ```
-Pocket used throughout: `live_priors/06-government-legal/federal-register-fulltext`
+Pocket used throughout items 1–7: `live_priors/06-government-legal/federal-register-fulltext`
 (600 real US Federal Register Rule/Proposed-Rule/Notice documents, fetched
 and disclosed in that repo's own commit history) — a sibling repo, not
-committed here.
+committed here. `span-role-reader.mjs` (item 8) defaults instead to
+`live_priors/06-government-legal/world-legislation/us` — a different, small,
+uncontested slice of the same sibling repo, used only to demonstrate the
+composed mechanism reading a real document end to end, not to make any
+claim about corpus completeness or scale.
