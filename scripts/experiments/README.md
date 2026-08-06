@@ -92,11 +92,13 @@ do better without reintroducing a hand-typed grammar by another route.
    copy-paste, not from grammar) and were chunking together as false
    "multiword" units — a shape-based filter catches most of these, not all.
 
-7. **`role-fold-verb-island` + `resolveSpanRole` extended to instance-level
-   resolution** — `resolve-span-role.mjs` binds each real INSTANCE of a
-   structurally ambiguous filler to an already-evidenced kind via
-   `activation.js`'s one-hop causal recall, direct sibling to
-   `pronouns.js::resolvePronouns`. Full account in `FINDINGS.md` §5-6.
+7. **`resolve-span-role.mjs`** proved a span's role is a property of the
+   *instance*, not the word: causal, one-hop, activation-gated collapse, a
+   direct sibling to `perceiver/text/pronouns.js::resolvePronouns`, reusing
+   `emergence/activation.js` unmodified. Its own registry, though, drew
+   from only ONE saved experiment file and explicitly excluded multi-word
+   members ("single tokens only for this pass"). Full account in
+   `FINDINGS.md` §5-6.
 
 8. **`role-fold-cross-lingual.mjs`** — every mechanism above was measured
    only against English; tested the same verb-island approach against
@@ -108,6 +110,67 @@ do better without reintroducing a hand-typed grammar by another route.
    it — the mouth is language-specific by construction, the organ isn't.
    Full account, including a real corpus-mislabeling defect found and
    worked around along the way, in `FINDINGS.md` §8-9.
+
+9. **`span-role-reader.mjs`** — composes items 5–7 into one reading tool
+   instead of three disconnected one-shot scripts, and widens
+   `resolve-span-role.mjs`'s registry along the one axis it named as the
+   next step: pools **both** `role-fold-verb-island.experiment.json` and
+   `role-fold-tp-chunk.experiment.json`, and admits multi-word members.
+   Two real defects surfaced by actually running the widened registry, not
+   assumed in advance:
+   - Classifying by a surviving KIND's own label (does it say "before" or
+     "after"?) put every multi-word span at zero, because the ones that
+     reached `height=above` clustered under a position-agnostic
+     `"multiword"` label instead — "shares multiword" outscored position
+     as a cohesion signal for these, at this evidence scale. Fixed by
+     classifying each MEMBER by its own saved position-attribute counts
+     (already computed and stored per-record, e.g. `"take place"` carries
+     `pos:after_len2: 4`) instead of the kind's label — same measured
+     data, finer grain.
+   - `resolveSpanRole`'s own span DETECTION only ever scanned single
+     tokens, which would make every multi-word registry entry structurally
+     unreachable (present in the map, never once checked against a
+     document's actual spans) — not a resolution failure, a detection gap.
+     Fixed with a bounded sliding n-gram window; the causal
+     activation-recall collapse itself is untouched. A self-check inside
+     the script (a hand-built fixture, not a claim taken on faith) confirms
+     a real multi-word registry entry is actually detected before trusting
+     any real-document result.
+
+   Run against 20 real US Code sections (`live_priors/06-government-legal/
+   world-legislation/us` — a small, uncontested slice, chosen only to
+   demonstrate the composed mechanism end to end): 590 unambiguous markers
+   (55 multi-word) and 148 ambiguous targets (1 multi-word) in the widened
+   registry, 1,488 instance-level resolutions, 47 words resolving to both
+   kinds across different real instances. Zero of those resolutions were
+   multi-word — not a detection failure (the self-check confirms
+   detection works), but the registry's multi-word entries genuinely not
+   recurring verbatim in this particular 20-document pocket, consistent
+   with this arc's own prior finding that multi-word convergence is a
+   higher bar than single-token convergence (item 5: only 2/69 convergent
+   fillers were multi-word). A gap, reported as a result, same as
+   everywhere else in this arc.
+
+10. **`eot-stream.mjs`** — composes items 5, 7, and `emergence/
+    people.js::understand()` into a live, append-only, revisable belief
+    ledger: per-population ("does this verb island already have a kind, or
+    does the material have to teach one?" via `understand()`, checked
+    against the first real `KindVocabulary@1` this codebase has had, built
+    from items 5/6's own `height=above` output) and per-instance ("does
+    this occurrence bind to a kind already evidenced?" via `resolveSpanRole`,
+    unmodified). Span identity is position-addressed (source + sentence +
+    char range, hashed) rather than content-addressed, so a later text
+    correction can supersede a belief without orphaning it — proven with a
+    self-check fixture before the real-document run trusts it. Explicitly
+    does not reuse `frame/index.js::note()` (built for commensurable
+    numeric perturbation sequences, not a heterogeneous belief stream — see
+    the script's own header for why forcing that reuse would repeat the
+    exact class of defect `eo-constitution` Article II.17 is about).
+    Run against 20 real US Code sections: both branches of `understand()`'s
+    decision genuinely exercised (2 populations matched the certified
+    prior, 13 triggered real fresh induction, 67 honestly reported as
+    insufficient material rather than forced through `induceKinds`' hard
+    `minKindSize` gate).
 
 ## The throughline
 
@@ -141,13 +204,19 @@ node scripts/experiments/role-fold-verb-island.mjs <pocket-dir> [docLimit] [topN
 node scripts/experiments/role-fold-tp-chunk.mjs <pocket-dir> [docLimit] [topNVerbs]
 node scripts/experiments/resolve-span-role.mjs <pocket-dir> [docLimit]
 LIVE_PRIORS_DIR=<path> node scripts/experiments/role-fold-cross-lingual.mjs
+node scripts/experiments/span-role-reader.mjs [pocket-dir] [docLimit]
+node scripts/experiments/eot-stream.mjs [pocket-dir] [docLimit] [topNVerbs]
 ```
-Pocket used for 1-6: `live_priors/06-government-legal/federal-register-fulltext`
+Pocket used for items 1–7: `live_priors/06-government-legal/federal-register-fulltext`
 (600 real US Federal Register Rule/Proposed-Rule/Notice documents, fetched
 and disclosed in that repo's own commit history) — a sibling repo, not
-committed here. Pocket used for 8 (cross-lingual):
+committed here. Pocket used for item 8 (cross-lingual):
 `live_priors/06-government-legal/world-legislation/{us,fr,de,fi}` — verified
 in-language before use; `live_priors/11-multi-language/gutenberg-non-en` was
 tried first and found mislabeled at scale (`FINDINGS.md` §8), disclosed
 there rather than fixed here (a `live_priors` defect, not this repo's to
-silently patch).
+silently patch). `span-role-reader.mjs` (item 9) and `eot-stream.mjs`
+default instead to `live_priors/06-government-legal/world-legislation/us` —
+a different, small, uncontested slice of the same sibling repo, used only
+to demonstrate each composed mechanism reading a real document end to end,
+not to make any claim about corpus completeness or scale.
