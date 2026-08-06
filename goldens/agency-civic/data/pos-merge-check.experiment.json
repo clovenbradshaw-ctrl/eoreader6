@@ -1,0 +1,2053 @@
+{
+  "priorGiver": "Universal Dependencies UD_English-EWT",
+  "mergeThreshold": 0.6,
+  "kindsChecked": 72,
+  "mergedCount": 46,
+  "nominalRescuedCount": 26,
+  "unmergedCount": 26,
+  "results": [
+    {
+      "source": "verb-island",
+      "verb": "must",
+      "kindLabel": "pos:far_after",
+      "memberCount": 6,
+      "udCoveredCount": 4,
+      "topTag": "NOUN",
+      "share": 0.747,
+      "nominalShare": 1,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 1,
+      "distribution": {
+        "NOUN": 0.747,
+        "PROPN": 0.253
+      },
+      "sampleMembers": [
+        "amount",
+        "annually",
+        "assumptions",
+        "English.",
+        "motion",
+        "U.S."
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "does",
+      "kindLabel": "pos:near_after",
+      "memberCount": 4,
+      "udCoveredCount": 4,
+      "topTag": "VERB",
+      "share": 1,
+      "nominalShare": 0,
+      "effectiveTag": "VERB",
+      "effectiveShare": 1,
+      "distribution": {
+        "VERB": 1
+      },
+      "sampleMembers": [
+        "adopt",
+        "affect",
+        "exceed",
+        "impose"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "does",
+      "kindLabel": "pos:near_before",
+      "memberCount": 6,
+      "udCoveredCount": 3,
+      "topTag": "NOUN",
+      "share": 1,
+      "nominalShare": 1,
+      "effectiveTag": "NOUN",
+      "effectiveShare": 1,
+      "distribution": {
+        "NOUN": 1
+      },
+      "sampleMembers": [
+        "AD",
+        "bullet",
+        "GSA",
+        "PMN",
+        "seq.",
+        "substance"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "must",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 19,
+      "udCoveredCount": 16,
+      "topTag": "VERB",
+      "share": 0.971,
+      "nominalShare": 0.029,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.971,
+      "distribution": {
+        "VERB": 0.971,
+        "NOUN": 0.017,
+        "PROPN": 0.013
+      },
+      "sampleMembers": [
+        "allow",
+        "assess",
+        "certify",
+        "comply",
+        "conform",
+        "demonstrate",
+        "enter",
+        "establish"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "was",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 13,
+      "udCoveredCount": 9,
+      "topTag": "VERB",
+      "share": 0.96,
+      "nominalShare": 0.003,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.96,
+      "distribution": {
+        "VERB": 0.96,
+        "ADJ": 0.037,
+        "NOUN": 0.003
+      },
+      "sampleMembers": [
+        "accessioned",
+        "collected",
+        "curated",
+        "designed",
+        "disapproved.",
+        "donated",
+        "given",
+        "obligated"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "has",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 21,
+      "udCoveredCount": 8,
+      "topTag": "NOUN",
+      "share": 0.621,
+      "nominalShare": 0.95,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.95,
+      "distribution": {
+        "NOUN": 0.621,
+        "PROPN": 0.329,
+        "ADJ": 0.05
+      },
+      "sampleMembers": [
+        "AMS",
+        "applicant",
+        "broker-dealer",
+        "CCPA",
+        "Commerce",
+        "Commission",
+        "Department",
+        "EPA"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "must",
+      "kindLabel": "pos:near_after",
+      "memberCount": 11,
+      "udCoveredCount": 10,
+      "topTag": "VERB",
+      "share": 0.926,
+      "nominalShare": 0.053,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.926,
+      "distribution": {
+        "VERB": 0.926,
+        "NOUN": 0.053,
+        "ADJ": 0.021,
+        "PRON": 0.001
+      },
+      "sampleMembers": [
+        "comply",
+        "demonstrate",
+        "intervene",
+        "maintain",
+        "meet",
+        "obtain",
+        "pay",
+        "set"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "shall",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 7,
+      "udCoveredCount": 7,
+      "topTag": "VERB",
+      "share": 0.926,
+      "nominalShare": 0.071,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.926,
+      "distribution": {
+        "VERB": 0.926,
+        "NOUN": 0.071,
+        "ADJ": 0.004
+      },
+      "sampleMembers": [
+        "become",
+        "cease",
+        "mean",
+        "occur",
+        "owe",
+        "sign",
+        "submit"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "may",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 31,
+      "udCoveredCount": 17,
+      "topTag": "NOUN",
+      "share": 0.715,
+      "nominalShare": 0.882,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.882,
+      "distribution": {
+        "NOUN": 0.715,
+        "PROPN": 0.167,
+        "VERB": 0.094,
+        "ADJ": 0.024
+      },
+      "sampleMembers": [
+        "AD",
+        "applicant",
+        "briefs",
+        "Commerce",
+        "Commission",
+        "complainant",
+        "conduct",
+        "customers"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "will",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 52,
+      "udCoveredCount": 46,
+      "topTag": "VERB",
+      "share": 0.87,
+      "nominalShare": 0.103,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.87,
+      "distribution": {
+        "VERB": 0.87,
+        "NOUN": 0.102,
+        "ADV": 0.023,
+        "X": 0.003,
+        "ADJ": 0.001,
+        "PROPN": 0.001,
+        "ADP": 0.001
+      },
+      "sampleMembers": [
+        "accept",
+        "accompany",
+        "advantage",
+        "affect",
+        "allow",
+        "announce",
+        "assess",
+        "assign"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "may",
+      "kindLabel": "pos:near_before",
+      "memberCount": 17,
+      "udCoveredCount": 12,
+      "topTag": "NOUN",
+      "share": 0.763,
+      "nominalShare": 0.863,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.863,
+      "distribution": {
+        "NOUN": 0.763,
+        "ADJ": 0.128,
+        "PROPN": 0.099,
+        "VERB": 0.01
+      },
+      "sampleMembers": [
+        "aquatic",
+        "Coast",
+        "Communication",
+        "dates",
+        "disability",
+        "easa.europa.eu.",
+        "GSA",
+        "Guard"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "has",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 19,
+      "udCoveredCount": 14,
+      "topTag": "VERB",
+      "share": 0.863,
+      "nominalShare": 0,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.863,
+      "distribution": {
+        "VERB": 0.863,
+        "ADJ": 0.137
+      },
+      "sampleMembers": [
+        "applied",
+        "Attained",
+        "become",
+        "committed",
+        "delegated",
+        "delivered",
+        "demonstrated",
+        "eFiling"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "by",
+      "kindLabel": "pos:far_after",
+      "memberCount": 19,
+      "udCoveredCount": 13,
+      "topTag": "NOUN",
+      "share": 0.697,
+      "nominalShare": 0.846,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.846,
+      "distribution": {
+        "NOUN": 0.697,
+        "PROPN": 0.149,
+        "VERB": 0.077,
+        "ADJ": 0.077
+      },
+      "sampleMembers": [
+        "accreditation",
+        "adjustment",
+        "aviation",
+        "Business",
+        "demonstrative",
+        "DMF",
+        "exempt",
+        "factor"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "also",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 14,
+      "udCoveredCount": 12,
+      "topTag": "VERB",
+      "share": 0.827,
+      "nominalShare": 0.017,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.827,
+      "distribution": {
+        "VERB": 0.827,
+        "ADJ": 0.157,
+        "PROPN": 0.017
+      },
+      "sampleMembers": [
+        "complete",
+        "consistent",
+        "differ",
+        "enter",
+        "inform",
+        "known",
+        "prohibits",
+        "referred"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "can",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 6,
+      "udCoveredCount": 6,
+      "topTag": "VERB",
+      "share": 0.816,
+      "nominalShare": 0.18,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.816,
+      "distribution": {
+        "VERB": 0.816,
+        "NOUN": 0.18,
+        "SCONJ": 0.003
+      },
+      "sampleMembers": [
+        "ask",
+        "attend",
+        "contact",
+        "enter",
+        "reduce",
+        "search"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "must",
+      "kindLabel": "pos:near_before",
+      "memberCount": 16,
+      "udCoveredCount": 13,
+      "topTag": "NOUN",
+      "share": 0.64,
+      "nominalShare": 0.81,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.81,
+      "distribution": {
+        "NOUN": 0.64,
+        "PROPN": 0.171,
+        "VERB": 0.114,
+        "ADJ": 0.076
+      },
+      "sampleMembers": [
+        "animal",
+        "applicant",
+        "DATES",
+        "EPA",
+        "FDA",
+        "FY",
+        "Maintenance",
+        "New"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "also",
+      "kindLabel": "pos:near_before",
+      "memberCount": 11,
+      "udCoveredCount": 8,
+      "topTag": "NOUN",
+      "share": 0.48,
+      "nominalShare": 0.796,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.796,
+      "distribution": {
+        "NOUN": 0.48,
+        "PROPN": 0.316,
+        "VERB": 0.204
+      },
+      "sampleMembers": [
+        "ACH",
+        "Act",
+        "AD",
+        "EPA",
+        "health",
+        "House",
+        "Note",
+        "operators"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "from",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 38,
+      "udCoveredCount": 19,
+      "topTag": "NOUN",
+      "share": 0.427,
+      "nominalShare": 0.789,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.789,
+      "distribution": {
+        "NOUN": 0.427,
+        "PROPN": 0.363,
+        "VERB": 0.105,
+        "ADJ": 0.053,
+        "NUM": 0.053
+      },
+      "sampleMembers": [
+        "AMS",
+        "Argentina",
+        "Bulgaria",
+        "CARB",
+        "CCPA",
+        "Certain",
+        "Chile",
+        "China"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "are",
+      "kindLabel": "pos:near_before",
+      "memberCount": 20,
+      "udCoveredCount": 18,
+      "topTag": "NOUN",
+      "share": 0.716,
+      "nominalShare": 0.778,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.778,
+      "distribution": {
+        "NOUN": 0.716,
+        "VERB": 0.111,
+        "PROPN": 0.062,
+        "ADJ": 0.056,
+        "ADV": 0.052,
+        "AUX": 0.002,
+        "X": 0
+      },
+      "sampleMembers": [
+        "adjustments",
+        "amounts",
+        "collecting",
+        "collections",
+        "country",
+        "electronic",
+        "ensure",
+        "hours"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "also",
+      "kindLabel": "pos:near_after",
+      "memberCount": 5,
+      "udCoveredCount": 5,
+      "topTag": "VERB",
+      "share": 0.777,
+      "nominalShare": 0.2,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.777,
+      "distribution": {
+        "VERB": 0.777,
+        "NOUN": 0.2,
+        "ADJ": 0.023
+      },
+      "sampleMembers": [
+        "concerns",
+        "identified",
+        "known",
+        "referred",
+        "testified"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "may",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 36,
+      "udCoveredCount": 30,
+      "topTag": "VERB",
+      "share": 0.772,
+      "nominalShare": 0.178,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.772,
+      "distribution": {
+        "VERB": 0.772,
+        "NOUN": 0.171,
+        "ADV": 0.033,
+        "ADJ": 0.017,
+        "PROPN": 0.006
+      },
+      "sampleMembers": [
+        "affect",
+        "amend",
+        "attend",
+        "charge",
+        "choose",
+        "contact",
+        "decline",
+        "deny"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "at",
+      "kindLabel": "pos:far_after",
+      "memberCount": 30,
+      "udCoveredCount": 16,
+      "topTag": "NOUN",
+      "share": 0.621,
+      "nominalShare": 0.76,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.76,
+      "distribution": {
+        "NOUN": 0.621,
+        "VERB": 0.157,
+        "PROPN": 0.138,
+        "ADJ": 0.063,
+        "ADP": 0.021
+      },
+      "sampleMembers": [
+        "Airworthiness",
+        "Archives",
+        "August",
+        "Butte",
+        "call",
+        "cdn-cgi",
+        "CFR",
+        "Code"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "as",
+      "kindLabel": "pos:near_before",
+      "memberCount": 10,
+      "udCoveredCount": 7,
+      "topTag": "VERB",
+      "share": 0.757,
+      "nominalShare": 0.002,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.757,
+      "distribution": {
+        "VERB": 0.757,
+        "ADJ": 0.241,
+        "NOUN": 0.002
+      },
+      "sampleMembers": [
+        "certified",
+        "classified",
+        "codified",
+        "exposed",
+        "federalism",
+        "generically",
+        "named",
+        "read"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "under",
+      "kindLabel": "capitalized",
+      "memberCount": 12,
+      "udCoveredCount": 10,
+      "topTag": "NOUN",
+      "share": 0.665,
+      "nominalShare": 0.753,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.753,
+      "distribution": {
+        "NOUN": 0.665,
+        "ADV": 0.1,
+        "NUM": 0.1,
+        "PROPN": 0.089,
+        "VERB": 0.047
+      },
+      "sampleMembers": [
+        "Accordingly",
+        "Activity",
+        "Administrator",
+        "Budget",
+        "Certification",
+        "Congress",
+        "FDA",
+        "Federalism"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "will",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 46,
+      "udCoveredCount": 25,
+      "topTag": "NOUN",
+      "share": 0.563,
+      "nominalShare": 0.752,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.752,
+      "distribution": {
+        "NOUN": 0.563,
+        "PROPN": 0.188,
+        "VERB": 0.093,
+        "ADV": 0.082,
+        "ADJ": 0.041,
+        "PRON": 0.026,
+        "X": 0.005,
+        "ADP": 0.002
+      },
+      "sampleMembers": [
+        "Act",
+        "AD",
+        "alone",
+        "amendments",
+        "AMS",
+        "applicant",
+        "award",
+        "Board"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "with",
+      "kindLabel": "pos:far_after",
+      "memberCount": 17,
+      "udCoveredCount": 11,
+      "topTag": "NOUN",
+      "share": 0.722,
+      "nominalShare": 0.751,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.751,
+      "distribution": {
+        "NOUN": 0.722,
+        "VERB": 0.245,
+        "PROPN": 0.029,
+        "ADJ": 0.004
+      },
+      "sampleMembers": [
+        "accordance",
+        "Adjustment",
+        "basis",
+        "combination",
+        "demonstrate",
+        "deposit",
+        "Design",
+        "endorsement"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "also",
+      "kindLabel": "capitalized",
+      "memberCount": 10,
+      "udCoveredCount": 4,
+      "topTag": "NOUN",
+      "share": 0.59,
+      "nominalShare": 0.75,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.75,
+      "distribution": {
+        "NOUN": 0.59,
+        "VERB": 0.25,
+        "PROPN": 0.16
+      },
+      "sampleMembers": [
+        "AD",
+        "Department",
+        "Exchange",
+        "FAA",
+        "Memorandum",
+        "NHTSA",
+        "OWCP",
+        "Respondent"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "has",
+      "kindLabel": "pos:far_after",
+      "memberCount": 9,
+      "udCoveredCount": 8,
+      "topTag": "NOUN",
+      "share": 0.717,
+      "nominalShare": 0.744,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.744,
+      "distribution": {
+        "NOUN": 0.717,
+        "VERB": 0.256,
+        "PROPN": 0.027
+      },
+      "sampleMembers": [
+        "animal",
+        "approve",
+        "cured",
+        "Design",
+        "determination",
+        "eligibility",
+        "Lung",
+        "OWCP"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "has",
+      "kindLabel": "pos:near_before",
+      "memberCount": 32,
+      "udCoveredCount": 22,
+      "topTag": "NOUN",
+      "share": 0.463,
+      "nominalShare": 0.741,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.741,
+      "distribution": {
+        "NOUN": 0.463,
+        "PROPN": 0.278,
+        "ADJ": 0.136,
+        "ADV": 0.088,
+        "VERB": 0.032,
+        "AUX": 0.002,
+        "X": 0
+      },
+      "sampleMembers": [
+        "Act",
+        "applicable",
+        "applicant",
+        "BIA",
+        "Branch",
+        "business",
+        "Commission",
+        "Department"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "by",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 63,
+      "udCoveredCount": 49,
+      "topTag": "VERB",
+      "share": 0.719,
+      "nominalShare": 0.202,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.719,
+      "distribution": {
+        "VERB": 0.719,
+        "NOUN": 0.188,
+        "ADJ": 0.059,
+        "ADV": 0.02,
+        "PROPN": 0.014
+      },
+      "sampleMembers": [
+        "accepted",
+        "accompanied",
+        "adjusted",
+        "affected",
+        "annually",
+        "bound",
+        "charge",
+        "choice"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "must",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 23,
+      "udCoveredCount": 15,
+      "topTag": "NOUN",
+      "share": 0.553,
+      "nominalShare": 0.715,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.715,
+      "distribution": {
+        "NOUN": 0.553,
+        "VERB": 0.213,
+        "PROPN": 0.161,
+        "ADV": 0.066,
+        "X": 0.006
+      },
+      "sampleMembers": [
+        "applicant",
+        "carrier",
+        "certification",
+        "complainant",
+        "EPA",
+        "FDA",
+        "hearing",
+        "How"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "may",
+      "kindLabel": "pos:near_after",
+      "memberCount": 21,
+      "udCoveredCount": 19,
+      "topTag": "VERB",
+      "share": 0.713,
+      "nominalShare": 0.26,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.713,
+      "distribution": {
+        "VERB": 0.713,
+        "NOUN": 0.257,
+        "ADJ": 0.027,
+        "PROPN": 0.003,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "acute",
+        "attend",
+        "charge",
+        "conduct",
+        "contact",
+        "dial",
+        "enter",
+        "examine"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "will",
+      "kindLabel": "pos:far_before",
+      "memberCount": 47,
+      "udCoveredCount": 34,
+      "topTag": "NOUN",
+      "share": 0.534,
+      "nominalShare": 0.701,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.701,
+      "distribution": {
+        "NOUN": 0.534,
+        "PROPN": 0.167,
+        "ADJ": 0.146,
+        "VERB": 0.094,
+        "ADV": 0.03,
+        "NUM": 0.029
+      },
+      "sampleMembers": [
+        "abbreviated",
+        "AD",
+        "agenda",
+        "amount",
+        "applicant",
+        "assessment",
+        "August",
+        "business"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "at",
+      "kindLabel": "pos:near_before",
+      "memberCount": 82,
+      "udCoveredCount": 57,
+      "topTag": "NOUN",
+      "share": 0.541,
+      "nominalShare": 0.692,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.692,
+      "distribution": {
+        "NOUN": 0.541,
+        "VERB": 0.187,
+        "PROPN": 0.151,
+        "ADJ": 0.121,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "AD",
+        "APF",
+        "availability",
+        "business",
+        "carryover",
+        "CBP",
+        "Center",
+        "clearing"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "would",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 17,
+      "udCoveredCount": 11,
+      "topTag": "NOUN",
+      "share": 0.66,
+      "nominalShare": 0.691,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.691,
+      "distribution": {
+        "NOUN": 0.66,
+        "ADV": 0.214,
+        "PRON": 0.059,
+        "PROPN": 0.03,
+        "VERB": 0.026,
+        "X": 0.011
+      },
+      "sampleMembers": [
+        "activity",
+        "AD",
+        "AOA",
+        "CBR",
+        "Exchange",
+        "executions",
+        "exemption",
+        "FMVSS"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "are",
+      "kindLabel": "capitalized",
+      "memberCount": 19,
+      "udCoveredCount": 12,
+      "topTag": "NOUN",
+      "share": 0.501,
+      "nominalShare": 0.678,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.678,
+      "distribution": {
+        "NOUN": 0.501,
+        "PROPN": 0.177,
+        "ADJ": 0.16,
+        "VERB": 0.079,
+        "PRON": 0.054,
+        "ADV": 0.029
+      },
+      "sampleMembers": [
+        "Bureau",
+        "CFR",
+        "Chemical",
+        "DATES",
+        "DISABLED",
+        "EPA",
+        "FDA",
+        "FTE"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "at",
+      "kindLabel": "pos:near_after",
+      "memberCount": 17,
+      "udCoveredCount": 6,
+      "topTag": "NOUN",
+      "share": 0.66,
+      "nominalShare": 0.667,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.667,
+      "distribution": {
+        "NOUN": 0.66,
+        "VERB": 0.333,
+        "PROPN": 0.006
+      },
+      "sampleMembers": [
+        "a.m.",
+        "ad.easa.europa.eu.",
+        "citing",
+        "concentrations",
+        "data.bls.gov",
+        "href",
+        "including",
+        "p.m."
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "was",
+      "kindLabel": "pos:far_after",
+      "memberCount": 4,
+      "udCoveredCount": 3,
+      "topTag": "NOUN",
+      "share": 0.5,
+      "nominalShare": 0.667,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.667,
+      "distribution": {
+        "NOUN": 0.5,
+        "ADJ": 0.333,
+        "PROPN": 0.167
+      },
+      "sampleMembers": [
+        "AD",
+        "Federal",
+        "PC",
+        "TSCA"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "was",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 7,
+      "udCoveredCount": 4,
+      "topTag": "NOUN",
+      "share": 0.65,
+      "nominalShare": 0.65,
+      "effectiveTag": "NOUN",
+      "effectiveShare": 0.65,
+      "distribution": {
+        "NOUN": 0.65,
+        "PRON": 0.162,
+        "ADJ": 0.1,
+        "ADV": 0.088
+      },
+      "sampleMembers": [
+        "AD",
+        "fieldwork",
+        "individual",
+        "item",
+        "NPRM",
+        "Respondent",
+        "there"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "will",
+      "kindLabel": "pos:near_after",
+      "memberCount": 47,
+      "udCoveredCount": 42,
+      "topTag": "VERB",
+      "share": 0.642,
+      "nominalShare": 0.2,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.642,
+      "distribution": {
+        "VERB": 0.642,
+        "NOUN": 0.162,
+        "ADJ": 0.105,
+        "ADV": 0.049,
+        "PROPN": 0.038,
+        "X": 0.003,
+        "ADP": 0.001,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "able",
+        "accepted",
+        "Act",
+        "additional",
+        "adversely",
+        "affect",
+        "allow",
+        "assess"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "under",
+      "kindLabel": "pos:near_after",
+      "memberCount": 26,
+      "udCoveredCount": 11,
+      "topTag": "NOUN",
+      "share": 0.56,
+      "nominalShare": 0.642,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.642,
+      "distribution": {
+        "NOUN": 0.56,
+        "ADJ": 0.271,
+        "VERB": 0.087,
+        "PROPN": 0.082
+      },
+      "sampleMembers": [
+        "Act",
+        "Act.",
+        "CAA",
+        "CFR",
+        "control",
+        "delegated",
+        "Executive",
+        "FD"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "are",
+      "kindLabel": "pos:far_after",
+      "memberCount": 22,
+      "udCoveredCount": 19,
+      "topTag": "NOUN",
+      "share": 0.562,
+      "nominalShare": 0.636,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.636,
+      "distribution": {
+        "NOUN": 0.562,
+        "ADJ": 0.21,
+        "VERB": 0.154,
+        "PROPN": 0.073,
+        "ADV": 0.001
+      },
+      "sampleMembers": [
+        "adjustment",
+        "applicants",
+        "assessment",
+        "balance",
+        "certain",
+        "coal",
+        "effectiveness",
+        "establishment"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "would",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 11,
+      "udCoveredCount": 9,
+      "topTag": "VERB",
+      "share": 0.635,
+      "nominalShare": 0.176,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.635,
+      "distribution": {
+        "VERB": 0.635,
+        "NOUN": 0.171,
+        "ADV": 0.111,
+        "ADP": 0.044,
+        "SCONJ": 0.022,
+        "ADJ": 0.007,
+        "INTJ": 0.005,
+        "PROPN": 0.004
+      },
+      "sampleMembers": [
+        "add",
+        "assist",
+        "authorize",
+        "constitute",
+        "designate",
+        "like",
+        "lock",
+        "normally"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "by",
+      "kindLabel": "pos:near_before",
+      "memberCount": 33,
+      "udCoveredCount": 22,
+      "topTag": "VERB",
+      "share": 0.62,
+      "nominalShare": 0.279,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.62,
+      "distribution": {
+        "VERB": 0.62,
+        "NOUN": 0.25,
+        "ADJ": 0.055,
+        "PRON": 0.045,
+        "PROPN": 0.029
+      },
+      "sampleMembers": [
+        "accompanied",
+        "accredited",
+        "adopted",
+        "annually",
+        "bank",
+        "body",
+        "commerce",
+        "commercially"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "by",
+      "kindLabel": "pos:far_before",
+      "memberCount": 36,
+      "udCoveredCount": 33,
+      "topTag": "VERB",
+      "share": 0.617,
+      "nominalShare": 0.284,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.617,
+      "distribution": {
+        "VERB": 0.617,
+        "NOUN": 0.262,
+        "ADJ": 0.046,
+        "PRON": 0.03,
+        "PROPN": 0.022,
+        "ADP": 0.015,
+        "ADV": 0.006,
+        "SCONJ": 0.002
+      },
+      "sampleMembers": [
+        "aircraft",
+        "beyond",
+        "cleared",
+        "course",
+        "covered",
+        "disclosure",
+        "established",
+        "exceed"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "with",
+      "kindLabel": "pos:near_before",
+      "memberCount": 13,
+      "udCoveredCount": 8,
+      "topTag": "NOUN",
+      "share": 0.514,
+      "nominalShare": 0.601,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.601,
+      "distribution": {
+        "NOUN": 0.514,
+        "VERB": 0.399,
+        "PROPN": 0.087
+      },
+      "sampleMembers": [
+        "beginning",
+        "bilateral",
+        "complies",
+        "comply",
+        "complying",
+        "conjunction",
+        "connection",
+        "consulted"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "by",
+      "kindLabel": "pos:near_after",
+      "memberCount": 131,
+      "udCoveredCount": 102,
+      "topTag": "NOUN",
+      "share": 0.473,
+      "nominalShare": 0.598,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.598,
+      "distribution": {
+        "NOUN": 0.473,
+        "VERB": 0.187,
+        "ADJ": 0.175,
+        "PROPN": 0.124,
+        "ADV": 0.02,
+        "ADP": 0.009,
+        "PRON": 0.009,
+        "X": 0.002,
+        "SCONJ": 0.001
+      },
+      "sampleMembers": [
+        "Act",
+        "AD",
+        "adding",
+        "adjusted",
+        "Administrator",
+        "affected",
+        "agency.",
+        "allowing"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "under",
+      "kindLabel": "pos:far_before",
+      "memberCount": 26,
+      "udCoveredCount": 23,
+      "topTag": "NOUN",
+      "share": 0.551,
+      "nominalShare": 0.597,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.597,
+      "distribution": {
+        "NOUN": 0.551,
+        "VERB": 0.286,
+        "ADJ": 0.116,
+        "PROPN": 0.046,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "AD",
+        "amount",
+        "Animal",
+        "authorized",
+        "Commission's",
+        "deposit",
+        "described",
+        "determination"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "section",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 11,
+      "udCoveredCount": 7,
+      "topTag": "NOUN",
+      "share": 0.559,
+      "nominalShare": 0.585,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.585,
+      "distribution": {
+        "NOUN": 0.559,
+        "VERB": 0.272,
+        "ADV": 0.143,
+        "PROPN": 0.026
+      },
+      "sampleMembers": [
+        "Abstract",
+        "Act",
+        "Additionally",
+        "Adjustment",
+        "CAA",
+        "CMC",
+        "CONTACT",
+        "contribution"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "with",
+      "kindLabel": "pos:far_before",
+      "memberCount": 35,
+      "udCoveredCount": 29,
+      "topTag": "NOUN",
+      "share": 0.435,
+      "nominalShare": 0.584,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.584,
+      "distribution": {
+        "NOUN": 0.435,
+        "VERB": 0.293,
+        "PROPN": 0.15,
+        "ADJ": 0.051,
+        "ADV": 0.034,
+        "INTJ": 0.034,
+        "X": 0.003
+      },
+      "sampleMembers": [
+        "Act",
+        "agreement",
+        "applicants",
+        "assembly",
+        "assist",
+        "Carbomonocyclic",
+        "certificate",
+        "charges"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "are",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 66,
+      "udCoveredCount": 50,
+      "topTag": "VERB",
+      "share": 0.565,
+      "nominalShare": 0.024,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.565,
+      "distribution": {
+        "VERB": 0.565,
+        "ADJ": 0.36,
+        "ADV": 0.047,
+        "PROPN": 0.019,
+        "NOUN": 0.005,
+        "NUM": 0.004
+      },
+      "sampleMembers": [
+        "accepted",
+        "accessible",
+        "adjusted",
+        "allowed",
+        "applicable",
+        "appointed",
+        "automatically",
+        "available."
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "may",
+      "kindLabel": "pos:far_after",
+      "memberCount": 59,
+      "udCoveredCount": 42,
+      "topTag": "NOUN",
+      "share": 0.462,
+      "nominalShare": 0.558,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.558,
+      "distribution": {
+        "NOUN": 0.462,
+        "ADJ": 0.218,
+        "VERB": 0.169,
+        "PROPN": 0.096,
+        "ADV": 0.048,
+        "SCONJ": 0.008
+      },
+      "sampleMembers": [
+        "Act",
+        "AD",
+        "addition",
+        "additional",
+        "applicant",
+        "applied.",
+        "Authorized",
+        "bullet"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "from",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 40,
+      "udCoveredCount": 24,
+      "topTag": "NOUN",
+      "share": 0.534,
+      "nominalShare": 0.557,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.557,
+      "distribution": {
+        "NOUN": 0.534,
+        "VERB": 0.441,
+        "PROPN": 0.023,
+        "X": 0.002
+      },
+      "sampleMembers": [
+        "accessed",
+        "adjustment",
+        "Appeal",
+        "arising",
+        "compiled",
+        "deleted",
+        "deletions",
+        "derived"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "with",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 59,
+      "udCoveredCount": 41,
+      "topTag": "NOUN",
+      "share": 0.471,
+      "nominalShare": 0.549,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.549,
+      "distribution": {
+        "NOUN": 0.471,
+        "VERB": 0.294,
+        "ADJ": 0.107,
+        "PROPN": 0.078,
+        "ADV": 0.032,
+        "ADP": 0.015,
+        "X": 0.002
+      },
+      "sampleMembers": [
+        "accordance",
+        "affiliated",
+        "agreement",
+        "airplanes",
+        "align",
+        "along",
+        "Americans",
+        "appropriate"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "as",
+      "kindLabel": "pos:far_before",
+      "memberCount": 39,
+      "udCoveredCount": 33,
+      "topTag": "NOUN",
+      "share": 0.427,
+      "nominalShare": 0.541,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.541,
+      "distribution": {
+        "NOUN": 0.427,
+        "VERB": 0.296,
+        "PROPN": 0.113,
+        "ADJ": 0.091,
+        "ADV": 0.072
+      },
+      "sampleMembers": [
+        "accounts",
+        "ACH",
+        "additional",
+        "adopted",
+        "amend",
+        "amount",
+        "Anderson",
+        "attach"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "as",
+      "kindLabel": "pos:far_after",
+      "memberCount": 61,
+      "udCoveredCount": 39,
+      "topTag": "NOUN",
+      "share": 0.41,
+      "nominalShare": 0.539,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.539,
+      "distribution": {
+        "NOUN": 0.41,
+        "ADJ": 0.212,
+        "VERB": 0.145,
+        "PROPN": 0.129,
+        "ADV": 0.053,
+        "NUM": 0.026,
+        "ADP": 0.024,
+        "SCONJ": 0.002,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "Act",
+        "actuals",
+        "AD",
+        "affect",
+        "Affected",
+        "ALJ",
+        "Bank",
+        "bullet"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "with",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 29,
+      "udCoveredCount": 18,
+      "topTag": "NOUN",
+      "share": 0.422,
+      "nominalShare": 0.533,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.533,
+      "distribution": {
+        "NOUN": 0.422,
+        "ADJ": 0.321,
+        "VERB": 0.139,
+        "PROPN": 0.111,
+        "X": 0.006
+      },
+      "sampleMembers": [
+        "ADS",
+        "applicable",
+        "Clinical",
+        "criminal",
+        "disabilities",
+        "disabilities.",
+        "Dr.",
+        "Executive"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "will",
+      "kindLabel": "pos:far_after",
+      "memberCount": 25,
+      "udCoveredCount": 22,
+      "topTag": "NOUN",
+      "share": 0.474,
+      "nominalShare": 0.53,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.53,
+      "distribution": {
+        "NOUN": 0.474,
+        "ADJ": 0.31,
+        "VERB": 0.115,
+        "PROPN": 0.056,
+        "NUM": 0.045
+      },
+      "sampleMembers": [
+        "available.",
+        "change",
+        "covered",
+        "determination",
+        "direct",
+        "Disclosure",
+        "effect",
+        "Federal"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "with",
+      "kindLabel": "pos:near_after",
+      "memberCount": 61,
+      "udCoveredCount": 40,
+      "topTag": "NOUN",
+      "share": 0.406,
+      "nominalShare": 0.525,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.525,
+      "distribution": {
+        "NOUN": 0.406,
+        "ADJ": 0.258,
+        "VERB": 0.215,
+        "PROPN": 0.119,
+        "X": 0.003,
+        "PRON": 0
+      },
+      "sampleMembers": [
+        "Act.",
+        "actual",
+        "AD",
+        "additional",
+        "applicable",
+        "attainment",
+        "BIA",
+        "CAA"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "under",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 18,
+      "udCoveredCount": 7,
+      "topTag": "NOUN",
+      "share": 0.524,
+      "nominalShare": 0.524,
+      "effectiveTag": "NOUN",
+      "effectiveShare": 0.524,
+      "distribution": {
+        "NOUN": 0.524,
+        "VERB": 0.333,
+        "ADJ": 0.143
+      },
+      "sampleMembers": [
+        "ADDRESSES.",
+        "anticipated",
+        "APO",
+        "appendix",
+        "Blanket",
+        "CAA",
+        "Caltrans",
+        "Executive"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "under",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 30,
+      "udCoveredCount": 24,
+      "topTag": "NOUN",
+      "share": 0.502,
+      "nominalShare": 0.523,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.523,
+      "distribution": {
+        "NOUN": 0.502,
+        "VERB": 0.263,
+        "ADJ": 0.13,
+        "ADV": 0.083,
+        "PROPN": 0.021
+      },
+      "sampleMembers": [
+        "Accordingly",
+        "action''",
+        "Activity",
+        "addition",
+        "Budget",
+        "complaint",
+        "confidential",
+        "covered"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "as",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 34,
+      "udCoveredCount": 28,
+      "topTag": "NOUN",
+      "share": 0.477,
+      "nominalShare": 0.514,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.514,
+      "distribution": {
+        "NOUN": 0.477,
+        "VERB": 0.386,
+        "ADV": 0.071,
+        "PROPN": 0.036,
+        "ADJ": 0.029
+      },
+      "sampleMembers": [
+        "act",
+        "acting",
+        "AD",
+        "addition",
+        "Additionally",
+        "burdens",
+        "Center",
+        "Claimed"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "has",
+      "kindLabel": "pos:near_after",
+      "memberCount": 15,
+      "udCoveredCount": 12,
+      "topTag": "VERB",
+      "share": 0.507,
+      "nominalShare": 0.2,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.507,
+      "distribution": {
+        "VERB": 0.507,
+        "ADJ": 0.21,
+        "NOUN": 0.2,
+        "ADV": 0.083
+      },
+      "sampleMembers": [
+        "attained",
+        "certain",
+        "committed",
+        "concerns",
+        "demonstrated",
+        "established",
+        "fully",
+        "identified"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "may",
+      "kindLabel": "pos:far_before",
+      "memberCount": 6,
+      "udCoveredCount": 4,
+      "topTag": "NOUN",
+      "share": 0.5,
+      "nominalShare": 0.5,
+      "effectiveTag": "NOUN",
+      "effectiveShare": 0.5,
+      "distribution": {
+        "NOUN": 0.5,
+        "ADJ": 0.375,
+        "VERB": 0.125
+      },
+      "sampleMembers": [
+        "ad.easa.europa.eu.",
+        "adverse",
+        "evaluation",
+        "invoice",
+        "originating",
+        "reasoned"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "does",
+      "kindLabel": "pos:far_after",
+      "memberCount": 4,
+      "udCoveredCount": 2,
+      "topTag": "ADJ",
+      "share": 0.5,
+      "nominalShare": 0.5,
+      "effectiveTag": "ADJ",
+      "effectiveShare": 0.5,
+      "distribution": {
+        "ADJ": 0.5,
+        "NOUN": 0.5
+      },
+      "sampleMembers": [
+        "additional",
+        "federalism",
+        "tests",
+        "unfunded"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "section",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 7,
+      "udCoveredCount": 4,
+      "topTag": "NUM",
+      "share": 0.5,
+      "nominalShare": 0,
+      "effectiveTag": "NUM",
+      "effectiveShare": 0.5,
+      "distribution": {
+        "NUM": 0.5,
+        "VERB": 0.25,
+        "ADJ": 0.25
+      },
+      "sampleMembers": [
+        "above.",
+        "below.",
+        "entitled",
+        "II",
+        "II.",
+        "III",
+        "Operational"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "at",
+      "kindLabel": "pos:before_len1",
+      "memberCount": 37,
+      "udCoveredCount": 24,
+      "topTag": "NOUN",
+      "share": 0.456,
+      "nominalShare": 0.498,
+      "effectiveTag": "NOUN+PROPN",
+      "effectiveShare": 0.498,
+      "distribution": {
+        "NOUN": 0.456,
+        "VERB": 0.444,
+        "ADV": 0.042,
+        "PROPN": 0.042,
+        "ADJ": 0.01,
+        "X": 0.007
+      },
+      "sampleMembers": [
+        "accessed",
+        "accessioned",
+        "appear",
+        "cancelled",
+        "Clause",
+        "codified",
+        "copying",
+        "deposit"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "by",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 71,
+      "udCoveredCount": 38,
+      "topTag": "VERB",
+      "share": 0.49,
+      "nominalShare": 0.39,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.49,
+      "distribution": {
+        "VERB": 0.49,
+        "NOUN": 0.333,
+        "ADJ": 0.088,
+        "PROPN": 0.056,
+        "PRON": 0.026,
+        "X": 0.005,
+        "ADV": 0.002
+      },
+      "sampleMembers": [
+        "accessing",
+        "adding",
+        "allowing",
+        "amending",
+        "AMS",
+        "animal",
+        "applying",
+        "Bureau"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "are",
+      "kindLabel": "pos:near_after",
+      "memberCount": 47,
+      "udCoveredCount": 41,
+      "topTag": "VERB",
+      "share": 0.413,
+      "nominalShare": 0.081,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.413,
+      "distribution": {
+        "VERB": 0.413,
+        "ADJ": 0.343,
+        "ADV": 0.115,
+        "NOUN": 0.075,
+        "NUM": 0.048,
+        "PROPN": 0.005
+      },
+      "sampleMembers": [
+        "accepted",
+        "additional",
+        "adjusted",
+        "animal",
+        "applicable",
+        "blind",
+        "confidential",
+        "consistent"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "under",
+      "kindLabel": "pos:near_before",
+      "memberCount": 10,
+      "udCoveredCount": 6,
+      "topTag": "VERB",
+      "share": 0.396,
+      "nominalShare": 0.417,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.396,
+      "distribution": {
+        "VERB": 0.396,
+        "NOUN": 0.333,
+        "ADJ": 0.188,
+        "PROPN": 0.083
+      },
+      "sampleMembers": [
+        "action''",
+        "conditional",
+        "conducted",
+        "confidential",
+        "covered",
+        "disclosure",
+        "entities",
+        "listing"
+      ]
+    },
+    {
+      "source": "verb-island",
+      "verb": "as",
+      "kindLabel": "pos:near_after",
+      "memberCount": 55,
+      "udCoveredCount": 47,
+      "topTag": "VERB",
+      "share": 0.376,
+      "nominalShare": 0.291,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.376,
+      "distribution": {
+        "VERB": 0.376,
+        "ADJ": 0.276,
+        "NOUN": 0.219,
+        "PROPN": 0.072,
+        "ADV": 0.047,
+        "X": 0.006,
+        "INTJ": 0.004
+      },
+      "sampleMembers": [
+        "acceptable",
+        "adjusted",
+        "alternative",
+        "applicable",
+        "applicant",
+        "appropriate.",
+        "authorized",
+        "basis"
+      ]
+    },
+    {
+      "source": "tp-chunk",
+      "verb": "as",
+      "kindLabel": "pos:after_len1",
+      "memberCount": 56,
+      "udCoveredCount": 34,
+      "topTag": "VERB",
+      "share": 0.37,
+      "nominalShare": 0.114,
+      "effectiveTag": "VERB",
+      "effectiveShare": 0.37,
+      "distribution": {
+        "VERB": 0.37,
+        "ADJ": 0.296,
+        "ADV": 0.195,
+        "NOUN": 0.101,
+        "PRON": 0.019,
+        "PROPN": 0.013,
+        "INTJ": 0.006
+      },
+      "sampleMembers": [
+        "adjusted",
+        "allowed",
+        "amended.",
+        "applicable",
+        "applicable.",
+        "appropriate",
+        "appropriate.",
+        "attorney"
+      ]
+    }
+  ]
+}
