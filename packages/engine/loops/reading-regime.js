@@ -50,7 +50,7 @@
 
 import { gap, isGap } from "../../../nul/index.js";
 import { readForward, seriesOf } from "../emergence/activation.js";
-import { createRegimeTracker } from "./atmosphere.js";
+import { createRegimeTracker, stationarityGap } from "./atmosphere.js";
 
 export const CELL = Object.freeze({ op: "EVA", grain: "Figure" });
 
@@ -68,6 +68,25 @@ export const readingRegime = (frames, { channel, window, draws, tolerance, resee
   // is causal — this is I1, not asserted but structural.
   const { records: frameRecords } = readForward(frames);
   const series = seriesOf(frameRecords, channel, { missing: UNREACHABLE });
+
+  // THE GATE THIS SEAM EXISTS TO ENFORCE. A ground is a nothing rebuilt by
+  // perturbation; over a trending series it is a lagging estimate of a slope
+  // instead, and every re-zero after that is arithmetic on the minimum ground
+  // size rather than a reading of the material. `recalled` on real prose is
+  // exactly that case (see stationarityGap's own header for the measured
+  // numbers), so this refuses rather than silently metronoming. A typed gap,
+  // never a correction: what to do about a trending channel — difference it,
+  // rate-normalise it, pick another — is the caller's declaration, not this
+  // function's to make on their behalf.
+  const trend = stationarityGap(series, { reseeds, seed });
+  if (isGap(trend)) {
+    return {
+      records: [],
+      regimes: [],
+      gaps: [trend],
+      refused: trend,
+    };
+  }
 
   const tracker = createRegimeTracker({ window, draws, tolerance, reseeds, seed, statistic, findOn });
 

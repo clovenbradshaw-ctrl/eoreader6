@@ -94,6 +94,94 @@ export const slackRunNull = (flags, reseeds, seed) => {
   return runs[Math.floor(runs.length * 0.95)];
 };
 
+/**
+ * Is this series stationary enough for a windowed ground to BE a ground?
+ *
+ * WHAT THIS EXISTS TO CATCH, measured, not hypothetical. `emergence/
+ * activation.js`'s `recalled` channel climbs monotonically across a reading —
+ * 0 through the first ~15 frames of Frankenstein, ~127 by frame 140 — because
+ * posting lists grow as the read proceeds: more prior frames exist to answer,
+ * so more answer. Feed that to `createRegimeTracker` and every ground built
+ * over a trailing window is exceeded by what follows STRUCTURALLY, whatever
+ * the content says. Clearings accumulate, `tolerance` trips, the ground
+ * rebuilds one level higher, and the cycle repeats at a period fixed by
+ * `groundFrom`'s own `10*window` minimum. Measured on the committed
+ * Frankenstein fixture: re-zeros at frames 133, 255, 377, 499, 621, 743 —
+ * spaced exactly 122 apart — and 30 shuffled-order controls returned a mean
+ * of 6.00 re-zeros with standard deviation 0.00, identical to the real
+ * reading. A metronome, not an Atmosphere. The trend was never cleared out of
+ * the ground; it BECAME the ground.
+ *
+ * THE TEST, and its limits, stated plainly because it is a HEURISTIC and was
+ * arrived at by iteration rather than derived. Compare the mean of the last
+ * quarter against the mean of the first quarter, ranked against a null built
+ * by shuffling the series' own values — nul's licensed perturbation for order
+ * questions, the same device `slackRunNull` above already uses on its own run
+ * of flags. A trend ends far from where it started; a burst rises and returns.
+ *
+ * Two earlier statistics were tried and refused against the same two known
+ * cases, and the record is kept so the next person does not re-walk it:
+ * a HALF-SPLIT mean comparison flags any burst sitting past the midpoint,
+ * which is most of them; SPEARMAN rank correlation with position is degenerate
+ * on this material because `recalled` is mostly ties at zero (68 of 83 values
+ * in the fixture that exposed it), which drags rho to 0.95 for a burst that
+ * plainly returns to baseline.
+ *
+ * WHAT IT CANNOT DISTINGUISH, named rather than hidden: a genuine burst
+ * occupying the final quarter of a reading is indistinguishable from a trend
+ * by this statistic, and will be refused. That is the conservative direction
+ * — it refuses a real signal rather than admitting a metronome — but it is a
+ * false positive and it is real. A caller who knows their material ends in a
+ * genuine surge should measure it another way rather than expect this gate to
+ * see the difference.
+ *
+ * A GAP, NEVER A CORRECTION. This returns a typed gap or null. It does not
+ * detrend, difference, or rescale the series — repairing a caller's material
+ * silently is how a measurement stops being the caller's. What to do about a
+ * trending channel is the caller's declaration to make.
+ *
+ * `reseeds` and `seed` are declared by the caller for the same reason every
+ * other null's resolution is.
+ */
+export const stationarityGap = (values, { reseeds, seed = 0 } = {}) => {
+  if (!Number.isInteger(reseeds) || reseeds < 2)
+    throw new TypeError("atmosphere: reseeds is the resolution of the stationarity null and is never a default");
+  const xs = [...values].filter((x) => typeof x === "number" && Number.isFinite(x));
+  // Two quarters of at least two points each, or there is nothing to compare.
+  if (xs.length < 8) return null;
+
+  const quarter = Math.max(2, Math.floor(xs.length / 4));
+  const mean = (a) => a.reduce((s, x) => s + x, 0) / a.length;
+  const split = (a) => Math.abs(mean(a.slice(a.length - quarter)) - mean(a.slice(0, quarter)));
+
+  const observed = split(xs);
+  const nulls = [];
+  for (let r = 0; r < reseeds; r++) nulls.push(split(PERTURBATIONS.shuffle(xs, seed + r * 7919)));
+  nulls.sort((a, b) => a - b);
+  const threshold = nulls[Math.floor(nulls.length * 0.95)];
+
+  if (!(observed > threshold)) return null;
+  return gap("trending_material", {
+    why: "the halves of this window differ by more than reordering the same values produces — a ground built over it is a lagging estimate of a slope, not a rebuilt nothing",
+    observed,
+    threshold,
+    reseeds,
+    n: xs.length,
+  });
+};
+
+/**
+ * NOTE FOR ANYONE WIRING A NEW CHANNEL INTO THIS ORGAN. The clearing below is
+ * SURFEIT — `exceeds_witness` above the ground, accumulated to `tolerance`.
+ * scripts/RESULTS.md's own headline table measures surfeit alone at 4/24
+ * chapter boundaries, p≈0.84 against rotated chapters, and says so plainly:
+ * "surfeit alone is at chance." The clearing that beat that null is `moved`
+ * — did the ground itself shift under maintenance — at 19/24, p≈0.000, and it
+ * lives in `loops/turn.js::runTurn` (`clearOn: ["moved"]`), not here. Wiring a
+ * channel to THIS function and expecting boundary detection reproduces a
+ * result this project already measured at chance. Check `stationarityGap`
+ * above on your series first, then check which clearing you actually want.
+ */
 export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, seed = 0, statistic = "burstiness" }) => {
   if (!Array.isArray(material) || material.length === 0) return gap("empty_material", {});
   if (!Number.isInteger(tolerance) || tolerance < 1)

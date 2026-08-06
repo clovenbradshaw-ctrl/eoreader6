@@ -59,7 +59,7 @@ const CONTROL_RUNS = 3;
 const WORD_RE = /[\p{L}\p{N}']+/gu;
 const words = (t) => String(t ?? "").toLowerCase().match(WORD_RE) ?? [];
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 const sentences = splitSentences(text);
 

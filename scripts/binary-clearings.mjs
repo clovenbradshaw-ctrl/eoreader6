@@ -27,7 +27,7 @@ import {
   causalWindow, tightWindow, hits, precision, chanceBaseline, rotationNull, shuffled, stats,
 } from "./lib/surrogates.mjs";
 
-const PATH = process.argv[2] || "/home/user/eoreader4.2/tests/fixtures/frankenstein.txt";
+const PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const BLOCK = Number(process.argv[3] || 512);
 const SPEC = { window: 12, draws: 200, reseeds: 5, tolerance: 3, hop: 4, seed: 17 };
 const CONTROLS = Number(process.env.CONTROLS || 24);

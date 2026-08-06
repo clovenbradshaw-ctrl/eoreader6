@@ -24,12 +24,12 @@ const GAP_MERGE_CHARS = 4000;
 
 const TEXTS = {
   pg2600: "/Users/mlacy/Downloads/pg2600.txt",
-  pg84: "/Users/mlacy/Documents/Default Project/pg84.txt",
+  pg84: "scripts/adversarial/fixtures/pg84-frankenstein.txt",
 };
 
 const priorFor = (entityGoldenEntry) => {
   if (entityGoldenEntry.text === "pg84") {
-    const coref = JSON.parse(readFileSync("/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json", "utf8"));
+    const coref = JSON.parse(readFileSync("scripts/adversarial/fixtures/pg84-frankenstein.coref.json", "utf8"));
     return coref.referents.find((r) => r.id === "creature");
   }
   const coref = JSON.parse(readFileSync("/Users/mlacy/Documents/Default Project/eoreader5/priors/coref/war-and-peace.json", "utf8"));

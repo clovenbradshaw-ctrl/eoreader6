@@ -53,8 +53,29 @@ console.log(`${words.length} tokens -> ${chunks.length} frames of ${CHUNK}; ${tr
 console.log(`spec=${JSON.stringify(SPEC)}\n`);
 
 const t0 = Date.now();
-const { records, regimes, gaps } = readingRegime(frames, SPEC);
+const { records, regimes, gaps, refused } = readingRegime(frames, SPEC);
 const readMs = Date.now() - t0;
+
+// A refusal is a result, and it is not the same result as "measured, found
+// nothing" — reporting 0/24 recall for a run that never placed anything would
+// be a number standing in for a refusal.
+if (refused) {
+  console.log(`REFUSED in ${(readMs / 1000).toFixed(1)}s — ${refused.gap}`);
+  console.log(`  ${refused.why}`);
+  console.log(`  observed half-split ${refused.observed.toFixed(3)} vs shuffle threshold ${refused.threshold.toFixed(3)} (reseeds ${refused.reseeds}, n ${refused.n})\n`);
+  console.log(`This is the gate loops/atmosphere::stationarityGap exists for, firing on the`);
+  console.log(`case that earned it: \`recalled\` climbs with document position (0 through the`);
+  console.log(`first ~15 frames, ~127 by frame 140) because posting lists grow as the read`);
+  console.log(`proceeds. A ground over a trailing window of that is a lagging estimate of a`);
+  console.log(`slope, and every re-zero after it is arithmetic on the 10*window minimum, not`);
+  console.log(`a reading. Before this gate existed this same run reported 6 re-zeros spaced`);
+  console.log(`exactly 122 apart, with 30 shuffled controls returning an identical`);
+  console.log(`mean 6.00 ± 0.00 — a metronome that looked like an Atmosphere.\n`);
+  console.log(`To measure this channel against chapter boundaries anyway, use the clearing`);
+  console.log(`that beat its null: scripts/activation-clearings.mjs (runTurn, clearOn`);
+  console.log(`["moved"]) — 8/24 causal, p≈0.046 on this fixture.`);
+  process.exit(0);
+}
 
 const rezeroFrames = () => records.filter((r) => r.rezeroed).map((r) => r.order);
 

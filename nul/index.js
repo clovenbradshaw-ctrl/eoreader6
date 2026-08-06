@@ -65,6 +65,7 @@ export const GAP_TYPES = Object.freeze([
   "undeclared_cell", // emergence/declaration: an organ acted outside the cell it declared, which is acting as something it is not
   "payoff_not_confirmed", // model-as-contracted-part: a model's output was cited as resolving a planted commitment, but the mechanical check could not find the required terms in it — refused admission to the tape, never silently kept as if resolved
   "model_unreachable", // scripts/write-novella.mjs: the one live/reactive network call anywhere in this repo failed — surfaced as a typed gap, never a raw, unclassified exception (challenge #14)
+  "trending_material", // loops/atmosphere::stationarityGap: the material carries a trend, so a ground built over a trailing window of it is a lagging estimate of a slope, not a rebuilt nothing. Every placement against such a ground is exceeded structurally, whatever the content says. Measured on emergence/activation's `recalled` over the committed Frankenstein fixture: re-zeros exactly 122 frames apart, and 30 shuffled-order controls returned mean 6.00 ± 0.00, identical to the real reading — a metronome set by the minimum ground size. The trend was never cleared out of the ground; it became the ground.
 ]);
 
 export const gap = (type, detail = {}) => {

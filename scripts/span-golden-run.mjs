@@ -25,7 +25,7 @@ const GOLDEN_PATH = "/Users/mlacy/Documents/Default Project/eoreader5/packages/e
 const GOLDEN = JSON.parse(readFileSync(GOLDEN_PATH, "utf8"));
 const TEXTS = {
   pg2600: "/Users/mlacy/Downloads/pg2600.txt",
-  pg84: "/Users/mlacy/Documents/Default Project/pg84.txt",
+  pg84: "scripts/adversarial/fixtures/pg84-frankenstein.txt",
 };
 const BLOCK_CHARS = 2000; // same scale as the golden's own tolerance
 

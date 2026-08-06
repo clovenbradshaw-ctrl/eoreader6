@@ -33,8 +33,8 @@ import { resolveAllNarratorSpans, narratorAt, isFirstPerson } from "../packages/
 import { deriveBeingRecords, understand, foldHolons } from "../packages/engine/emergence/people.js";
 import { isGap } from "../nul/index.js";
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = process.argv[3] || "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = process.argv[3] || "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const KIND_PRIORS_PATH = process.argv[4] || "";
 const POPULATION = process.argv[5] || "pg84-beings";
 const READER_VERSION = "eo-2026-07";

@@ -27,7 +27,7 @@ import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engi
 import { discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
 import { isGap } from "../nul/index.js";
 
-const DEFAULT_PATH = "/Users/mlacy/Documents/Default Project/pg84.txt";
+const DEFAULT_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const path = process.argv[2] ?? DEFAULT_PATH;
 
 const session = createSession();

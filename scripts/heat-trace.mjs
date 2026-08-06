@@ -10,7 +10,7 @@ import { splitSentences } from "../packages/engine/perceiver/text/spans.js";
 import { tokenize, buildFrequencyTable, contentWords } from "../packages/engine/perceiver/text/material.js";
 import { createSession, activateMotif, tick, activeMotifs } from "../discourse/index.js";
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const text = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
 const sentences = splitSentences(text);

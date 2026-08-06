@@ -27,8 +27,8 @@ const GOLDEN_PATH = "/Users/mlacy/Documents/Default Project/eoreader5/packages/e
 const GOLDEN = JSON.parse(readFileSync(GOLDEN_PATH, "utf8"));
 const creatureGolden = GOLDEN.entities.find((e) => e.entity === "creature");
 
-const TEXT_PATH = "/Users/mlacy/Documents/Default Project/pg84.txt";
-const COREF_PATH = "/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json";
+const TEXT_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
+const COREF_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
 const FINE_CHARS = 500;
 const GAP_MERGE_CHARS = 4000; // mentions within this gap merge into one presence cluster
 

@@ -89,11 +89,11 @@ const buildRegimes = (text, prior, sourceId) => {
 
 const TEXTS = {
   pg2600: "/Users/mlacy/Downloads/pg2600.txt",
-  pg84: "/Users/mlacy/Documents/Default Project/pg84.txt",
+  pg84: "scripts/adversarial/fixtures/pg84-frankenstein.txt",
 };
 
 let allRegimes = [];
-const frankPrior = JSON.parse(readFileSync("/Users/mlacy/Documents/Default Project/eoPriors/priors/coref/pg84-frankenstein.json", "utf8")).referents.find((r) => r.id === "creature");
+const frankPrior = JSON.parse(readFileSync("scripts/adversarial/fixtures/pg84-frankenstein.coref.json", "utf8")).referents.find((r) => r.id === "creature");
 allRegimes.push(...buildRegimes(readFileSync(TEXTS.pg84, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"), frankPrior, "pg84"));
 
 const wpCoref = JSON.parse(readFileSync("/Users/mlacy/Documents/Default Project/eoreader5/priors/coref/war-and-peace.json", "utf8"));

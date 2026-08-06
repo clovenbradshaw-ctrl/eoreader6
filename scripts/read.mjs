@@ -79,7 +79,7 @@ const runLevel1 = (level0Results, seriesLength) => {
   return { settledCount: settled.length, bins, density, results };
 };
 
-const TEXT_PATH = process.argv[2] || "/Users/mlacy/Documents/Default Project/pg84.txt";
+const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const text = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 const words = tokenize(text);
 const chunks = chunkWords(words, 40);
