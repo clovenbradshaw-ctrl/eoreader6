@@ -233,3 +233,54 @@ it is **9 of 14** — better than half, and better than turn 1 — but the shuff
 controls sit in the same range, so this is not yet evidence of anything. Per
 SEED.md, widening is encounter and narrowing is extraction. Recorded, not
 claimed.
+
+## Reading real civic material: the Unified Housing Strategy
+
+`node scripts/read-nashville-civic.mjs`. Two real documents — Metro
+Nashville's Unified Housing Strategy Executive Summary (April 2025, 212
+sentences) and Full Report (July 2025, 1825 sentences) — run through the
+actual host session pipeline (`createSession`/`ingestFile`/`sessionReferents`)
+and, separately, `resolvePronouns` at the same production operating point
+(`PRONOUN_MIN_ACTIVATION 0.05`, `PRONOUN_MIN_MARGIN 0.2`) `host/corpus.js`
+uses. This is spec 11's Assembly A civic fixture, first look.
+
+**Cross-document name coreference works.** Pooling both documents (the
+`sourceId` array path, `discoverReferents(pooledSurfaces, { groups })`) merges
+86 referents named in both documents: Metro (267 total mentions, split
+22+245), MDHA (64), Housing Division (74), Barnes Fund (42), Davidson County
+(29) — the same institution, correctly summed across two documents written
+five months apart by the same office (the Full Report is 5.4x longer but
+covers the same ground as the Executive Summary).
+
+**Third-person-singular pronouns are almost absent from this register, and
+the one real one mis-binds.** Across 2037 combined sentences, `resolvePronouns`
+found exactly 7 pronoun occurrences with a named antecedent already active: 1
+bound, 6 gapped on `pronoun_no_margin`. The single binding is wrong: *"her"* in
+*"Her housing search involved countless hours riding around on the bus and
+looking at listings..."* (a resident case-study vignette) bound to **UHS** —
+the strategy's own acronym — at activation 39.994, margin 0.613, because
+nothing marks UHS as non-personal and it is named in nearly every paragraph of
+the document. This is spec 11 Assembly D's problem (Frankenstein: 84/638
+bindings, 13%, go to three city names) at its starkest: on real civic prose,
+the *only* pronoun binding produced is the wrong one, for exactly the reason
+Assembly D names.
+
+**Referent discovery has a real-world-PDF noise floor Frankenstein/War and
+Peace never surface.** Repeated running headers/footers ("Nashville Unified
+Housing Strategy | *N*", "UHS Key Findings, Strategies, and Actions" on every
+page) and decoratively letter-spaced section headers ("S T R A T E G Y A")
+enter the cast as garbage referents: "Actions Nashville Nashville Unified"
+(148 mentions pooled), "Key Findings Strategies" (100), "Figure Nashville"
+(46), "S T"/"S T R"/"S T R A" (7 each). Neither Frankenstein nor War and
+Peace's plain Gutenberg text has this — it is specific to PDF-derived civic
+documents with page furniture, and Assembly A's census should account for it
+before reading Link/Kind/Network/Paradigm occupancy on the civic fixture as a
+fact about the *register* rather than the *extraction*.
+
+What this does not establish: that fixing the header/footer noise changes the
+terrain-occupancy picture, or that Assembly D's continuation-ratio signal
+actually separates UHS/Metro/MDHA from personal referents on this material —
+D1 (Frankenstein) is unrun here and D4 (civic re-measurement) needs it first.
+
+Fixtures: `scripts/adversarial/fixtures/nashville-uhs-executive-summary-2025.txt`,
+`scripts/adversarial/fixtures/nashville-uhs-full-report-2025.txt`.
