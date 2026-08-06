@@ -1035,6 +1035,80 @@ disappears without a record is the same failure as a name that outlives its
 evidence (Amendment XVII) — a claim nobody can check against what it used to
 say.
 
+### XX — Five licensed pairs, zero pointwise questions, and a registry that made checking one cost more than it should
+
+*2026-08-05. Amends #4 and Amendment I; adds `maxDeviation`; changes `ground`
+and `extremeGround`.*
+
+A companion project rebuilding this kernel's own turns from primitives
+(`eoreader6.1`) ran every one of `STATISTICS` against a planted single-point
+magnitude outlier — one value, otherwise-ordinary material around it — using
+this engine's real `ground`/`difference`, live, not by analogy. None of the
+five licensed pairs flagged it:
+
+```
+burstiness/shuffle         rank 0.415
+windowMean/shuffle         rank 0.540
+permutationEntropy/shuffle rank 0.525
+irreversibility/shuffle    rank 0.875
+irreversibility/phase      rank 0.910
+```
+
+This is not five near-misses. It is one blind spot, seen five times: every
+licensed statistic asks about windowed bursts, distributional order, or
+reversal asymmetry — never about a single value's distance from the rest.
+Amendment I says a licence is a property of the pair and carries no warrant
+for any other pair; the gap above says something the pair-language alone
+doesn't: a whole *kind* of question — pointwise, not windowed — had no
+statistic asking it at all. #4's "a statistic must be sensitive to what its
+perturbation destroys" was never wrong here; nothing was declared insensitive
+by mistake. Nothing pointwise had been declared.
+
+**`maxDeviation`** closes it: the max absolute deviation from the material's
+own median, ignoring `window` deliberately, because the question it asks is a
+property of the whole material, not a sub-span. Licensed for `resample` and
+`phase`, checked directly (`scripts/verify-maxdeviation-candidate.mjs`,
+`scripts/check-shuffle-maxdev.mjs`; also `conformance/outlier.test.js`).
+**Not** licensed for `shuffle` — checked and refused, not merely unclaimed:
+shuffle only permutes the material's own multiset, `maxDeviation` is invariant
+under any permutation of a fixed multiset, so every draw returns the same
+value and `ground` correctly reports `degenerate_ground` every time. A licence
+that can never be earned is worth recording as such, the same way a gap is a
+result (#8).
+
+The correct use holds the candidate **out** of `material` before `ground` is
+built, and tests it against the `difference` the rest of the material
+produces — the same shape `cascade` already uses for holding a target out of
+its own null. Checked, not assumed: handing the full series (candidate
+included) to `resample` lets the perturbation redraw the candidate back into
+its own null (`conformance/outlier.test.js`, "held-in material
+self-contaminates"), which is exactly the contamination `pattern`'s own
+`cites` check exists to catch elsewhere — `maxDeviation` just has no `cites`
+gate of its own to catch it, because it takes no `before` to check against.
+
+**The friction that made checking this cost more than it should.** Finding
+this required calling `ground` with a candidate statistic before that
+statistic had any business being in `STATISTICS` — the registry that
+`licensed`, `cascade`, and every existing caller treat as the closed
+vocabulary of what a ground can measure. Editing the registry just to try an
+idea is itself a small violation of Amendment I's "checked, not assumed":
+it makes trying something and licensing it the same act, when they are not.
+`ground` and `extremeGround` now accept `statistic` as either the registry
+key they always took, unchanged for every existing caller, **or a function**,
+resolved directly and never entered into `STATISTICS` or `LICENSED` by that
+alone — `licensed(fn, perturbation)` is false for any function, since
+`LICENSED` is keyed by name, so nothing is licensed by running. `fingerprint`
+is exported for the same reason: a candidate ground has to `cite` real
+material to be worth anything, and building a compatible one from outside
+used to mean duplicating a private hash. There is no second fingerprint, only
+this one made reachable. None of this is a new capability inside the engine —
+`STATISTICS`, `LICENSED`, and every organ that reads them are exactly as
+closed as before. It is a shorter path to the evidence a registry entry is
+supposed to require in the first place.
+
+No new declared number. `STATISTICS` gained one member; `LICENSED` gained two
+pairs and, for the first time, a recorded refusal alongside them.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
