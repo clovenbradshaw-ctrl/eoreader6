@@ -8,12 +8,22 @@
 // must refuse rather than guess whenever the typology it needs is not fully
 // received. The cross-script fixture is II.13's earning test, not an
 // assertion: the same rank pattern, spelled in an unrelated alphabet, must
-// return the identical relation.
+// return the identical relation. The graph fixture is II.7's: `toTriples`
+// output must flow through the real `emergence/graph.js`, not a stand-in.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { order, scopeTree, admissibleTypology, corpusDirectionTest, RELATIONS, DIRECTIONS } from "../modifier-order/index.js";
+import {
+  order,
+  scopeTree,
+  toTriples,
+  admissibleTypology,
+  corpusDirectionTest,
+  RELATIONS,
+  DIRECTIONS,
+} from "../modifier-order/index.js";
 import { isGap } from "../nul/index.js";
+import { createGraph, readTriples, edgeKey } from "../packages/engine/emergence/graph.js";
 
 const GIVER =
   "Cinque (2010), The Syntax of Adjectives; Scott (2002); Dixon (1982) — illustrative fixture typology, not a shipped lexicon";
@@ -145,4 +155,50 @@ test("corpusDirectionTest reads an attested rank series as ordered material, exa
   const iidRanks = Array.from({ length: 300 }, () => Math.floor(next() * 10) + 1);
   const t = corpusDirectionTest(iidRanks, { draws: 120, window: 3, seed: 11 });
   assert.equal(t.verdict, "exchangeable");
+});
+
+// ── the graph fixture: II.7, one mechanism, not a parallel one ─────────────
+
+test("toTriples refuses without a received head", () => {
+  const seq = [{ class: "quality" }, { class: "color" }];
+  const t = toTriples(seq, EN, {});
+  assert.ok(isGap(t));
+  assert.equal(t.gap, "undeclared");
+  assert.equal(t.what, "head");
+});
+
+test("toTriples refuses to mint edges for an inverted stack", () => {
+  const seq = [{ class: "color" }, { class: "quality" }]; // black, fat — inverted
+  const t = toTriples(seq, EN, { head: "cat_1" });
+  assert.ok(isGap(t));
+  assert.equal(t.gap, "unstable");
+});
+
+test("toTriples builds a head-outward chain: the entity node carries every modifier applied", () => {
+  const seq = [{ class: "quality", surface: "fat" }, { class: "color", surface: "black" }]; // fat, black
+  const t = toTriples(seq, EN, { head: "cat_1" });
+  assert.equal(t.headNode, "cat_1");
+  assert.equal(t.entityNode, "cat_1::black::fat");
+  assert.deepEqual(t.triples, [
+    { subject: "cat_1::black", verb: "color", object: "cat_1", polarity: "+" },
+    { subject: "cat_1::black::fat", verb: "quality", object: "cat_1::black", polarity: "+" },
+  ]);
+});
+
+test("toTriples output flows through the real emergence/graph.js unchanged", () => {
+  const seq = [{ class: "quality", surface: "fat" }, { class: "color", surface: "black" }];
+  const t = toTriples(seq, EN, { head: "cat_1" });
+  assert.ok(!isGap(t));
+
+  const g = createGraph({ gamma: 0.9, pruneBelow: 0.01 });
+  const result = readTriples(g, t.triples);
+
+  assert.equal(result.newNodes, 3); // cat_1, cat_1::black, cat_1::black::fat
+  assert.equal(result.newEdges, 2);
+  assert.ok(g.nodes.has("cat_1"));
+  assert.ok(g.nodes.has("cat_1::black"));
+  assert.ok(g.nodes.has("cat_1::black::fat"));
+  for (const triple of t.triples) {
+    assert.ok(g.edges.has(edgeKey(triple)), `graph must hold the edge for ${JSON.stringify(triple)}`);
+  }
 });

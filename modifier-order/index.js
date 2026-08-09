@@ -33,6 +33,18 @@
 // the same rank pattern, spelled in an unrelated alphabet, must return the
 // identical relation.
 //
+// `toTriples` is the graph adapter, and deliberately a thin one: it maps a
+// nested scope onto the exact (subject, verb, object, polarity) triple shape
+// `packages/engine/perceiver/text/relations.js` already produces, so the
+// output flows through `packages/engine/emergence/graph.js::readTriples`
+// completely unchanged — no new graph primitive, no parallel mechanism. II.7
+// (the convergence test) asks for the one mechanism the lineage already
+// converges on; this organ does not get its own. graph.js's own header says
+// it plainly: "a video perceiver supplying its own triples would not change
+// a line" — this is that seam, exercised for modifier stacks instead of SVO
+// relations. conformance/modifier-order.test.js proves the flow against the
+// real graph module, not a stand-in.
+//
 // This is not a Born-null organ. It makes no statistical claim about
 // material and so does not pass through the holon gate (formation/
 // holon_level) — it is a deterministic, type-checked structural check over
@@ -145,6 +157,45 @@ export const scopeTree = (sequence, typology, { head = "HEAD" } = {}) => {
     (inner, cls) => Object.freeze({ class: cls, scopes: inner }),
     Object.freeze({ class: head, scopes: null }),
   );
+};
+
+/**
+ * The graph adapter. `head` is an entity identity received from upstream
+ * coref (referents/index.js or a plain surface string) — never re-derived
+ * here, same discipline graph.js itself states ("IDENTITY IS WHATEVER IT IS
+ * GIVEN"). Each layer outward mints one triple, subject narrower than
+ * object, verbed by the modifier's own received class — never a derived
+ * is-a/describes split the typology does not carry. `entityNode` is the
+ * fully-qualified node (every modifier applied) a downstream consumer
+ * should use to refer to the actual described referent — "the fat black
+ * cat", not just "cat" — which is the practical win: a later coreference to
+ * "it" can bind the specific, modified entity, not the bare kind.
+ *
+ * Refuses on an inverted stack for the reason scopeTree does: an inverted
+ * stack has no scope to describe, so no triples are minted for it.
+ */
+export const toTriples = (sequence, typology, { head } = {}) => {
+  if (typeof head !== "string" || head.trim() === "")
+    return gap("undeclared", { what: "head", why: "the entity a modifier stack narrows is received, never assumed" });
+
+  const o = order(sequence, typology);
+  if (isGap(o)) return o;
+  if (o.relation !== "nested")
+    return gap("unstable", { reason: "triples describe a nesting; this sequence inverts one", violation: o.violation });
+
+  const { direction } = typology;
+  const headOutwardTags = direction === "pre" ? [...sequence].reverse() : sequence;
+
+  const triples = [];
+  let parent = head;
+  for (const tag of headOutwardTags) {
+    const label = tag.surface ?? tag.class;
+    const child = `${parent}::${label}`;
+    triples.push(Object.freeze({ subject: child, verb: tag.class, object: parent, polarity: "+" }));
+    parent = child;
+  }
+
+  return Object.freeze({ triples: Object.freeze(triples), headNode: head, entityNode: parent });
 };
 
 /**
