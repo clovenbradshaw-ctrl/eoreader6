@@ -23,7 +23,7 @@ test("the doctrine is present, and the instrument is held outside the code", () 
 // priors on their way to eoPriors and has no importable surface. The test
 // below enforces that — the moment `bin` contains code it has become an organ
 // and has to be earned like one.
-const ORGANS = ["cascade", "conformance", "discourse", "event_log", "examples", "formation", "frame", "goldens", "holon_level", "nul", "packages", "provenance", "scripts", "temporality", "verdict"];
+const ORGANS = ["cascade", "conformance", "discourse", "event_log", "examples", "formation", "frame", "goldens", "holon_level", "induction", "lens", "modifier-order", "nul", "packages", "provenance", "reading", "scripts", "temporality", "verdict"];
 const STAGED_DATA = ["bin"];
 
 test("only earned organs exist alongside the core", () => {

@@ -106,7 +106,7 @@ export const kPassMeasurement = ({
       verdicts.push({ refId, verdict: v, pass: p, surprisal: observed });
 
       tick(log, {
-        event_type: p === 0 ? "PROBLEM_SPAN_INGEST" : "PROBLEM_SPAN_REREAD",
+        type: p === 0 ? "PROBLEM_SPAN_INGEST" : "PROBLEM_SPAN_REREAD",
         domain,
         source: span.source,
         span_text: span.text.slice(0, 80),
