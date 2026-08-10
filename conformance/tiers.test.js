@@ -31,6 +31,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createTier, createTierStack, observe, foldThrough, massIsConsistent, gammaFor } from "../packages/engine/emergence/tiers.js";
+import { seedTier } from "../packages/engine/emergence/genre-seed.js";
 
 // SEED.md's declared numbers, declared once — there is nothing per-tier left
 // to declare.
@@ -376,4 +377,69 @@ test("a different received stream is a different reading — the seed is real", 
   const b = createTier({ name: "t", ...SPEC, seed: 2 });
   assert.notEqual(a.seed, b.seed);
   assert.deepEqual(readWith(SPEC.seed), readWith(SPEC.seed), "the same stream is the same reading");
+});
+
+// ── genre-seeded cold start — the vacuity control, both directions ─────────
+//
+// emergence/genre-seed.js hands this organ's own `observe()` a real first
+// arrival instead of leaving `new Map()`. Held to the SAME two-direction
+// discipline every other gate in this file is held to: seeding must not
+// manufacture shifts out of material that matches what it was seeded with,
+// and it must not go blind to material the seed gave near-zero weight to.
+
+const GENRE_CLUSTER = Object.freeze({
+  id: "sig-entity-tracing",
+  size: 131,
+  centroid: Object.freeze({
+    NUL: 0.0015921634170932301,
+    SIG: 0.1102136664838743,
+    INS: 0.03871947329957187,
+    SEG: 0.020655409913781567,
+    CON: 0.02385116161438826,
+    SYN: 0.0018174541660510837,
+    DEF: 0.07640304949531274,
+    EVA: 0.0013240191947163067,
+    REC: 0.0004709190954613652,
+  }),
+});
+const opArrival = (obj) => new Map(Object.entries(obj));
+
+test("a genre-seeded tier's first REAL observation has something to be judged against — never no_ground", () => {
+  // The unseeded control, restated: conformance/tiers.test.js's own first
+  // test above pins this as always true of a bare tier.
+  const bare = tierOf();
+  const bareFirst = observe(bare, opArrival({ SIG: 3, DEF: 1 }));
+  assert.equal(bareFirst.gap?.gap, "no_ground", "precondition: an unseeded tier's first observation has no prior at all");
+
+  const seeded = tierOf();
+  const seedResult = seedTier(seeded, GENRE_CLUSTER, { giver: "test:sig-entity-tracing" });
+  assert.equal(seedResult.seeded, true, "precondition: this real, corpus-derived cluster must clear its own readiness gate");
+  const seededFirst = observe(seeded, opArrival({ SIG: 3, DEF: 1 }));
+  assert.notEqual(seededFirst.gap?.gap, "no_ground", "a genre-seeded tier already holds a prior before the document's own first sentence arrives");
+  assert.equal(typeof seededFirst.surprise, "number", "belief had somewhere real to move from");
+});
+
+test("on-genre material does not manufacture a shift; off-genre material the seed gave near-zero weight to does", () => {
+  // Both tiers are seeded identically and warmed up identically — the two
+  // spikes below differ only in which operator they concentrate on.
+  const warmedTier = () => {
+    const t = tierOf();
+    seedTier(t, GENRE_CLUSTER, { giver: "test:sig-entity-tracing" });
+    for (let i = 0; i < 10; i++) observe(t, opArrival({ SIG: 3, DEF: 1 }));
+    return t;
+  };
+
+  // SIG is the seed's own dominant operator (centroid weight 0.110, the
+  // largest of the eight) and the warm-up's own vocabulary — concentrating
+  // an arrival on it is more of the SAME kind, not a different one.
+  const onGenre = observe(warmedTier(), opArrival({ SIG: 12 }));
+  assert.equal(onGenre.passed, false, "concentrating on the genre's own dominant operator must not read as a shift");
+
+  // SEG carries the seed's smallest measurable weight (0.0207) and never
+  // appeared in the warm-up either — concentrating an arrival on it is
+  // exactly the "different KIND, not a reweight" case: material the genre
+  // prior did not lead this tier to expect.
+  const offGenre = observe(warmedTier(), opArrival({ SEG: 12 }));
+  assert.equal(offGenre.passed, true, "concentrating on an operator the genre gave near-zero weight to must still read as real surfeit");
+  assert.equal(offGenre.censored, "above", "magnitude reportable, place not — the same #8 discipline every other shift in this file is held to");
 });
