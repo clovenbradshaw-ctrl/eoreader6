@@ -133,8 +133,10 @@ export const extractOccurrences = (sentences, { minAnchorFrequency, maxAnchorFre
 
 // Exact one-sided binomial upper-tail probability — the same statistic
 // modifier-order/ud-bridge.js already uses for "is this pattern more
-// common than chance," reused here rather than re-derived (II.7).
-const binomialUpperTail = (k, n) => {
+// common than chance," reused here rather than re-derived (II.7). Exported
+// so induction/stacks.js's pairwise significance test reuses this exact
+// statistic too, rather than a third copy of the same math (II.7 again).
+export const binomialUpperTail = (k, n) => {
   const logChoose = (n, r) => {
     let lg = 0;
     for (let i = 0; i < r; i++) lg += Math.log(n - i) - Math.log(i + 1);
