@@ -199,6 +199,33 @@ export const toTriples = (sequence, typology, { head } = {}) => {
 };
 
 /**
+ * Maps a nested modifier scope onto event_log-appendable events — one
+ * SEG.narrow per layer, the same operator this organ's own header already
+ * names for classifying modification (SEG on Kind). A caller ticks these
+ * into a real log (event_log/index.js::tick) to make the scope part of the
+ * document's read history; ./lens.js's MODIFIER_SCOPE_LENS is the matching
+ * projection (lens/index.js::readLens).
+ *
+ * Kept a distinct event vocabulary from DEF.admit/CON.identity/SYN.merge/
+ * SEG.split (referents/index.js's own events) rather than reused: those are
+ * about referent IDENTITY — which surfaces name the same being. This is
+ * about SCOPE — which modifier narrows which entity. Conflating them would
+ * be the same category error emergence/graph.js's own header already
+ * guards against for a different pair of concepts ("the 'co-occur' verb is
+ * the machinery's own name, not content").
+ *
+ * Refuses exactly where toTriples refuses (missing head, inverted stack) —
+ * no events are minted for a sequence that has no scope to describe.
+ */
+export const toEvents = (sequence, typology, { head } = {}) => {
+  const t = toTriples(sequence, typology, { head });
+  if (isGap(t)) return t;
+  return t.triples.map((triple) =>
+    Object.freeze({ type: "SEG.narrow", subject: triple.subject, object: triple.object, class: triple.verb, polarity: triple.polarity }),
+  );
+};
+
+/**
  * A separate, genuinely statistical question: given an attested corpus of
  * rank sequences from one language (one numeric series per sentence's
  * modifier stack, already reduced to ranks by a received typology), is the

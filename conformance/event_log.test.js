@@ -66,15 +66,16 @@ test("asOf refuses a missing or non-integer cursor rather than defaulting to now
   assert.ok(isGap(asOf(log, -1)));
 });
 
-test("asOf is a real point-in-time slice, not the whole log", () => {
+test("asOf is a real point-in-time slice, not the whole log — cursor is a COUNT (half-open, like slice), not a tick index", () => {
   const log = createLog();
   tick(log, { type: "A" }); // tick 0
   tick(log, { type: "B" }); // tick 1
   tick(log, { type: "C" }); // tick 2
 
-  assert.deepEqual(asOf(log, 0).map((e) => e.type), ["A"]);
-  assert.deepEqual(asOf(log, 1).map((e) => e.type), ["A", "B"]);
-  assert.deepEqual(asOf(log, 2).map((e) => e.type), ["A", "B", "C"]);
+  assert.deepEqual(asOf(log, 0).map((e) => e.type), [], "cursor 0 means zero events considered");
+  assert.deepEqual(asOf(log, 1).map((e) => e.type), ["A"]);
+  assert.deepEqual(asOf(log, 2).map((e) => e.type), ["A", "B"]);
+  assert.deepEqual(asOf(log, 3).map((e) => e.type), ["A", "B", "C"]);
 });
 
 test("asOf at a cursor beyond the log's current tick still returns everything that exists, not an error", () => {
@@ -90,4 +91,19 @@ test("reading 'the latest state' is still an explicit choice, never an implicit 
   // The only way to mean "now" is to name it: log.tick itself.
   const now = asOf(log, log.tick);
   assert.equal(now.length, 2);
+});
+
+test("a cursor captured before a later append stays a stable snapshot — the whole reason cursor is exclusive (II.17)", () => {
+  const log = createLog();
+  tick(log, { type: "A" }); // tick 0
+  tick(log, { type: "B" }); // tick 1
+  const cursor = log.tick; // "as of right now" — count is 2
+
+  tick(log, { type: "C" }); // appended AFTER the cursor was captured, lands at tick 2
+
+  assert.deepEqual(
+    asOf(log, cursor).map((e) => e.type),
+    ["A", "B"],
+    "the later append must not silently join a cursor captured before it existed",
+  );
 });

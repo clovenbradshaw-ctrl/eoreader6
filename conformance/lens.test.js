@@ -53,7 +53,7 @@ test("readLens over the real projectReferents reproduces its own direct-call res
 
 test("a lens's view is point-in-time: an earlier cursor sees fewer admissions", () => {
   const log = buildLog();
-  const early = readLens(log, REFERENT_LENS, 0); // only the first DEF.admit
+  const early = readLens(log, REFERENT_LENS, 1); // cursor 1 = only the first event, the first DEF.admit
   assert.equal(early.view.length, 1);
   assert.equal(early.view[0].surfaces.length, 1);
 
