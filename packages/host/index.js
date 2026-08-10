@@ -36,3 +36,5 @@ export {
   edgeKey,
   structuralKey,
 } from "./graph.js";
+
+export { attachTiers, admitTiers, sessionTiersSnapshot } from "./tiers.js";
