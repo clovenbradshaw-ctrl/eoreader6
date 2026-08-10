@@ -28,6 +28,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { extractStacks, pairwiseComparisons, monotonicPairs, assembleMonotonicTypology } from "../induction/stacks.js";
+import { tagSequence } from "../induction/typology.js";
+import { admissibleTypology, order, toEvents } from "../modifier-order/index.js";
 
 // Alice's Adventures in Wonderland, Lewis Carroll, 1865 -- public domain.
 // Project Gutenberg EBook #11, Chapter IX opening (the start of "The Mock
@@ -90,4 +92,42 @@ test("the mechanism recovers 'Mock Turtle' as a head-modifier pair from genuine 
   const typology = assembleMonotonicTypology(pairs, { population: "induction-stacks-live-text-smoke", direction: "pre" });
   assert.equal(typology.gap, undefined, JSON.stringify(typology));
   assert.ok(typology.ranks.turtle < typology.ranks.mock);
+});
+
+// ── real composition: a typology induced from real prose feeds the
+// EXISTING modifier-order organ unchanged, exactly like conformance/
+// induction-typology.test.js already proves for the induceKinds path ────
+
+test("a typology induced from real prose is admissible to modifier-order/index.js's own admissibleTypology check", () => {
+  const foldCase = (t) => t.toLowerCase();
+  const stacks = extractStacks(EXCERPT, { minAnchorFrequency: 1, maxAnchorFrequency: 15, minStackLength: 2, maxStackLength: 6, foldCase });
+  const comparisons = pairwiseComparisons(stacks, { headSide: "end" });
+  const pairs = monotonicPairs(comparisons, { minPairOccurrences: 4 });
+  const typology = assembleMonotonicTypology(pairs, { population: "induction-stacks-live-text-smoke", direction: "pre" });
+  assert.equal(admissibleTypology(typology), null);
+});
+
+test("order() and toEvents() nest, invert, and mint real events from a typology induced entirely from this real excerpt -- no synthetic fixture, no lexicon", () => {
+  const foldCase = (t) => t.toLowerCase();
+  const stacks = extractStacks(EXCERPT, { minAnchorFrequency: 1, maxAnchorFrequency: 15, minStackLength: 2, maxStackLength: 6, foldCase });
+  const comparisons = pairwiseComparisons(stacks, { headSide: "end" });
+  const pairs = monotonicPairs(comparisons, { minPairOccurrences: 4 });
+  const typology = assembleMonotonicTypology(pairs, { population: "induction-stacks-live-text-smoke", direction: "pre" });
+
+  // "mock turtle" is reading order for a pre-nominal typology -- nests.
+  const nested = order(tagSequence(["mock", "turtle"], typology), typology);
+  assert.equal(nested.relation, "nested");
+
+  // "turtle mock" inverts the induced order -- refused.
+  const inverted = order(tagSequence(["turtle", "mock"], typology), typology);
+  assert.equal(inverted.relation, "inverted");
+
+  const events = toEvents(tagSequence(["mock", "turtle"], typology), typology, { head: "creature" });
+  assert.equal(events.length, 2);
+  assert.ok(events.every((e) => e.type === "SEG.narrow"));
+  assert.equal(events[0].subject, "creature::turtle");
+  assert.equal(events[1].subject, "creature::turtle::mock");
+
+  const refused = toEvents(tagSequence(["turtle", "mock"], typology), typology, { head: "creature" });
+  assert.equal(refused.gap, "unstable");
 });
