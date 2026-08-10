@@ -5,7 +5,9 @@
   "type": "module",
   "description": "Perceive only by difference from a ground you rebuild. See SEED.md.",
   "exports": {
-    ".": "./nul/index.js"
+    ".": "./nul/index.js",
+    "./host": "./packages/host/index.js",
+    "./engine": "./packages/engine/index.js"
   },
   "scripts": {
     "test": "node --test \"conformance/*.test.js\"",
