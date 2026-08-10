@@ -96,6 +96,13 @@ export function admitTiers(session, { sourceId, gamma, pruneBelow, alpha = 1 } =
   return { tiers: session.tiers, admitted: results };
 }
 
+// How many of a tier's own shift records a snapshot surfaces — a display
+// bound, not a measurement parameter (SEED.md's three declared numbers
+// govern what counts as a shift; this only bounds how much of that already-
+// decided record a caller renders at once), so it lives here rather than as
+// a fourth number threaded through tiers.js itself.
+const SNAPSHOT_SHIFTS = 5;
+
 /** A plain-data view of the current tier stack, for serialisation / a UI list. */
 export function sessionTiersSnapshot(session) {
   if (!session.tiers) return { seeded: false, tiers: [] };
@@ -106,7 +113,7 @@ export function sessionTiersSnapshot(session) {
       observations: t.observations,
       shifts: t.shifts,
       novelRate: t.novelRate,
-      lastShift: t.shiftRecords[t.shiftRecords.length - 1] ?? null,
+      recentShifts: t.shiftRecords.slice(-SNAPSHOT_SHIFTS).reverse(),
     })),
   };
 }
