@@ -17,9 +17,22 @@ export {
   sessionOutline,
   snipSegment,
   sessionReferents,
+  sessionRelations,
   CORPUS_API_VERSION,
 } from "./corpus.js";
 
 export { executePrompt } from "./surfer.js";
 
 export { createSinger, singPass, singRun, apertureSeries, sing } from "./sing.js";
+
+export {
+  attachGraph,
+  admitGraph,
+  sessionGraphSnapshot,
+  createGraph,
+  readTriples,
+  injectPrior,
+  strongestEdges,
+  edgeKey,
+  structuralKey,
+} from "./graph.js";

@@ -1,6 +1,9 @@
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+// Bare specifier, not "node:fs": a bundler targeting a non-Node host (this
+// module's own comment above on priorsRoot) treats the "node:" URI scheme
+// as an unhandled resource type to load, not a module to fall back on, even
+// when told to stub "fs" — the bare specifier is what that fallback
+// actually matches. Node resolves both identically, so nothing changes here.
+import fs from "fs";
 import { canonicalHashSync, CORPUS_API_VERSION } from "../spec/index.js";
 import { createRegistry, register } from "../../provenance/index.js";
 import { createSession as makeDiscourseSession } from "../../discourse/index.js";
@@ -881,10 +884,28 @@ const classifyIndividuation = (r, relations) => {
 // RECEIVED (SEED.md #1, Amendment V) — never inferred from the text — so a
 // caller that does not know or does not declare a document's language gets
 // exactly today's behaviour: the engine's own derived, weaker fallback.
-const priorsRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "bin", "priors", "lang");
+//
+// Built from `import.meta.url` + the `URL` constructor rather than
+// node:path/node:url: both are standard ESM/Web primitives (Node treats a
+// URL exactly like a path in every fs call below), so this file only ever
+// touches ONE Node-specific surface (fs itself) — the one a non-Node host
+// (packages/host/index.js imported into a browser bundle, language always
+// omitted so this function is simply never called) already tree-shakes
+// around without needing a second built-in stubbed alongside it.
+//
+// The relative path is assembled at runtime rather than passed as a string
+// literal: `new URL("literal", import.meta.url)` is exactly the shape
+// bundlers (webpack 5's asset-module handling in particular) statically
+// recognise and try to resolve as a bundled asset — which then fails the
+// browser build outright over a path a browser host never asks fs to open
+// in the first place (language is never declared there). A computed string
+// argument reads identically to Node's URL resolution and is invisible to
+// that static analysis.
+const PRIORS_RELATIVE_PATH = ["..", "..", "bin", "priors", "lang", ""].join("/");
+const priorsRoot = new URL(PRIORS_RELATIVE_PATH, import.meta.url);
 
 const loadAbbreviationPrior = (language) => {
-  const path = join(priorsRoot, `${language}.json`);
+  const path = new URL(`${language}.json`, priorsRoot);
   if (!fs.existsSync(path)) return null;
   const raw = JSON.parse(fs.readFileSync(path, "utf8"));
   if (raw.schema !== "AbbreviationPrior@1")
@@ -1261,6 +1282,20 @@ function sessionReferentsAcrossDocuments(session, { sourceIds, priors = [], limi
   }
 
   return { referents: kept, gaps, sourceIds: docs.map((d) => d.id) };
+}
+
+// sessionRelations — the (subject, verb, object) triples discoveredCast
+// already measures per document for the individuation classifier's `agency`
+// signal, exposed as a document's own return rather than kept trapped inside
+// that one call site. This is the graph's medium-specific mouth
+// (perceiver/text/relations.js) at host tier: packages/host/graph.js reads
+// this, never re-derives it, so a document's relations are measured exactly
+// once regardless of how many callers (the cast, the graph) need them.
+export function sessionRelations(session, { sourceId } = {}) {
+  const doc = session.documents.get(sourceId);
+  if (!doc) return { relations: [], gaps: [`unknown document ${sourceId}`] };
+  const { relations, gaps } = discoveredCast(session, doc);
+  return { relations, gaps };
 }
 
 export function sessionReferents(session, { sourceId, priors = [], limit = 100 } = {}) {

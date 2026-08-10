@@ -11,7 +11,11 @@
 // once; reduce(units, {fraction}) is pure and answers "what would the
 // material look like having read only this much of the real thing so far."
 
-import fs from "node:fs";
+// Bare specifier, not "node:fs" — see packages/host/corpus.js's own note on
+// its identical import: a bundler's fs-fallback stub matches "fs", not the
+// "node:" URI scheme, and load() below is Node-only I/O a non-Node host
+// never calls. Node resolves both identically.
+import fs from "fs";
 import { stripContainer } from "./spans.js";
 
 const WORD_RE = /[\p{L}\p{N}']+/gu;
