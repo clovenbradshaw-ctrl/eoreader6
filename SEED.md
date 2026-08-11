@@ -1459,6 +1459,24 @@ lens          20       69.8  (4.3)         0.00
 paradigm      14       43.6  (4.0)         0.00
 ```
 
+**Re-confirmed after a real bug was found and fixed in the control script
+itself, same day.** Wiring this script to `scripts/cache-reading.mjs` (the
+"wire it in" pass that eliminated this session's repeated from-scratch
+extractions) surfaced a genuine pre-existing bug in how the original script
+built its `edge:` arrival keys: it called `graph.js::edgeKey({subjectId,
+objectId, verb})`, but `edgeKey` reads `{subject, object, verb}` — the
+wrong property names meant every edge collapsed to the literal string
+`"undefined|verb|object"`, keeping only the verb and losing subject/object
+identity entirely for every single edge arrival, in both the original
+super-strict run and the capped run above. The rewired script builds the
+key directly and does not have this bug. Re-run at the same capped scale to
+check whether the fix changed the finding: **real=77/20/15 (atmosphere/
+lens/paradigm) vs. shuffled mean 174.4/68.1/43.5 (z≈-12.5/-7.4/-7.3)** —
+essentially the same numbers, same conclusion. The bug did not drive the
+inversion; it is recorded because a result that turns out to depend on an
+unexamined bug is not a result, and this one was checked rather than assumed
+clean.
+
 **Order matters enormously — real is roughly 13 standard deviations from
 the shuffled mean on every tier — so this is definitively not the turn.js
 failure mode (indistinguishable from shuffled noise).** But the direction is

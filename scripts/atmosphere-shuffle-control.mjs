@@ -19,16 +19,11 @@
 // arithmetic, the exact failure this codebase already found once.
 
 import { readFileSync } from "node:fs";
-import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
-import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
-import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
-import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
-import { projectReferents } from "../packages/engine/referents/index.js";
-import { createGraph, readTriples, edgeKey } from "../packages/engine/emergence/graph.js";
-import { createTierStack, foldThrough, gammaFor } from "../packages/engine/emergence/tiers.js";
+import { createTierStack, foldThrough } from "../packages/engine/emergence/tiers.js";
+import { readCached } from "./cache-reading.mjs";
 
 const TEXT_PATH = process.argv[2];
-if (!TEXT_PATH) throw new Error("usage: node scripts/atmosphere-shuffle-control.mjs <text> [shuffles] [maxArrivals]");
+if (!TEXT_PATH) throw new Error("usage: node scripts/atmosphere-shuffle-control.mjs <text> [shuffles] [maxArrivals] [coref-json]");
 const SHUFFLES = process.argv[3] ? Number(process.argv[3]) : 30;
 // tiers.js's own observe() decays EVERY key in the tier's prior on every
 // single call (packages/engine/emergence/tiers.js:241, by design — "EVERY
@@ -40,59 +35,22 @@ const SHUFFLES = process.argv[3] ? Number(process.argv[3]) : 30;
 // question, and reported as such.
 const MAX_ARRIVALS = process.argv[4] ? Number(process.argv[4]) : Infinity;
 
-const LADDER = { sentencesPerFrame: 6, window: 12, draws: 200, seed: 20260803, minSurfaces: 1, pruneBelow: 1e-4, tierNames: ["atmosphere", "lens", "paradigm"] };
+const LADDER = { tierNames: ["atmosphere", "lens", "paradigm"], window: 12, draws: 200, seed: 20260803 };
+const COREF_PATH = process.argv[5];
 
-const { text: body } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n"));
-const sentences = splitSentences(body);
-const frames = [];
-for (let i = 0; i < sentences.length; i += LADDER.sentencesPerFrame) {
-  const g = sentences.slice(i, i + LADDER.sentencesPerFrame);
-  if (g.length) frames.push({ order: frames.length, offset: g[0].offset, text: g.map((s) => s.text).join(" ") });
-}
-console.error(`${frames.length} frames; discovering cast…`);
+// Delegated to cache-reading.mjs's causal-vocab branch (Amendment: "wire it
+// in" — this session ran this exact extraction from scratch every time
+// before this wiring existed). No coref file changes this script's own
+// behavior versus before: it never resolved narrator spans either way (an
+// empty stand-in {referents: []} produces exactly the same first-person
+// typed-gap outcome its own hand-rolled `resolve()` used to produce
+// implicitly, by never matching first-person surfaces at all).
+const body = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n");
+const coref = COREF_PATH ? JSON.parse(readFileSync(COREF_PATH, "utf8")) : { referents: [] };
+const r = readCached(body, coref, { label: TEXT_PATH.split("/").pop(), causal: true });
+console.error(`${r.frameCount} frames, ${r.castCount} referents, ${r.arrivalSeq.length} non-empty arrival maps`);
 
-const table = buildFrequencyTable(tokenize(body));
-const functionWords = functionWordSet(table);
-const surfaces = extractSurfaces(sentences, { functionWords });
-const cast = projectReferents(discoverReferents(surfaces).events).filter((r) => !r.mergedInto);
-const surfaceToId = [];
-for (const r of cast) for (const s of r.surfaces) {
-  const n = diaNorm(s);
-  if (n.length < 2) continue;
-  surfaceToId.push([n, new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u"), r.id]);
-}
-surfaceToId.sort((a, b) => b[0].length - a[0].length);
-const resolve = (phrase) => { const p = diaNorm(phrase); for (const [, re, id] of surfaceToId) if (re.test(p)) return id; return null; };
-
-console.error(`${cast.length} referents; reading frames (ONE pass, capturing arrival maps)…`);
-const vocab = new Set();
-const seenFollowing = new Map();
-const arrivalSeq = []; // the real, ordered sequence of per-frame arrival Maps
-
-for (const f of frames) {
-  const raw = extractRelations(f.text, { verbs: vocab });
-  if (raw.length) {
-    const arrival = new Map();
-    const bump = (k) => arrival.set(k, (arrival.get(k) ?? 0) + 1);
-    for (const r of raw) {
-      const subjectId = resolve(r.subject);
-      const objectId = resolve(r.object);
-      if (subjectId) bump(`node:${subjectId}`);
-      if (objectId) bump(`node:${objectId}`);
-      if (subjectId && objectId) bump(`edge:${edgeKey({ subjectId, objectId, verb: r.verb })}`);
-    }
-    if (arrival.size) arrivalSeq.push(arrival);
-  }
-  const frameVocab = discoverRelationVocab(f.text, { surfaces, functionWords, minSurfaces: LADDER.minSurfaces });
-  for (const c of frameVocab.candidates) {
-    let set = seenFollowing.get(c.verb);
-    if (!set) seenFollowing.set(c.verb, (set = new Set()));
-    for (const form of c.surfaceForms) set.add(form);
-    if (set.size >= LADDER.minSurfaces) vocab.add(c.verb);
-  }
-  if (f.order % 1000 === 0) console.error(`  frame ${f.order}/${frames.length}`);
-}
-console.error(`captured ${arrivalSeq.length} non-empty arrival maps out of ${frames.length} frames`);
+const arrivalSeq = r.arrivalSeq;
 const capped = Number.isFinite(MAX_ARRIVALS) ? arrivalSeq.slice(0, MAX_ARRIVALS) : arrivalSeq;
 if (capped.length < arrivalSeq.length) console.error(`capped to ${capped.length} arrival maps for tractability (see header)`);
 console.error("");

@@ -33,18 +33,10 @@
 
 import { readFileSync } from "node:fs";
 import { lineIndex, outlineOfIndex } from "../packages/engine/perceiver/text/segments.js";
-import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
-import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
-import { createGraph, readTriples } from "../packages/engine/emergence/graph.js";
-import { gammaFor } from "../packages/engine/emergence/tiers.js";
-import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
-import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
-import { projectReferents } from "../packages/engine/referents/index.js";
-import { resolveAllNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
 import { deriveBeingRecords, understand } from "../packages/engine/emergence/people.js";
-import { readLinks, bindingTriples } from "../packages/engine/emergence/binding.js";
 import { connectedComponents, communityDetection } from "../packages/engine/emergence/segment.js";
 import { refuseParadigm, rezeroParadigm } from "../packages/engine/emergence/paradigm.js";
+import { readCached } from "./cache-reading.mjs";
 import { isGap } from "../nul/index.js";
 
 const TEXT_PATH = process.argv[2];
@@ -53,71 +45,17 @@ if (!TEXT_PATH || !COREF_PATH) throw new Error("usage: node scripts/read-paradig
 const POPULATION = process.argv[4] || "paradigm-beings";
 
 const OPTS = { minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42, reseeds: 24 };
-const SENTENCES_PER_FRAME = 6;
-const WINDOW = 12;
-const PRUNE_BELOW = 1e-4;
-const BINDING_WINDOW = 2;
-const BINDING_DRAWS = 199;
-const BINDING_SEED = 20260811;
 
 // ── read ONE body of text into being-records — the same chain
-// read-kinds-networked.mjs already validated, factored so it can run twice
-// (once per half) without duplicating the pipeline by hand. ────────────────
+// read-kinds-networked.mjs already validated, now delegated to
+// cache-reading.mjs's readCached() so a text this script has already split
+// and read once (e.g. re-running against the same split point) loads
+// instead of re-extracting. Part one and part two are different content,
+// so they cache under different keys automatically — no change needed to
+// the splitting logic itself. ───────────────────────────────────────────────
 const readPart = (text, coref, label) => {
-  const { text: body } = stripContainer(text);
-  const sentences = splitSentences(body);
-  const frames = [];
-  for (let i = 0; i < sentences.length; i += SENTENCES_PER_FRAME) {
-    const g = sentences.slice(i, i + SENTENCES_PER_FRAME);
-    if (g.length) frames.push({ order: frames.length, offset: g[0].offset, text: g.map((s) => s.text).join(" ") });
-  }
-
-  const table = buildFrequencyTable(tokenize(body));
-  const functionWords = functionWordSet(table);
-  const surfaces = extractSurfaces(sentences, { functionWords });
-  const cast = projectReferents(discoverReferents(surfaces).events).filter((r) => !r.mergedInto);
-  const { verbs } = discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 });
-
-  const surfaceToId = [];
-  for (const r of cast) for (const s of r.surfaces) {
-    const n = diaNorm(s);
-    if (n.length < 2) continue;
-    surfaceToId.push([n, new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u"), r.id]);
-  }
-  surfaceToId.sort((a, b) => b[0].length - a[0].length);
-
-  const { resolved: narratorSpans } = resolveAllNarratorSpans(body, coref.referents ?? []);
-  const resolve = (phrase, offset) => {
-    const p = diaNorm(phrase);
-    if (isFirstPerson(p)) {
-      const n = narratorAt(offset, narratorSpans);
-      return n.referentId ?? null;
-    }
-    for (const [, re, id] of surfaceToId) if (re.test(p)) return id;
-    return null;
-  };
-
-  const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
-  const referentArrivals = new Map();
-  for (const f of frames) {
-    const raw = extractRelations(f.text, { verbs });
-    const triples = raw
-      .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset) }))
-      .filter((t) => t.subject && t.object && t.subject !== t.object);
-    if (triples.length) readTriples(graph, triples);
-    for (const t of triples) for (const id of [t.subject, t.object]) {
-      const arr = referentArrivals.get(id);
-      if (!arr) referentArrivals.set(id, [f.order]);
-      else if (arr[arr.length - 1] !== f.order) arr.push(f.order);
-    }
-  }
-
-  const entityRegister = [...referentArrivals.entries()].filter(([, a]) => a.length >= 2).map(([id, a]) => ({ id, arrivals: a.slice().sort((x, y) => x - y) }));
-  if (entityRegister.length >= 2) {
-    const links = readLinks(entityRegister, { window: BINDING_WINDOW, draws: BINDING_DRAWS, seed: BINDING_SEED, totalUnits: frames.length });
-    const lt = bindingTriples(links);
-    if (lt.length > 0) readTriples(graph, lt, { structural: true });
-  }
+  const r = readCached(text, coref, { label });
+  const graph = { nodes: r.graphNodes, edges: r.graphEdges };
 
   const components = connectedComponents(graph.nodes, graph.edges);
   const communityLabels = communityDetection(graph.nodes, graph.edges);
@@ -125,16 +63,16 @@ const readPart = (text, coref, label) => {
   components.forEach((comp, i) => { for (const id of comp) componentOf.set(id, `c${i}`); });
 
   const baseRecords = deriveBeingRecords(graph, { population: `${POPULATION}-${label}` });
-  const records = baseRecords.map((r) => Object.freeze({
-    ...r,
+  const records = baseRecords.map((rec) => Object.freeze({
+    ...rec,
     attributes: Object.freeze([
-      ...r.attributes,
-      Object.freeze({ field_id: "component", value_type: "categorical", value: componentOf.get(r.id) ?? "isolated", count: 1 }),
-      Object.freeze({ field_id: "community", value_type: "categorical", value: communityLabels.get(r.id) ?? r.id, count: 1 }),
+      ...rec.attributes,
+      Object.freeze({ field_id: "component", value_type: "categorical", value: componentOf.get(rec.id) ?? "isolated", count: 1 }),
+      Object.freeze({ field_id: "community", value_type: "categorical", value: communityLabels.get(rec.id) ?? rec.id, count: 1 }),
     ]),
   }));
 
-  console.log(`  ${label}: ${frames.length} frames, ${cast.length} referents, graph ${graph.nodes.size} nodes/${graph.edges.size} edges, ${records.length} being-records`);
+  console.log(`  ${label}: ${r.frameCount} frames, ${r.castCount} referents, graph ${graph.nodes.size} nodes/${graph.edges.size} edges, ${records.length} being-records`);
   return records;
 };
 
