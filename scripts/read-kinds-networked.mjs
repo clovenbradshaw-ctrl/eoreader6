@@ -35,17 +35,10 @@
 // SAME understand()/induceKinds() read-people.mjs already calls.
 
 import { readFileSync } from "node:fs";
-import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
-import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
-import { createGraph, readTriples, strongestEdges } from "../packages/engine/emergence/graph.js";
-import { gammaFor } from "../packages/engine/emergence/tiers.js";
-import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
-import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
-import { projectReferents } from "../packages/engine/referents/index.js";
-import { resolveAllNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
+import { strongestEdges } from "../packages/engine/emergence/graph.js";
 import { deriveBeingRecords, understand, foldHolons } from "../packages/engine/emergence/people.js";
-import { readLinks, bindingTriples } from "../packages/engine/emergence/binding.js";
 import { connectedComponents, communityDetection } from "../packages/engine/emergence/segment.js";
+import { readCached } from "./cache-reading.mjs";
 import { isGap } from "../nul/index.js";
 
 const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
@@ -55,101 +48,22 @@ const POPULATION = process.argv[5] || "pg84-beings-networked";
 const READER_VERSION = "eo-2026-08-11";
 
 // Declared, never defaulted — same numbers read-people.mjs and
-// read-ladder.mjs already declare for the same organs.
+// read-ladder.mjs already declare for the same organs. WINDOW/PRUNE_BELOW/
+// BINDING_* are no longer declared HERE — they live in cache-reading.mjs's
+// own readCached(), which this script now delegates the whole SVO+Link
+// extraction to (see that file's header: this session ran the same
+// extraction five times across five scripts before this wiring existed).
 const OPTS = { minPrevalence: 0.25, minKindSize: 3, permutations: 200, quantile: 0.95, seed: 42, reseeds: 24 };
-const SENTENCES_PER_FRAME = 6;
-const WINDOW = 12;            // the reach of the present (relation graph forgetting)
-const PRUNE_BELOW = 1e-4;
-const BINDING_WINDOW = 2;     // co-arrival window, frames — read-ladder.mjs's own declared value
-const BINDING_DRAWS = 199;    // null draws for displacement, reversal, reseed
-const BINDING_SEED = 20260811;
 
-const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
-
-const sentences = splitSentences(text);
-const frames = [];
-for (let i = 0; i < sentences.length; i += SENTENCES_PER_FRAME) {
-  const g = sentences.slice(i, i + SENTENCES_PER_FRAME);
-  if (g.length) frames.push({ order: frames.length, offset: g[0].offset, text: g.map((s) => s.text).join(" ") });
-}
-
-// ── the cast, discovered blind ──────────────────────────────────────────────
-const table = buildFrequencyTable(tokenize(text));
-const functionWords = functionWordSet(table);
-const surfaces = extractSurfaces(sentences, { functionWords });
-const referentEvents = discoverReferents(surfaces).events;
-const cast = projectReferents(referentEvents).filter((r) => !r.mergedInto);
-
-const { verbs, candidates } = discoverRelationVocab(text, { surfaces, functionWords, minSurfaces: 1 });
-
-const surfaceToId = [];
-for (const r of cast) for (const s of r.surfaces) {
-  const n = diaNorm(s);
-  if (n.length < 2) continue;
-  surfaceToId.push([n, new RegExp(`\\b${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "u"), r.id]);
-}
-surfaceToId.sort((a, b) => b[0].length - a[0].length);
-
+const text = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 const coref = JSON.parse(readFileSync(COREF_PATH, "utf8"));
-const { resolved: narratorSpans, unresolved: narratorGaps } = resolveAllNarratorSpans(text, coref.referents);
 
-let firstPersonBound = 0, firstPersonGapped = 0;
-const resolve = (phrase, offset) => {
-  const p = diaNorm(phrase);
-  if (isFirstPerson(p)) {
-    const n = narratorAt(offset, narratorSpans);
-    if (n.referentId) { firstPersonBound++; return n.referentId; }
-    firstPersonGapped++;
-    return null;
-  }
-  for (const [, re, id] of surfaceToId) if (re.test(p)) return id;
-  return null;
-};
+const r = readCached(text, coref, { label: TEXT_PATH.split("/").pop() });
+const graph = { nodes: r.graphNodes, edges: r.graphEdges };
 
-// ── LINK, verb-inclusive: SVO into the graph, and referent arrivals tracked
-// for binding at the same time (one pass over the frames, not two) ─────────
-const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
-const referentArrivals = new Map(); // referentId -> [frameOrder, ...]
-let totalTriples = 0, statedTotal = 0;
-
-for (const f of frames) {
-  const raw = extractRelations(f.text, { verbs });
-  statedTotal += raw.length;
-  const triples = raw
-    .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset), said: t }))
-    .filter((t) => t.subject && t.object && t.subject !== t.object);
-  totalTriples += triples.length;
-  if (triples.length) readTriples(graph, triples);
-
-  for (const t of triples) {
-    for (const id of [t.subject, t.object]) {
-      const arr = referentArrivals.get(id);
-      if (!arr) referentArrivals.set(id, [f.order]);
-      else if (arr[arr.length - 1] !== f.order) arr.push(f.order);
-    }
-  }
-}
-
-// ── LINK, modality-blind: binding.js's co-arrival Link, fed structurally ───
-const entityRegister = [...referentArrivals.entries()]
-  .filter(([, arr]) => arr.length >= 2)
-  .map(([id, arrivals]) => ({ id, arrivals: arrivals.slice().sort((a, b) => a - b) }));
-
-let bindingTriplesCount = 0;
-if (entityRegister.length >= 2) {
-  const links = readLinks(entityRegister, { window: BINDING_WINDOW, draws: BINDING_DRAWS, seed: BINDING_SEED, totalUnits: frames.length });
-  const lt = bindingTriples(links);
-  bindingTriplesCount = lt.length;
-  if (lt.length > 0) readTriples(graph, lt, { structural: true });
-}
-
-console.log(`READING ${TEXT_PATH.split("/").pop()} — ${frames.length} frames`);
-console.log(`relation vocabulary: ${verbs.size} verbs measured from the text (${candidates.length} candidates seen, minSurfaces 1)`);
-console.log(`SVO (Link, verb-inclusive): ${statedTotal} stated, ${totalTriples} kept`);
-console.log(`binding (Link, modality-blind): ${entityRegister.length} entities registered, ${bindingTriplesCount} triples witnessed → graph`);
-console.log(`cast discovered blind: ${cast.length} referents`);
-console.log(`narrator spans: ${narratorSpans.length} resolved, ${narratorGaps.length} unresolved`);
-console.log(`first-person: ${firstPersonBound} bound by scope, ${firstPersonGapped} typed gaps`);
+console.log(`READING ${TEXT_PATH.split("/").pop()} — ${r.frameCount} frames`);
+console.log(`binding (Link, modality-blind): ${r.entityRegister.length} entities registered, ${r.bindingTriplesCount} triples witnessed → graph`);
+console.log(`cast discovered blind: ${r.castCount} referents`);
 console.log(`Network (graph): ${graph.nodes.size} nodes, ${graph.edges.size} live relations\n`);
 
 // ── NETWORK: topology, read once the graph holds both relation sources ─────

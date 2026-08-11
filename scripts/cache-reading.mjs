@@ -44,7 +44,7 @@ const BINDING_WINDOW = 2;
 const BINDING_DRAWS = 199;
 const BINDING_SEED = 20260811;
 
-const contentKey = (text, coref) => createHash("sha256").update(text).update(JSON.stringify(coref)).digest("hex").slice(0, 16);
+const contentKey = (text, coref, causal) => createHash("sha256").update(text).update(JSON.stringify(coref)).update(causal ? "causal" : "whole-text").digest("hex").slice(0, 16);
 
 /**
  * Read a text ONCE (SVO extraction + Link binding), returning everything a
@@ -52,20 +52,38 @@ const contentKey = (text, coref) => createHash("sha256").update(text).update(JSO
  * hash — a second call with the SAME text+coref (byte-for-byte) loads
  * instead of re-extracting; any change to either input is a different
  * hash, never a stale hit.
+ *
+ * `causal` (default false) selects which of this session's two, both
+ * legitimate, relation-vocabulary policies to run — they are NOT
+ * interchangeable and must never share a cache key (folded into
+ * `contentKey` above for exactly that reason):
+ *
+ *   causal: false (the default, "whole-text"/"policy A")  — the vocabulary
+ *     is measured once over the whole text before any frame is read. What
+ *     read-people.mjs / read-kinds-networked.mjs / read-paradigm.mjs use.
+ *     A RECORD of the text, legal as such, refused as "the technique"
+ *     (read-ladder.mjs's own header names this distinction).
+ *   causal: true ("policy B") — the vocabulary is incremental: a verb is
+ *     admitted only after it has already followed enough surfaces in
+ *     frames read so far, so frame t's extraction never sees a verb first
+ *     met at t or later. What read-ladder.mjs / terrain-census.mjs /
+ *     atmosphere-shuffle-control.mjs use — the policy Amendment XXIV's
+ *     (and its correction's) numbers were actually measured under.
  */
-export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache", label = "reading" } = {}) => {
-  const key = contentKey(text, coref);
+export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache", label = "reading", causal = false } = {}) => {
+  const key = contentKey(text, coref, causal);
   const cachePath = `${cacheDir}/${key}.json`;
   if (existsSync(cachePath)) {
-    console.error(`[cache-reading] HIT ${key} (${label}) — loading, not re-extracting`);
+    console.error(`[cache-reading] HIT ${key} (${label}, ${causal ? "causal" : "whole-text"} vocab) — loading, not re-extracting`);
     const saved = JSON.parse(readFileSync(cachePath, "utf8"));
     return {
       ...saved,
       graphNodes: new Map(saved.graphNodesEntries),
       graphEdges: new Map(saved.graphEdgesEntries),
+      arrivalSeq: saved.arrivalSeq.map((pairs) => new Map(pairs)),
     };
   }
-  console.error(`[cache-reading] MISS ${key} (${label}) — extracting once, will cache`);
+  console.error(`[cache-reading] MISS ${key} (${label}, ${causal ? "causal" : "whole-text"} vocab) — extracting once, will cache`);
 
   const { text: body } = stripContainer(text);
   const sentences = splitSentences(body);
@@ -79,7 +97,9 @@ export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache"
   const functionWords = functionWordSet(table);
   const surfaces = extractSurfaces(sentences, { functionWords });
   const cast = projectReferents(discoverReferents(surfaces).events).filter((r) => !r.mergedInto);
-  const { verbs } = discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 });
+  // whole-text vocab, measured once — overwritten per-frame below when causal.
+  let verbs = causal ? new Set() : discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 }).verbs;
+  const seenFollowing = new Map(); // causal only: verb -> Set(surfaceForm) from frames already read
 
   const surfaceToId = [];
   for (const r of cast) for (const s of r.surfaces) {
@@ -99,9 +119,13 @@ export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache"
 
   const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
   const referentArrivals = new Map();
-  const arrivalSeq = []; // per-frame arrival maps, for the tier stack / shuffle control — captured for free here
+  const arrivalSeq = []; // per-frame arrival maps as [key,count] pairs (JSON-safe, Map-reconstructable)
 
   for (const f of frames) {
+    // Causal: frame t's extraction sees only verbs already admitted from
+    // frames before it — vocab is grown AFTER extraction, below, never
+    // before, so frame t never reads its own new verbs (read-ladder.mjs's
+    // own discipline, reproduced exactly).
     const raw = extractRelations(f.text, { verbs });
     const triples = raw
       .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset) }))
@@ -113,15 +137,25 @@ export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache"
       else if (arr[arr.length - 1] !== f.order) arr.push(f.order);
     }
     if (raw.length) {
-      const arrival = {};
-      const bump = (k) => { arrival[k] = (arrival[k] ?? 0) + 1; };
+      const arrival = new Map();
+      const bump = (k) => arrival.set(k, (arrival.get(k) ?? 0) + 1);
       for (const r of raw) {
         const s = resolve(r.subject, f.offset), o = resolve(r.object, f.offset);
         if (s) bump(`node:${s}`);
         if (o) bump(`node:${o}`);
         if (s && o) bump(`edge:${s}|${r.verb}|${o}`);
       }
-      if (Object.keys(arrival).length) arrivalSeq.push(arrival);
+      if (arrival.size) arrivalSeq.push([...arrival.entries()]);
+    }
+
+    if (causal) {
+      const frameVocab = discoverRelationVocab(f.text, { surfaces, functionWords, minSurfaces: 1 });
+      for (const c of frameVocab.candidates) {
+        let set = seenFollowing.get(c.verb);
+        if (!set) seenFollowing.set(c.verb, (set = new Set()));
+        for (const form of c.surfaceForms) set.add(form);
+        if (set.size >= 1) verbs.add(c.verb);
+      }
     }
   }
 
@@ -149,7 +183,7 @@ export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache"
   writeFileSync(cachePath, JSON.stringify(result));
   console.error(`[cache-reading] wrote ${cachePath} (${frames.length} frames, ${graph.nodes.size} nodes, ${graph.edges.size} edges, ${arrivalSeq.length} arrival maps)`);
 
-  return { ...result, graphNodes: graph.nodes, graphEdges: graph.edges };
+  return { ...result, graphNodes: graph.nodes, graphEdges: graph.edges, arrivalSeq: arrivalSeq.map((pairs) => new Map(pairs)) };
 };
 
 // CLI: prime the cache for a text without needing a downstream script.
