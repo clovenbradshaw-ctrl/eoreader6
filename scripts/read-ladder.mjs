@@ -61,7 +61,7 @@ const BINDING_WINDOW = 2;    // co-arrival window: how close in frame index
 const BINDING_DRAWS = 199;   // null draws for displacement, reversal, reseed
 
 import { readFileSync } from "node:fs";
-import { splitSentences } from "../packages/engine/perceiver/text/spans.js";
+import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { extractRelations, discoverRelationVocab } from "../packages/engine/perceiver/text/relations.js";
 import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/perceiver/text/surfaces.js";
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
@@ -73,7 +73,7 @@ import { readLinks, bindingTriples } from "../packages/engine/emergence/binding.
 
 const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const COREF_PATH = process.argv[3] || "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
-const text = readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+const { text } = stripContainer(readFileSync(TEXT_PATH, "utf8").replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
 
 const sentences = splitSentences(text);
 const frames = [];

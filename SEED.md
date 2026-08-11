@@ -1109,6 +1109,76 @@ supposed to require in the first place.
 No new declared number. `STATISTICS` gained one member; `LICENSED` gained two
 pairs and, for the first time, a recorded refusal alongside them.
 
+### XXI — Interpretation was starved by Structure, not by itself
+
+*2026-08-11. Extends Amendment XIII; names a debt "Not yet earned" never
+stated.*
+
+`loops/tiers.js`'s Atmosphere/Lens/Paradigm stack sat at 18 observations and
+**zero shifts** on a full, real-book reading (`scripts/read-tiered.mjs`
+against `pg84-frankenstein.txt`) — Lens and Paradigm never even received a
+first observation, because a tier only observes once the tier beneath it has
+shifted, and Atmosphere never did. It looked like an Interpretation-terrain
+defect. It was not.
+
+`scripts/read-ladder.mjs` already wires `emergence/binding.js`'s Link
+(co-arrival, three nulls, direction and polarity — Amendments X–XII)
+causally into the graph, frame by frame, alongside the text-derived SVO
+triples — exactly Amendment XIII's own specified composition, just never
+run against this measurement before. With it wired, on the same book:
+
+```
+                atmosphere        lens           paradigm
+before   18 observed, 0 shifted   never observed  never observed
+after   392 observed, 12 shifted  12 obs, 2 shift  2 obs, 0 shift
+```
+
+Atmosphere and Lens went from completely inert to genuinely shifting.
+Paradigm was reached for the first time this session (2 observations) —
+still zero shifts, so the climb does not yet reach the top, but the organ
+that was silent is not silent anymore. **The Interpretation terrains do not
+fail on their own account; they starve when the Structure terrains beneath
+them (specifically Link) are left unwired — "unwired is failing" (the growth
+rule) turns out to apply transitively, one terrain up.**
+
+**A correctness prerequisite, found in the course of measuring this and
+worth recording alongside it.** `read-ladder.mjs` read the raw file without
+`stripContainer`, unlike its two siblings (`read-tiered.mjs`,
+`read-people.mjs`, both of which already call it). On a Gutenberg text this
+seats the license boilerplate — "Project Gutenberg", "Foundation", "United
+States", "English" — as if it were narrative content, and it showed:
+before the fix, the graph's own strongest-believed relations were boilerplate
+co-occurrences, not story. Fixed by adding the same `stripContainer` call the
+siblings already carry — no new mechanism, a missed composition. The table
+above is the POST-fix measurement; the pre-fix run showed the same shape
+(atmosphere/lens genuinely shifting) but could not be trusted to say the
+shifting was about the *novel* rather than the license text, and should not
+be cited. **A known regression from this fix, not yet closed**:
+`read-ladder.mjs`'s own drill-down audit (`BENCH`, hardcoded byte offsets
+for `school`/`study`/`flee`/etc.) was evidently calibrated against the
+unstripped byte space — every query now reports `relation covers: NO`,
+including two (`school`, `study`) that passed before. The offsets need
+recalibrating against the stripped text, or the audit needs to read them
+through `stripContainer`'s own offset mapping; until then that part of
+`read-ladder.mjs`'s output should not be trusted either.
+
+**What this does not settle.** Paradigm's own zero-shift rate is still
+unexplained — it is possible Link alone is not enough to reach it, and the
+Network terrain (`emergence/segment.js`'s `communityDetection`/
+`connectedComponents`) is a distinct, still-unwired lever nobody has tried
+yet: kind induction (`emergence/kinds.js`) currently clusters purely by
+attribute-profile similarity and never consults graph topology at all. This
+amendment names Link's effect as measured; it does not claim Link is
+sufficient, only that Link was necessary and previously entirely absent from
+every script that reaches this measurement.
+
+**No new declared number.** The binding spec (`window`, `draws`) `read-ladder.mjs`
+already declares are the same three-number physiology every other organ in
+this file uses. Nothing here changes them.
+
+Evidence: `/tmp/read-ladder-out2.log` (this session's run, post-`stripContainer`-fix),
+`scripts/read-ladder.mjs`, `scripts/read-tiered.mjs` (the before-measurement).
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
