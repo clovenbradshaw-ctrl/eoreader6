@@ -146,8 +146,24 @@ export const lineAt = (starts, offset) => {
   return lo;
 };
 
+// Amendment (golden-quotes-surprise-calibration pilot): a heading must be
+// isolated ABOVE too, not just followed by a blank line. Without this, a
+// long title hard-wrapped across several physical lines (Gutenberg wraps at
+// ~70-80 chars) has every one of its OWN continuation lines independently
+// scored as a fresh heading — measured directly: Don Quixote's table of
+// contents wraps "...FAMOUS KNIGHT IN THE\nWORLD\n\n", and "WORLD" alone is
+// all-caps, short, followed by a blank line, and passed the substance gate
+// (the next candidate's own label counted as its "body") — so a prompt
+// containing the ordinary word "world" resolved to that fragment instead of
+// the real passage. A genuine heading is isolated on both sides in real
+// prose (surrounded by blank lines); only a hard-wrap continuation sits
+// directly under a non-blank line. Requiring isolation above keeps every
+// existing single-line heading (already isolated in real usage) and drops
+// exactly the mid-wrap fragments.
 const isHeading = (index, i) =>
-  i + 1 < index.lines.length && headingScore(index.lines[i], index.lines[i + 1].trim() === "") > 0;
+  i + 1 < index.lines.length &&
+  (i === 0 || index.lines[i - 1].trim() === "") &&
+  headingScore(index.lines[i], index.lines[i + 1].trim() === "") > 0;
 
 /** Every heading-shaped line in the index, unscreened. */
 export const headingsOf = (index) => {
