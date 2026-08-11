@@ -1179,6 +1179,66 @@ this file uses. Nothing here changes them.
 Evidence: `/tmp/read-ladder-out2.log` (this session's run, post-`stripContainer`-fix),
 `scripts/read-ladder.mjs`, `scripts/read-tiered.mjs` (the before-measurement).
 
+### XXII — A kind is also a fact about the Network, not only about its attributes
+
+*2026-08-11. Extends Amendment XXI's open question.*
+
+Amendment XXI left one thing untried: whether the Network terrain
+(`emergence/segment.js`'s `communityDetection`/`connectedComponents`) adds
+anything kind induction's attribute-profile path (`emergence/kinds.js`)
+cannot see on its own. Tried, on `pg84.txt`, via
+`scripts/read-kinds-networked.mjs` — Link wired both ways (verb-inclusive
+SVO and modality-blind binding, as Amendment XXI's own reading requires),
+then `communityDetection`'s label attached to each being-record as one more
+categorical attribute (`community`) alongside `emergence/people.js`'s
+existing `relations`/`partners`/`subject_share`/`negated_share`. Nothing
+about `induceKinds`' own CON/EVA/DEF/INS/SYN chain changed; it received one
+more field, the same way it already receives four.
+
+```
+attribute-only (read-people.mjs):      1 kind  — partners=1, 11 members,
+                                        people and places undifferentiated
+Network-aware (read-kinds-networked):  2 kinds — split along the book's own
+                                        subplot structure
+  community=elizabeth (7): america, chamounix, edinburgh, elizabeth, henry,
+                            lucerne, strasburgh — Victor's own journey, his
+                            travelling companion and the cities he passes
+  partners=1 (5):           agatha, christian, constantinople, germany, turk
+                            — the De Lacey/Safie subplot cast
+```
+
+Both groups had **identical `partners` counts** (1) before the Network
+attribute was added — this is exactly the case Amendment XXI's own
+prediction named: two kinds that share every attribute key the old path
+read and differ only in which part of the graph they actually sit in. The
+split is not decoration; it recovers a real distinction the book itself
+carries (Victor's own chapters vs. the creature's told-to-Victor account of
+the De Lacey household) using a mechanism blind to plot, character names, or
+any hand-authored notion of "subplot" — only graph topology.
+
+**What this does not settle.** Two kinds, not the "several" a richer read
+might find — `foldHolons` halts immediately above them (`minKindSize: 3`,
+declared, and only 2 kind-records exist to reify), so the climb does not
+yet reach a level above kinds on this book. Whether more communities would
+resolve with a larger window, a different `minPrevalence`, or simply more
+binding-witnessed pairs (this run witnessed only 3 binding triples — most
+of the graph's edges are still verb-inclusive SVO) is untried. Also
+untried: whether `connectedComponents` (the coarser, unweighted partition)
+would do equally well alone, without `communityDetection`'s finer weighted
+split — both were computed and attached this run, but only `community`
+discriminated; `component` produced the same two-way split along the same
+lines here, so on this one book the two topology signals were redundant
+with each other, not independently informative. That is a finding about
+this run, not a general claim.
+
+**No new declared number.** `communityDetection`'s own `maxIterations`
+default (20) is an algorithm convergence bound, not a physiology number —
+the same standing `PRESERVES`/registry constants already hold, distinct
+from `draws`/`window`/`reseeds`.
+
+Evidence: `scripts/read-kinds-networked.mjs`, run against
+`scripts/adversarial/fixtures/pg84-frankenstein.txt`.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
