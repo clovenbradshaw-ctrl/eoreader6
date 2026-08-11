@@ -1109,6 +1109,294 @@ supposed to require in the first place.
 No new declared number. `STATISTICS` gained one member; `LICENSED` gained two
 pairs and, for the first time, a recorded refusal alongside them.
 
+### XXI — Interpretation was starved by Structure, not by itself
+
+*2026-08-11. Extends Amendment XIII; names a debt "Not yet earned" never
+stated.*
+
+`loops/tiers.js`'s Atmosphere/Lens/Paradigm stack sat at 18 observations and
+**zero shifts** on a full, real-book reading (`scripts/read-tiered.mjs`
+against `pg84-frankenstein.txt`) — Lens and Paradigm never even received a
+first observation, because a tier only observes once the tier beneath it has
+shifted, and Atmosphere never did. It looked like an Interpretation-terrain
+defect. It was not.
+
+`scripts/read-ladder.mjs` already wires `emergence/binding.js`'s Link
+(co-arrival, three nulls, direction and polarity — Amendments X–XII)
+causally into the graph, frame by frame, alongside the text-derived SVO
+triples — exactly Amendment XIII's own specified composition, just never
+run against this measurement before. With it wired, on the same book:
+
+```
+                atmosphere        lens           paradigm
+before   18 observed, 0 shifted   never observed  never observed
+after   392 observed, 12 shifted  12 obs, 2 shift  2 obs, 0 shift
+```
+
+Atmosphere and Lens went from completely inert to genuinely shifting.
+Paradigm was reached for the first time this session (2 observations) —
+still zero shifts, so the climb does not yet reach the top, but the organ
+that was silent is not silent anymore. **The Interpretation terrains do not
+fail on their own account; they starve when the Structure terrains beneath
+them (specifically Link) are left unwired — "unwired is failing" (the growth
+rule) turns out to apply transitively, one terrain up.**
+
+**A correctness prerequisite, found in the course of measuring this and
+worth recording alongside it.** `read-ladder.mjs` read the raw file without
+`stripContainer`, unlike its two siblings (`read-tiered.mjs`,
+`read-people.mjs`, both of which already call it). On a Gutenberg text this
+seats the license boilerplate — "Project Gutenberg", "Foundation", "United
+States", "English" — as if it were narrative content, and it showed:
+before the fix, the graph's own strongest-believed relations were boilerplate
+co-occurrences, not story. Fixed by adding the same `stripContainer` call the
+siblings already carry — no new mechanism, a missed composition. The table
+above is the POST-fix measurement; the pre-fix run showed the same shape
+(atmosphere/lens genuinely shifting) but could not be trusted to say the
+shifting was about the *novel* rather than the license text, and should not
+be cited. **A known regression from this fix, not yet closed**:
+`read-ladder.mjs`'s own drill-down audit (`BENCH`, hardcoded byte offsets
+for `school`/`study`/`flee`/etc.) was evidently calibrated against the
+unstripped byte space — every query now reports `relation covers: NO`,
+including two (`school`, `study`) that passed before. The offsets need
+recalibrating against the stripped text, or the audit needs to read them
+through `stripContainer`'s own offset mapping; until then that part of
+`read-ladder.mjs`'s output should not be trusted either.
+
+**What this does not settle.** Paradigm's own zero-shift rate is still
+unexplained — it is possible Link alone is not enough to reach it, and the
+Network terrain (`emergence/segment.js`'s `communityDetection`/
+`connectedComponents`) is a distinct, still-unwired lever nobody has tried
+yet: kind induction (`emergence/kinds.js`) currently clusters purely by
+attribute-profile similarity and never consults graph topology at all. This
+amendment names Link's effect as measured; it does not claim Link is
+sufficient, only that Link was necessary and previously entirely absent from
+every script that reaches this measurement.
+
+**No new declared number.** The binding spec (`window`, `draws`) `read-ladder.mjs`
+already declares are the same three-number physiology every other organ in
+this file uses. Nothing here changes them.
+
+Evidence: `/tmp/read-ladder-out2.log` (this session's run, post-`stripContainer`-fix),
+`scripts/read-ladder.mjs`, `scripts/read-tiered.mjs` (the before-measurement).
+
+### XXII — A kind is also a fact about the Network, not only about its attributes
+
+*2026-08-11. Extends Amendment XXI's open question.*
+
+Amendment XXI left one thing untried: whether the Network terrain
+(`emergence/segment.js`'s `communityDetection`/`connectedComponents`) adds
+anything kind induction's attribute-profile path (`emergence/kinds.js`)
+cannot see on its own. Tried, on `pg84.txt`, via
+`scripts/read-kinds-networked.mjs` — Link wired both ways (verb-inclusive
+SVO and modality-blind binding, as Amendment XXI's own reading requires),
+then `communityDetection`'s label attached to each being-record as one more
+categorical attribute (`community`) alongside `emergence/people.js`'s
+existing `relations`/`partners`/`subject_share`/`negated_share`. Nothing
+about `induceKinds`' own CON/EVA/DEF/INS/SYN chain changed; it received one
+more field, the same way it already receives four.
+
+```
+attribute-only (read-people.mjs):      1 kind  — partners=1, 11 members,
+                                        people and places undifferentiated
+Network-aware (read-kinds-networked):  2 kinds — split along the book's own
+                                        subplot structure
+  community=elizabeth (7): america, chamounix, edinburgh, elizabeth, henry,
+                            lucerne, strasburgh — Victor's own journey, his
+                            travelling companion and the cities he passes
+  partners=1 (5):           agatha, christian, constantinople, germany, turk
+                            — the De Lacey/Safie subplot cast
+```
+
+Both groups had **identical `partners` counts** (1) before the Network
+attribute was added — this is exactly the case Amendment XXI's own
+prediction named: two kinds that share every attribute key the old path
+read and differ only in which part of the graph they actually sit in. The
+split is not decoration; it recovers a real distinction the book itself
+carries (Victor's own chapters vs. the creature's told-to-Victor account of
+the De Lacey household) using a mechanism blind to plot, character names, or
+any hand-authored notion of "subplot" — only graph topology.
+
+**What this does not settle.** Two kinds, not the "several" a richer read
+might find — `foldHolons` halts immediately above them (`minKindSize: 3`,
+declared, and only 2 kind-records exist to reify), so the climb does not
+yet reach a level above kinds on this book. Whether more communities would
+resolve with a larger window, a different `minPrevalence`, or simply more
+binding-witnessed pairs (this run witnessed only 3 binding triples — most
+of the graph's edges are still verb-inclusive SVO) is untried. Also
+untried: whether `connectedComponents` (the coarser, unweighted partition)
+would do equally well alone, without `communityDetection`'s finer weighted
+split — both were computed and attached this run, but only `community`
+discriminated; `component` produced the same two-way split along the same
+lines here, so on this one book the two topology signals were redundant
+with each other, not independently informative. That is a finding about
+this run, not a general claim.
+
+**No new declared number.** `communityDetection`'s own `maxIterations`
+default (20) is an algorithm convergence bound, not a physiology number —
+the same standing `PRESERVES`/registry constants already hold, distinct
+from `draws`/`window`/`reseeds`.
+
+Evidence: `scripts/read-kinds-networked.mjs`, run against
+`scripts/adversarial/fixtures/pg84-frankenstein.txt`.
+
+**Generalization check, same day: does not (yet) generalize, honestly
+recorded rather than either claimed or discarded.** Run against
+`scripts/adversarial/fixtures/alice-raw.txt` with an empty stand-in coref
+file (no fabricated prior — `{referents: []}`, so first-person surfaces
+correctly become typed gaps rather than a guessed narrator): the graph came
+out far sparser (14 nodes, 11 relations, fragmented into 5 components of
+size ≤6) and `induceKinds` found **zero** kinds, Network-aware or not.
+Two confounds, both real, neither disentangled from the other yet: (1)
+Frankenstein's coref file is a curated, received prior (II.2) naming
+Victor/Walton/the creature's narrator spans; Alice has no equivalent, so
+48 first-person mentions gapped instead of resolving, and (2) blind
+surface-discovery mistook capitalized contractions (`I've`, `I'm`, `I'd`)
+for proper-noun entities in their absence, seating them among the graph's
+top relations. So Amendment XXII's finding is **not yet shown to
+generalize** — it may hold generally, or it may depend on having a
+curated narrator prior the way Frankenstein does. Untangling those two
+confounds (build a real Alice coref prior, or test on a third-person-only
+passage where narrator resolution does not matter) is the next check, not
+done here.
+
+### XXIII — Link and Network are genuinely modality-blind; entity-discovery is the missing piece elsewhere
+
+*2026-08-11. Extends Amendments X-XIII, XXI, XXII.*
+
+Amendments XXI-XXII measured Link/Network on text. The organs themselves —
+`emergence/binding.js`, `emergence/segment.js` — take only `{id, arrivals}`
+or a `(nodes, edges)` graph; nothing in either reads a surface or a word.
+What text supplies and no other modality here had, until this amendment,
+was the entity-discovery stage that produces that shape. Tried on two real
+audio recordings (`scripts/read-audio-networked.mjs`,
+`scripts/read-audio-voices.mjs`; a solo blues vocal-plus-guitar performance
+and an orchestral overture, ~182-185s each) — three findings, one per
+composition attempted, none of them fabricated to agree with each other.
+
+**1. `referents/blind.js::findRecurringMotifs` as entity-discovery: mechanically
+modality-blind, confirmed — statistically underpowered on real audio,
+confirmed on two different songs.** Its own header already said "blind to
+modality"; this is the first time it was run on audio rather than text.
+Composed with `binding.js`/`graph.js` exactly as Amendment XXI's text
+reading does, no code in either organ touched:
+
+```
+                    entities   pairs tested   witnessed
+Josh White (blues)      9           17            0
+Frankenstein overture  75         1262            0
+```
+
+Swept the binding co-arrival window from 0.2s to 15s on the first song: 0
+witnessed at every scale. Window size is not the bottleneck. Each motif has
+3-8 occurrences over a ~3-minute recording — text's referents typically
+have dozens to hundreds (Frankenstein's "Victor" alone) — and that is too
+few arrivals for the displacement/reversal/reseed nulls to ever clear,
+regardless of window. A power/sparsity finding, not a design defect in
+Link.
+
+**A correctness prerequisite found on the way, same shape as Amendment
+XXI's `stripContainer` bug**: `findRecurringMotifs`'s own default
+`similarityThreshold` (0.3), calibrated on text's causal-surprisal series,
+degenerates on audio's RMS envelope AND its flux channel alike — one
+"motif" spanning 987/1819 and 1004/1819 scanned positions respectively
+(>55%), not a normalization/silence artifact (values ranged 3-7415 across
+its occurrences) but a real property of continuous audio material: smooth,
+band-limited signals have far more generically-similar-shaped windows than
+text's discrete surprisal series does. Swept 0.3/0.2/0.1/0.05/0.02 on flux:
+the dominant cluster shrinks 1004 -> 267 -> 8 -> 0 -> 0. 0.1 is the
+tightest value before real motifs vanish entirely — measured, not chosen to
+produce a particular outcome.
+
+**2. A timbre-similarity graph (a new composition, not `findRecurringMotifs`)
+DOES produce real Network-terrain substructure on real audio — once a
+threshold-selection bug, caught mid-session, stopped hiding it.**
+`scripts/read-audio-voices.mjs` builds a graph directly from cosine
+similarity between per-time-bin timbre centroids (`perceiver/audio/reading.js`'s
+unmodified `chroma`/`timbre`/`moments` field vectors — AUDIO_FIELD_SPEC's
+own declared "cosine" metric, not a new statistic), then runs
+`connectedComponents`/`communityDetection` — the SAME two functions
+Amendment XXII validated on text kind induction — unmodified.
+
+The threshold-selection code was wrong TWICE in one session, in opposite
+directions, and both are recorded because a result that survives only
+because a bug hid the alternative is not a result:
+
+- First bug: selection picked the LOOSEST candidate as a fallback when
+  nothing in a coarse sweep cleared "largest component under 60% of bins,"
+  producing a threshold that left 99% of bins in one blob while reporting
+  it as "chosen."
+- Second bug, after fixing the first: an upper-bound-only check (`frac <
+  0.6`) trivially accepted a threshold where the graph had ZERO edges —
+  every bin its own isolated singleton component — because 0% is also
+  "under 60%." Equally degenerate, opposite extreme, same blind spot.
+- Fixed by requiring a BAND, `[0.05, 0.6)`, and by sweeping finer (17
+  candidates instead of 6) once the coarse sweep suggested the real
+  transition might be hiding in a gap between two tried values. It was:
+  0.9995 gives 3% largest-component, 0.999 gives 62% — and eleven finer
+  candidates in between (`0.9994`...`0.9991`) revealed a smooth climb
+  (13% -> 19% -> 33% -> 41%), not a cliff. **The first fine-grained
+  conclusion drawn mid-session — "phase transition, no real intermediate
+  structure exists" — was itself a sweep-granularity artifact and is
+  retracted here, not left standing.**
+
+At the corrected threshold (0.9994): 436 nodes, 222 edges, **267 connected
+components ranging from size 1 to 58** (sizes 58, 16, 12, 11, 8, 7, 5, 4,
+4, 3, ... — a real distribution, not one dominant cluster and noise).
+
+**3. Sequence structure — a new question this amendment adds beyond
+Amendments XXI-XXII's "does a link exist at all": once a Network-terrain
+community is found, does its presence in time cluster or scatter, and does
+it repeat internally?** Two checks, composed from organs/techniques already
+used elsewhere in this file, no new mechanism:
+
+- **Contiguity vs. a shuffled-order null** (the same reseeding-null
+  discipline SEED.md #3/#6 requires everywhere else): for each of the top 5
+  communities, shuffle the bin-to-community label assignment 200 times
+  (declared seed) and compare the real mean contiguous-run length against
+  that null's distribution. All five landed at rank 1.00 — more contiguous
+  than every one of 200 shuffled draws. These communities are not scattered
+  coincidence; they occur in short (0.5-1.5s), non-random bursts.
+- **Internal chroma-motif recurrence** (`findRecurringMotifs` again, nested
+  one level down — a voice's own chroma sequence, in time order, tested for
+  a repeating melodic figure): inconclusive on this recording. The
+  discovered voices (7-11 bins each) are smaller than the ~32-bin floor the
+  motif organ needs for a recurrence claim at this bin size. Not a negative
+  finding — an honest boundary of THIS composition's resolution, not
+  forced past it by lowering `minOccurrences` or the bin size without
+  re-measuring the consequence, which was not done here.
+
+**What this amendment settles.** Link and Network are confirmed genuinely
+modality-blind — every organ that produced a result above (`binding.js`,
+`graph.js`, `segment.js`) is completely unmodified from its text-validated
+form. What varies by modality is only the entity-discovery stage feeding
+them, and two different entity-discovery strategies gave two different
+verdicts on the SAME recording: arrival-index motifs (too sparse to link)
+vs. timbre-similarity communities (real substructure, real temporal
+clustering). That is itself the finding — "does this modality have
+separable Network structure" depends on which entity-discovery organ asks
+the question, not on Link/Network's own capacity to answer it.
+
+**What this does not settle.** Only one song was taken all the way through
+the voice-separation + sequence-structure chain; the second (the overture)
+was only run through the motif/binding path before the pivot to
+timbre-similarity, so it is unknown whether the overture's (orchestral,
+multi-instrument, plausibly MORE timbrally separable than a solo
+performance) Network substructure looks similar or different. Internal
+chroma recurrence is untested at a bin size that could actually clear the
+motif organ's floor. Neither is assumed; both are the next checks, not
+answered here.
+
+**No new declared number.** The timbre-similarity threshold is calibrated
+by sweep, the same way `MOTIF_OPTIONS.similarityThreshold` was — a measured
+choice, not a fourth declared number standing beside `draws`/`window`/`reseeds`.
+The contiguity null's `RUN_NULL_DRAWS`/`RUN_NULL_SEED` are the same kind of
+declared-not-defaulted reseeding-null parameters every other null in this
+file already carries.
+
+Evidence: `scripts/read-audio-networked.mjs`, `scripts/read-audio-voices.mjs`,
+run against `live_priors/10-audio-music/downloads/78rpm/josh-white-house-of-the-rising-sun/restored-22050.wav`
+and `/Users/mlacy/Documents/3.0/eochat/frankenstein-overture.wav`.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place

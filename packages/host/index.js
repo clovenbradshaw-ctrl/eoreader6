@@ -38,3 +38,7 @@ export {
 } from "./graph.js";
 
 export { attachTiers, admitTiers, sessionTiersSnapshot } from "./tiers.js";
+
+export { attachSelf, admitSelf, sessionSelfSnapshot, sessionTestimonyHolarchy, SELF, SELF_MISMATCH, WORLD } from "./self.js";
+
+export { admitReading } from "./reading.js";
