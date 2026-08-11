@@ -1430,35 +1430,92 @@ once shifted it on Frankenstein all session — including the run built
 specifically to unlock it.** The plain census does not even wire binding.js;
 it is exactly the mechanism Amendment XXI found inert on the smaller book.
 The variable that moved is scale: 887 referents and a 297-node graph against
-Frankenstein's 99 and ≤53. **Amendment XXI's own causal claim needs a
-correction, not a retraction**: Link-wiring is not shown to be the thing
-that reaches Paradigm — what it demonstrably did was unlock Atmosphere and
-Lens on a book too small to reach Paradigm any other way tried this
-session. Whether Link-wiring is still doing real work on a book already
-large enough to reach Paradigm on volume alone (i.e., does War-and-Peace-plus-
-Link shift paradigm MORE, or sooner, or more of it — same question Network-
-aware kinds asks of attribute-only kinds in Amendment XXII) is the next
-check, not yet run as this amendment is written.
+Frankenstein's 99 and ≤53.
 
-**What this does not settle.** One large book against several runs of one
-smaller book is not a controlled comparison — book length, genre, cast
-size, and translation register all moved together between Frankenstein and
-War and Peace, and this amendment cannot separate "more text" from "a more
-socially dense 19th-century novel" from "a different translator's prose
-rhythm." A controlled length-sweep on ONE book (truncate War and Peace to
-Frankenstein's own word count and see whether paradigm still shifts) is the
-obvious next check and is not done here.
+**CORRECTION, same day, after the paragraph above was written and pushed:
+the reasoning "bigger numbers means Paradigm is climbed better" is wrong,
+and this section originally asserted exactly that without checking it.**
+
+The question — asked directly, and it was the right question — was whether
+these shift counts are real or reading their own arithmetic, the exact
+failure this codebase already found once (`nul/index.js::pattern`'s own
+docstring: the original `loops/turn.js` atmosphere clearing "recovered 23 of
+Frankenstein's 24 chapter boundaries" and recovered 21-23 of them from the
+SAME series shuffled). That control had never been run on THIS mechanism's
+numbers before they were reported above. `scripts/atmosphere-shuffle-control.mjs`
+runs it: capture the real per-frame arrival maps in one pass (order
+preserved), fold them through a fresh tier stack in real order, then in 15
+independently-shuffled orders (same maps, same counts, order destroyed),
+and compare. (Capped to the first 1000 of 4027 arrival maps for tractability
+— `tiers.js::observe` decays every key in the tier's prior on every call, by
+design, so a full-book 30-shuffle run did not finish in a reasonable
+wall-clock time; this is a bounded-scale version of the same question, not a
+different one.)
+
+```
+             real   shuffled mean (std)   real's rank among 15 shuffled draws
+atmosphere    79      175.5  (7.2)         0.00 — BELOW every single shuffled draw
+lens          20       69.8  (4.3)         0.00
+paradigm      14       43.6  (4.0)         0.00
+```
+
+**Order matters enormously — real is roughly 13 standard deviations from
+the shuffled mean on every tier — so this is definitively not the turn.js
+failure mode (indistinguishable from shuffled noise).** But the direction is
+the OPPOSITE of what "paradigm shifted 122 times, more than Frankenstein
+ever managed" was implicitly read as meaning. **Real, temporally coherent
+reading order produces FAR FEWER shifts than randomly-shuffled order, not
+more.** This makes mechanical sense once stated: `tiers.js`'s prior decays by
+`gamma` and is judged against `arrival` as it currently stands (`loops/level`'s
+own reader-relative discipline) — a real chapter keeps returning to the same
+characters and relations, so each new arrival is LESS surprising against a
+prior that recently saw the same names, while a randomly-shuffled sequence
+constantly juxtaposes unrelated material, manufacturing surprise at every
+step. **A "shift" at this tier stack is closer to "this arrival broke local
+narrative coherence" than to "this arrival was significant."** Real reading
+staying coherent is not a failure to climb; on this evidence it may be
+closer to what climbing well looks like.
+
+**What this means for the original comparison.** The raw cross-book
+contrast — Frankenstein near-zero shifts, War and Peace hundreds — is NOT
+thereby explained away; the two numbers are not directly comparable to a
+shuffled-null the way this control makes THEM comparable within one book.
+What the correction retracts is the causal story: "more shifts because more
+scale, and more shifts is climbing higher" was asserted without the control
+that would have tested it, and the control that was eventually run points
+the opposite direction from that story on the one book it was actually run
+against. Whether War and Peace's shift counts are still unusual relative to
+ITS OWN shuffled null in some other way (e.g., is 79 real shifts on 1000
+arrivals itself far from what an unstructured, non-book-shaped sequence of
+the same volume would produce — a different, not-yet-run comparison against
+IID or block-shuffled noise rather than order-shuffled real material) is
+untested. This section should not be read as either confirming or refuting
+that Paradigm "really" climbs on War and Peace — only as retracting the
+specific unearned inference that large raw shift counts are evidence of
+climbing well.
+
+**What this does not settle.** The capped, 1000-arrival version of the
+control is not the full 4027-arrival claim originally made; re-running at
+full scale (with more CPU time budgeted, or a faster tier-stack
+implementation this amendment does not propose) is the honest way to know
+whether the same ~13-std inversion holds at full book length. A controlled
+length-sweep between Frankenstein and War and Peace, holding genre and
+translator constant, is still untried. And the deeper question this
+correction actually opens — what a "shift" in this tier stack should be
+interpreted to mean, if not "more structure found" — is a real open
+question this amendment surfaces and does not answer.
 
 **No new declared number.** The census's own `LADDER`/`ATMOSPHERE`/`KIND`
-specs are unchanged from `terrain-census.mjs`'s own declared constants — this
-amendment ran the existing instrument against new material, not a new
-instrument.
+specs are unchanged from `terrain-census.mjs`'s own declared constants; the
+shuffle control's own `SHUFFLES`/seed/cap are declared, not defaulted.
 
 Evidence: `terrain-census.mjs`'s own `ladder()`/tier-stack logic, re-run
 against `https://www.gutenberg.org/files/2600/2600-0.txt` (fetched this
 session, not committed to the repo — see the "not_wired"/`path: null`
 entries `terrain-census.mjs` itself still carries for why a repo-committed
-copy is a separate, undone step).
+copy is a separate, undone step). Correction evidence:
+`scripts/atmosphere-shuffle-control.mjs`, run against the same text, capped
+to 1000 arrival maps, 15 shuffled draws, seed `20260812`.
 
 ### XXV — Paradigm, wired from raw text for the first time
 
