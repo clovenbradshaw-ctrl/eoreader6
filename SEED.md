@@ -1397,6 +1397,199 @@ Evidence: `scripts/read-audio-networked.mjs`, `scripts/read-audio-voices.mjs`,
 run against `live_priors/10-audio-music/downloads/78rpm/josh-white-house-of-the-rising-sun/restored-22050.wav`
 and `/Users/mlacy/Documents/3.0/eochat/frankenstein-overture.wav`.
 
+### XXIV — Paradigm shifts on scale, not only on Link
+
+*2026-08-11. Extends Amendment XXI.*
+
+Amendment XXI wired the Link terrain (`emergence/binding.js`) into a
+Frankenstein reading specifically to unlock the Interpretation stack, and it
+worked — atmosphere and lens went from inert to genuinely shifting. Paradigm
+still never shifted: 2 observations, 0 shifts, the ceiling that amendment
+left open.
+
+`terrain-census.mjs`'s own declared source list has named "War and Peace" as
+an unobtained gap since it was written — `path: null`, "general web fetch is
+restricted." That restriction did not hold in this session: `curl` reached
+`gutenberg.org` directly (200, 3.4MB). The real text (Tolstoy/Maude
+translation, Project Gutenberg #2600) was fetched and read through the same
+census `terrain-census.mjs` already runs — the plain SVO-graph-into-tiers
+path, no Link/binding wiring at all, the simpler of the two mechanisms this
+file has been building.
+
+```
+                   Frankenstein (various runs this session)   War and Peace
+cast/referents          99-110                                     887
+graph                    18-53 nodes                               297 nodes
+atmosphere            0-16 shifted (of 18-430 observed)         450 shifted (of 4027 observed, 11%)
+lens                   0-4 shifted (of 12-16 observed)          186 shifted (of 450 observed, 41%)
+paradigm                0 shifted, ever                         122 shifted (of 186 observed, 66%)
+```
+
+**Paradigm shifted 122 times on War and Peace, using a mechanism that never
+once shifted it on Frankenstein all session — including the run built
+specifically to unlock it.** The plain census does not even wire binding.js;
+it is exactly the mechanism Amendment XXI found inert on the smaller book.
+The variable that moved is scale: 887 referents and a 297-node graph against
+Frankenstein's 99 and ≤53. **Amendment XXI's own causal claim needs a
+correction, not a retraction**: Link-wiring is not shown to be the thing
+that reaches Paradigm — what it demonstrably did was unlock Atmosphere and
+Lens on a book too small to reach Paradigm any other way tried this
+session. Whether Link-wiring is still doing real work on a book already
+large enough to reach Paradigm on volume alone (i.e., does War-and-Peace-plus-
+Link shift paradigm MORE, or sooner, or more of it — same question Network-
+aware kinds asks of attribute-only kinds in Amendment XXII) is the next
+check, not yet run as this amendment is written.
+
+**What this does not settle.** One large book against several runs of one
+smaller book is not a controlled comparison — book length, genre, cast
+size, and translation register all moved together between Frankenstein and
+War and Peace, and this amendment cannot separate "more text" from "a more
+socially dense 19th-century novel" from "a different translator's prose
+rhythm." A controlled length-sweep on ONE book (truncate War and Peace to
+Frankenstein's own word count and see whether paradigm still shifts) is the
+obvious next check and is not done here.
+
+**No new declared number.** The census's own `LADDER`/`ATMOSPHERE`/`KIND`
+specs are unchanged from `terrain-census.mjs`'s own declared constants — this
+amendment ran the existing instrument against new material, not a new
+instrument.
+
+Evidence: `terrain-census.mjs`'s own `ladder()`/tier-stack logic, re-run
+against `https://www.gutenberg.org/files/2600/2600-0.txt` (fetched this
+session, not committed to the repo — see the "not_wired"/`path: null`
+entries `terrain-census.mjs` itself still carries for why a repo-committed
+copy is a separate, undone step).
+
+### XXV — Paradigm, wired from raw text for the first time
+
+*2026-08-11. Closes the gap `terrain-census.mjs`'s own `censusParadigm()`
+has named since it was written.*
+
+`emergence/paradigm.js` (`refuseParadigm`/DEF·Pattern, `rezeroParadigm`/
+REC·Pattern) was fully built and conformance-tested but never fed from raw
+text — the census's own Paradigm row has always returned `not_wired`. The
+missing piece was never a new mechanism. It is the same helix turn this
+session kept finding missing elsewhere: read part of a book, induce a
+paradigm (Amendment XXII's Network-aware kind induction, unmodified), read
+further, and ask whether the paradigm induced from the FIRST part still
+holds being-records derived from the SECOND — never seen when the paradigm
+was induced.
+
+`scripts/read-paradigm.mjs` composes exactly that, every organ unmodified:
+`perceiver/text/segments.js`'s heading detector splits the book at its own
+real chapter midpoint (never a raw character cut through a sentence);
+Amendment XXI's Link and Amendment XXII's Network wiring run once per half;
+`understand()` induces the paradigm from part one; `refuseParadigm` tests
+it against part two.
+
+**Run on War and Peace** (split at "CHAPTER XVIII," 191 of 383 headings in
+part one): part one's 128 being-records induced one kind, `negated_share=0`
+(3 members). Tested against part two's 111 being-records — **held**,
+placement=1.000, and part two also independently coheres as its own two
+kinds. `refuseParadigm` ran against real, previously-unseen material and
+returned a real, non-gapped verdict — the first time this happened outside
+a synthetic conformance fixture.
+
+**What this does not settle, stated plainly rather than oversold.** The
+only core the induced paradigm had was `negated_share` — a field every
+being-record in this codebase carries by construction (`emergence/
+people.js::deriveBeingRecords` always computes it), so "held" here is a
+real but weak test: it says part two's records mostly aren't negation
+targets either, not that a DISTINCTIVE structural signature (a `community`
+or `partners` core, the kind Amendment XXII found real subplot structure
+on) survived into unseen chapters. **Run on Frankenstein split in half**:
+each half was too sparse (7 and 15 being-records) for `induceKinds` to
+clear both Born gates at all — `understand()` returned zero kinds, so
+there was nothing to test `refuseParadigm` against. The wiring itself
+handled this correctly (a clean, typed, non-crashing report, not a
+fabricated paradigm), but it means the "does this hold" question has only
+been asked once, on one book, with one weak core. `rezeroParadigm`
+(REC·Pattern, composing the next paradigm after a genuine unravel) has
+still never fired outside its own conformance fixtures — nothing in this
+session's material produced an actual unravel to trigger it.
+
+**The natural next check**, not done here: split at a point (or split into
+more than two parts) likely to produce a paradigm with a narrower, more
+distinctive core — Amendment XXII's own `community`-based kind split is the
+obvious candidate — and see whether THAT kind of paradigm holds, or
+unravels and triggers a real `rezeroParadigm` composition.
+
+**No new declared number.** `read-paradigm.mjs` declares the same `OPTS`
+(`minPrevalence`/`minKindSize`/`permutations`/`quantile`/`seed`/`reseeds`)
+every kind-induction caller this session already uses, and the same
+binding spec Amendment XXI declared. `refuseParadigm`/`rezeroParadigm`
+themselves added no new declared number when they were built, and none is
+added here.
+
+Evidence: `scripts/read-paradigm.mjs`, run against
+`scripts/adversarial/fixtures/pg84-frankenstein.txt` (paradigm: none
+induced, honest gap) and the War and Peace text fetched for Amendment XXIV
+(paradigm: 1 kind, held against part two).
+
+### XXVI — A host owes the reach it has actually earned, continuously, not the reach it hopes to finish at
+
+*2026-08-11. A host-tier law, in the spirit of Amendment IX's engine/host
+boundary — not a measured engine finding, a constraint on what a host built
+on this engine must do. Prompted directly: a host was found (`eoWebLLM`'s
+`eo-hypergraph.ts::admitOnce`) that admits a whole document — Void through
+whatever terrain the material earns — as ONE synchronous call before the
+reader can do anything else with it.*
+
+The nine terrains are a real climb, not a single act, and this session
+measured how real: Field is instant; Link and Network cost real compute
+(Amendments XXI-XXIII); a Paradigm test on a book the size of War and Peace
+took minutes, not seconds (Amendments XXIV-XXV). A host that gates the
+reader's first useful interaction behind the DEEPEST terrain the material
+might eventually earn is choosing to make every long document as unusable
+as the slowest terrain it could reach, even though most terrains — Field,
+Entity, even a first pass of Link — are available almost immediately.
+
+**The law, stated plainly:**
+
+1. **A reader may act at whatever terrain has actually been reached, the
+   moment it is reached — never only at the end.** `Void` (chunked,
+   addressable) is enough to snip and quote from. `Field`+`Entity` (segmented,
+   cast discovered) is enough to navigate by heading and ask "who is in this."
+   `Link`/`Network` is enough to ask "who relates to whom." `Kind`/`Paradigm`
+   is enough to ask "what kind of thing is this, and does it still hold."
+   None of these should be gated behind whichever is slowest. This is the
+   SAME principle Amendment IX already named for firstness — "the host owns
+   the sequence" — extended from single readings to a document's whole climb.
+2. **A host must say which terrain it is reporting from, not silently
+   pretend to a depth it has not earned.** The engine's own gap discipline
+   (SEED.md #8, "a gap is a result") applies here too: a chat response
+   informed only by `Field`+`Entity` because `Link` has not finished yet is
+   not a worse answer for saying so — it is a fabrication if it acts as
+   though `Kind`/`Paradigm` had already run. `terrain-census.mjs`'s own
+   report format (per-terrain admitted count, or a named typed gap) is the
+   right shape for this to surface to a reader, not just to a developer's
+   log.
+3. **Deeper terrains enrich a standing conversation; they do not replace or
+   invalidate what a shallower terrain already said.** This is the helix,
+   not the ladder (the correction this session already made once,
+   explicitly, mid-session): a `Kind` induced after ten more minutes of
+   background reading is a NEW prior re-entering the reading, the same way
+   Amendment IV's relevance-by-surprise-reduction already works — it is not
+   grounds to retract what `Link`-level navigation already, honestly,
+   said at the time.
+4. **This is a host obligation, not an engine one, and the engine is not
+   changed by it.** Nothing in `packages/engine/` should learn to run "in
+   the background" or "incrementally" for its own sake — `admitTiers`,
+   `admitGraph`, and every organ this session touched stay exactly the
+   synchronous, deterministic, fully-measured calls they already are. What
+   changes is where a HOST (`eoWebLLM`, or any future one) places those
+   calls relative to when it lets a reader act — sequenced, reported
+   per-terrain, and awaited only as far as the reader is currently asking,
+   never all nine terrains deep by default.
+
+**What this does not do.** It does not specify eoWebLLM's own
+implementation (a job queue, a streaming response, a polling endpoint — any
+of these could satisfy the law; none is prescribed here). It does not
+change any engine-tier organ's contract or timing. It is a constraint
+future host-tier work must satisfy, recorded here because it was found
+missing while this session was measuring what those terrains actually cost
+to reach.
+
 ## The instrument
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
