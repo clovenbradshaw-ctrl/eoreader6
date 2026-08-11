@@ -62,6 +62,7 @@ import { diaNorm } from "../engine/perceiver/text/surfaces.js";
 import { sessionSegments, snipSegment, snipRange, nGramProfile, queryContainment } from "./corpus.js";
 import { tokens as assocTokens, codeOf as assocCodeOf, encodeFrame as assocEncodeFrame, recall as assocRecall } from "../engine/emergence/activation.js";
 import { ground as nulGround, difference as nulDifference, isGap as nulIsGap } from "../../nul/index.js";
+import { readingRegime } from "../engine/loops/reading-regime.js";
 
 // The cell this host organ occupies on the operator grid (engine/operators.js):
 // SEG · Field · Clearing — the addressed reach-unit cut out of the arena, the
@@ -271,6 +272,84 @@ const buildAssocState = (session, doc) => {
   return built;
 };
 
+// THE HIGH TIER CALIBRATES; IT NEVER VOTES. A tier built from the same read
+// that just produced a confidently-wrong candidate has no privileged
+// position to overrule it from — that regress is already refuted twice in
+// this repo (lemma abstraction, the ungated lone gift: a coarse signal given
+// a voting role drowns better evidence in proportion to its own
+// coarseness). What the high tier is allowed to do instead: set the low
+// tier's own hyperparameters, never the low tier's answer. Only a mismatch
+// between what the high tier expected and what the low tier actually
+// witnessed climbs back up, as a residual, never a verdict.
+//
+// `engine/loops/reading-regime.js` already exists and is already measured
+// for exactly this shape of question — not "which candidate is right" but
+// "does the standard I'm currently holding candidates to still fit what I'm
+// reading right now" — a self-referential alarm on activation.js's own
+// `recalled` channel, confirmed (scripts/reading-regime-frankenstein.mjs) to
+// fire at a real register shift with zero false alarms on ordinary prose.
+// Reused here verbatim, at the SAME declared spec that script earned —
+// not re-picked for this call site — over the SAME spans buildAssocState
+// already reads the document as.
+const READING_REGIME_SPEC = { channel: "recalled", window: 12, draws: 200, tolerance: 3, reseeds: 5, seed: 17, statistic: "burstiness", findOn: ["regularity"] };
+
+const buildReadingRegimeState = (session, doc) => {
+  session._regime ??= new Map();
+  const cached = session._regime.get(doc.id);
+  if (cached) return cached;
+
+  const { spans } = buildAssocState(session, doc);
+  const frames = spans.map((s, order) => ({ order, offset: s.byte_start, text: s.text }));
+  const { records } = readingRegime(frames, READING_REGIME_SPEC);
+
+  const built = { records, spans };
+  session._regime.set(doc.id, built);
+  return built;
+};
+
+// How many pushes since the tracker last re-zeroed at this position — 0
+// means "right at a re-zero," `window` or more means "long stable." Used
+// only to WIDEN the Born gate's own noise-floor sample (see contentAddress
+// below), never to pick a winner: the regime tracker has no opinion about
+// which candidate is right, only about whether the ground under all of them
+// was just rebuilt.
+const distanceSinceRezero = (session, doc, byteOffset) => {
+  const { records, spans } = buildReadingRegimeState(session, doc);
+  if (records.length === 0 || spans.length === 0) return Infinity;
+  let lo = 0, hi = spans.length - 1, order = 0;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (spans[mid].byte_start <= byteOffset) { order = mid; lo = mid + 1; } else hi = mid - 1;
+  }
+  let sinceRezero = order;
+  for (let i = order; i >= 0; i--) {
+    if (records[i]?.rezeroed) { sinceRezero = order - i; break; }
+  }
+  return sinceRezero;
+};
+
+// Random passages of the document, drawn without replacement, for widening
+// the Born gate's noise-floor sample where the reading regime says the
+// local ground is shaky — the SAME construction scripts/model-relevance.js
+// uses for its own document-noise reference, reused here rather than a
+// second, differently-written sampler.
+const randomSpanScores = (spans, count, excludeOrders, weights, tokens, seed) => {
+  const next = ((s) => { let a = s >>> 0; return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; })(seed);
+  const pool = spans.map((_, i) => i).filter((i) => !excludeOrders.has(i));
+  const picked = [];
+  while (picked.length < count && pool.length > 0) {
+    const i = Math.floor(next() * pool.length);
+    picked.push(pool.splice(i, 1)[0]);
+  }
+  const totalW = tokens.reduce((s, t) => s + (weights.get(t) ?? 0), 0);
+  return picked.map((i) => {
+    const text = spans[i].text.toLowerCase();
+    let matchedW = 0;
+    for (const t of tokens) if (text.includes(t)) matchedW += weights.get(t) ?? 0;
+    return totalW > 0 ? matchedW / totalW : 0;
+  });
+};
+
 // Which of the tied candidates the query's words actually co-fire with, by
 // mapping each candidate's anchor byte to the span it falls in and reading
 // that span's activation off a single recall() probe. Returns null (not a
@@ -308,7 +387,7 @@ export const assocTieBreak = (session, doc, prompt, tiedCandidates, idx) => {
   return winnerScore > 0 ? winner : null;
 };
 
-const contentAddress = (prompt, idx, session, doc) => {
+const contentAddress = (prompt, idx, session, doc, admissionWidth = null) => {
   const toks = tokenize(prompt);
   if (toks.length === 0) return null;
 
@@ -402,7 +481,7 @@ const contentAddress = (prompt, idx, session, doc) => {
   if (shortlist.length === 0) return null;
 
   shortlist.sort((a, b) => b.lexical - a.lexical || a.anchorLine - b.anchorLine);
-  const candidates = shortlist.slice(0, CONTENT_SHORTLIST_CAP);
+  const candidates = shortlist.slice(0, admissionWidth ?? CONTENT_SHORTLIST_CAP);
 
   let best = -1;
   let bestScore = 0;
@@ -442,7 +521,31 @@ const contentAddress = (prompt, idx, session, doc) => {
   // it is tested against. `draws`, `window`, `seed` are the SAME declared
   // numbers that script earned this pair against — not re-picked here.
   if (session && doc) {
-    const rest = scored.filter((s) => s.c.anchorLine !== best).map((s) => s.score);
+    let rest = scored.filter((s) => s.c.anchorLine !== best).map((s) => s.score);
+
+    // THE CALIBRATION STEP: widen the noise-floor sample, never touch the
+    // winner. `distanceSinceRezero` asks the reading-regime tracker (built
+    // from activation.js's own `recalled` channel, the same measured seam
+    // scripts/reading-regime-frankenstein.mjs earned) how long the ground
+    // around the winning candidate has stood since it was last rebuilt. Near
+    // a re-zero (within the tracker's own declared `window` — not a new
+    // number), the local `rest` sample cannot be trusted as a fair noise
+    // floor: the vocabulary itself is in transition right there. The fix is
+    // not to distrust the WINNER — it is to distrust the SAMPLE, by mixing
+    // in random passages from elsewhere in the document (the identical
+    // construction scripts/model-relevance.js's noise band already uses)
+    // in proportion to how recent the re-zero was. A stable region (at or
+    // past `window` pushes since the last re-zero) adds nothing: this is
+    // pure calibration, inert everywhere the ground already holds.
+    const stability = distanceSinceRezero(session, doc, idx.starts[best]);
+    const extra = Math.max(0, READING_REGIME_SPEC.window - stability);
+    if (extra > 0) {
+      const { spans } = buildAssocState(session, doc);
+      let bestOrder = 0;
+      for (let i = 0; i < spans.length; i++) if (spans[i].byte_start <= idx.starts[best]) bestOrder = i; else break;
+      rest = rest.concat(randomSpanScores(spans, extra, new Set([bestOrder]), weights, toks, 11));
+    }
+
     let signal = false;
     if (rest.length >= 2) {
       const g = nulGround({ material: rest, draws: 200, window: 2, perturbation: "resample", statistic: "maxDeviation", seed: 11 });
@@ -468,10 +571,23 @@ const contentAddress = (prompt, idx, session, doc) => {
     // outlier, the reasonable candidates to hand a last-resort caller are
     // simply the best few by the same mechanical score — no further
     // hand-set threshold decides which ones count as "in the running".
-    const TOP_K = 6;
+    const TOP_K = admissionWidth ?? 6;
     const tied = signal ? [] : [...scored].sort((a, b) => b.score - a.score).slice(0, TOP_K).map((s) => s.c);
     if (tied.length > 1) {
-      const winner = assocTieBreak(session, doc, prompt, tied, idx);
+      // The graph is only consulted when the signal test itself had enough
+      // material to run (rest.length >= 2, above). With too few candidates
+      // there is no "rest" to test against, and the graph's own causal idf
+      // has a measured recency bias on short documents (a word's SECOND
+      // occurrence gets a higher stored weight than its first, because idf
+      // grows with total frames read while df clamps to 1 for both):
+      // a planted adversarial case in the frozen surfer golden
+      // (`en-content-regression` — two near-identical sections, the correct
+      // one occurring FIRST) flips to the WRONG, later section under this
+      // bias when consulted with no statistical backing. Where the file's
+      // own documented convention already exists for an exact tie ("the
+      // earlier one wins — determinism over noise"), a graph with nothing
+      // to test against should not override it.
+      const winner = rest.length >= 2 ? assocTieBreak(session, doc, prompt, tied, idx) : null;
       if (winner && winner.anchorLine !== best) {
         best = winner.anchorLine;
         bestMatch = { ...bestMatch, resolvedBy: "assoc_graph_tiebreak" };
@@ -487,6 +603,14 @@ const contentAddress = (prompt, idx, session, doc) => {
       // conformance/local-first-boundary.test.js) can see the real
       // alternatives and ask, rather than trust a pick it can't see was ever
       // in question.
+      // The score distribution's own spread — not the tied set's, the WHOLE
+      // admitted pool's (`scored`, everything within the current
+      // admissionWidth) — so a caller deciding how much wider to search next
+      // (wayfind, below) derives the step from what this document's scores
+      // actually look like, never a fixed multiplier picked in advance.
+      const allScores = scored.map((s) => s.score);
+      const scoreMean = allScores.reduce((a, b) => a + b, 0) / allScores.length;
+      const scoreVariance = allScores.reduce((a, b) => a + (b - scoreMean) ** 2, 0) / allScores.length;
       bestMatch = {
         ...bestMatch,
         ambiguous: true,
@@ -495,6 +619,9 @@ const contentAddress = (prompt, idx, session, doc) => {
           byte_start: idx.starts[c.anchorLine],
           text: c.text,
         })),
+        scoreMean,
+        scoreSD: Math.sqrt(scoreVariance),
+        admittedCount: scored.length,
       };
     }
   }
@@ -549,7 +676,7 @@ const resolveRange = (outline, anchor) => {
 
 // The one entry point: execute a natural-language prompt against the session
 // corpus and snip the segment it addresses. No model anywhere in the path.
-export function executePrompt(session, prompt, { sourceFilter, radius } = {}) {
+export function executePrompt(session, prompt, { sourceFilter, radius, admissionWidth = null } = {}) {
   const text = String(prompt ?? "").trim();
   if (!text) return { gap: "empty_prompt", reason: "a prompt with no words addresses nothing" };
 
@@ -569,7 +696,7 @@ export function executePrompt(session, prompt, { sourceFilter, radius } = {}) {
   }
 
   const results = targets.map((doc) =>
-    addressDoc(session, scopeForTarget(text, doc, named), doc, { radius }),
+    addressDoc(session, scopeForTarget(text, doc, named), doc, { radius, admissionWidth }),
   );
 
   const operator = OPERATORS.SEG;
@@ -587,8 +714,67 @@ export function executePrompt(session, prompt, { sourceFilter, radius } = {}) {
   };
 }
 
+// THE WAYFINDER — etak, one integrated act with the star compass (surf) and
+// dead reckoning (climb), not a fourth instrument bolted on top. Both of
+// those run on every call, cheap and checked constantly. wayfind is the
+// discipline of refusing to trust a narrow reading alone when it comes back
+// without a confirmed bearing (`content_match.ambiguous`) — DEF (the ground
+// refuses to confirm at this width) triggers REC (rezero: widen the
+// admission pool, the SAME `admissionWidth` hyperparameter contentAddress
+// already reads) and EVA re-reads the wider ground through the UNCHANGED
+// mechanical+graph+regime-calibration pipeline.
+//
+// THE STEP SIZE IS DERIVED, NOT A FIXED MULTIPLIER. A flat doubling is the
+// same "handset margin" this project's growth rule keeps having to refuse —
+// it was never asked what THIS document's own scores actually look like.
+// contentAddress already reports the admitted pool's mean and standard
+// deviation (`content_match.scoreMean`/`scoreSD`) — the SAME distribution
+// the Born-null gate itself is built from, not a second statistic invented
+// for this purpose. The next width widens by the coefficient of variation
+// (SD/mean): a tightly clustered pool (low relative spread — the sample
+// already looks representative) widens gently; a pool with real spread
+// (high relative spread — real structure may be sitting further down,
+// unadmitted) widens more aggressively, in direct proportion to how much
+// variability this document's own scores actually carry.
+//
+// THE HIGH TIER NEVER VOTES, HERE EITHER. Each round widens WHAT gets
+// tested, never picks a winner directly — the winner is still whatever the
+// same Born-null "signal" test (now also calibrated by the reading-regime
+// noise-floor widening) confirms at that width, or it is not confirmed at
+// all. wayfind's only decision is whether to keep widening or to stop, and
+// stopping on a real confirmed signal is the SAME stopping rule every round
+// uses, never "this looks like what I expected."
+//
+// VOID IS THE DEFAULT ANSWER, NOT A FAILURE MODE. A caller that widens
+// `maxRounds` times and still gets no confirmed bearing is told exactly
+// that (`wayfinder.void: true`), with the widest pool actually tried
+// attached (`content_match.tiedCandidates`, from the last round) — never a
+// guess dressed as a confirmation.
+export function wayfind(session, prompt, { sourceFilter, radius, maxRounds = 3 } = {}) {
+  let result = null;
+  let width = null;
+  for (let round = 0; round <= maxRounds; round++) {
+    result = executePrompt(session, prompt, { sourceFilter, radius, admissionWidth: width });
+    const match = result.content_match;
+    const ambiguous = match?.ambiguous === true;
+    if (!ambiguous) {
+      return { ...result, wayfinder: { void: false, escalations: round, admissionWidth: width } };
+    }
+    const currentWidth = width ?? CONTENT_SHORTLIST_CAP;
+    // Coefficient of variation of THIS round's admitted-pool scores — the
+    // step is what the data says, not a fixed multiplier. Guarded: a
+    // degenerate or unreported distribution (scoreMean <= 0, or an older/
+    // gapped result with no scoreSD) falls back to the smallest defensible
+    // step, one full width — never zero, which would loop forever, and
+    // never invented from nothing.
+    const cv = match?.scoreMean > 0 && Number.isFinite(match.scoreSD) ? match.scoreSD / match.scoreMean : 1;
+    width = Math.ceil(currentWidth * (1 + Math.max(cv, 0.1)));
+  }
+  return { ...result, wayfinder: { void: true, escalations: maxRounds, admissionWidth: width } };
+}
+
 // Address the prompt inside one document: the whole ladder, one target.
-const addressDoc = (session, text, doc, { radius } = {}) => {
+const addressDoc = (session, text, doc, { radius, admissionWidth = null } = {}) => {
   const outline = sessionSegments(session, { sourceId: doc.id });
   if (outline.error) return { gap: "no_source", reason: outline.error };
 
@@ -602,7 +788,7 @@ const addressDoc = (session, text, doc, { radius } = {}) => {
     anchor = addr.anchor;
     addressed_by = "heading";
   } else {
-    content = contentAddress(text, outline.idx, session, doc);
+    content = contentAddress(text, outline.idx, session, doc, admissionWidth);
     if (!content) {
       return {
         gap: "content_not_found",
