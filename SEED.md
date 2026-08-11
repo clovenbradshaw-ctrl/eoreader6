@@ -1239,7 +1239,25 @@ from `draws`/`window`/`reseeds`.
 Evidence: `scripts/read-kinds-networked.mjs`, run against
 `scripts/adversarial/fixtures/pg84-frankenstein.txt`.
 
-## The instrument
+**Generalization check, same day: does not (yet) generalize, honestly
+recorded rather than either claimed or discarded.** Run against
+`scripts/adversarial/fixtures/alice-raw.txt` with an empty stand-in coref
+file (no fabricated prior — `{referents: []}`, so first-person surfaces
+correctly become typed gaps rather than a guessed narrator): the graph came
+out far sparser (14 nodes, 11 relations, fragmented into 5 components of
+size ≤6) and `induceKinds` found **zero** kinds, Network-aware or not.
+Two confounds, both real, neither disentangled from the other yet: (1)
+Frankenstein's coref file is a curated, received prior (II.2) naming
+Victor/Walton/the creature's narrator spans; Alice has no equivalent, so
+48 first-person mentions gapped instead of resolving, and (2) blind
+surface-discovery mistook capitalized contractions (`I've`, `I'm`, `I'd`)
+for proper-noun entities in their absence, seating them among the graph's
+top relations. So Amendment XXII's finding is **not yet shown to
+generalize** — it may hold generally, or it may depend on having a
+curated narrator prior the way Frankenstein does. Untangling those two
+confounds (build a real Alice coref prior, or test on a third-person-only
+passage where narrator resolution does not matter) is the next check, not
+done here.
 
 `CUBE.md`, held outside the code: mode × domain × grain, 27 cells. Used to place
 organs while building — which cell is this, why do two share one, what cell is
