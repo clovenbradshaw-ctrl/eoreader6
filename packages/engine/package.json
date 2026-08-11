@@ -23,6 +23,7 @@
     "./competency/ledger": "./competency/ledger.js",
     "./loops/atmosphere": "./loops/atmosphere.js",
     "./operators": "./operators.js",
-    "./emergence/kinds": "./emergence/kinds.js"
+    "./emergence/kinds": "./emergence/kinds.js",
+    "./holon/task-log": "./holon/task-log.js"
   }
 }
