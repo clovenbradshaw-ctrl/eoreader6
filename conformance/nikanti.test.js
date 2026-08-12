@@ -46,7 +46,7 @@ const DEFINERS = new Set([
   "packages/engine/loops/surf.js",
   "packages/engine/loops/time.js",
   "packages/engine/loops/level.js",
-  "packages/engine/loops/family.js",
+  "packages/engine/loops/samanya.js",
   "packages/engine/loops/grain.js",
   "packages/engine/operators.js",
 ]);

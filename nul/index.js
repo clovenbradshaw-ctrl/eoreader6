@@ -48,7 +48,7 @@ export const GAP_TYPES = Object.freeze([
   "made_no_difference", // perceived, and therefore not testimony
   "unstable", // level()'s cross-measurement failed — the two grounds share no comparable footing
   "incommensurate_extent", // a null built over a different amount of material than the thing it is the null FOR
-  "missing_kind_prior", // emergence/people: the reader has no received understanding of this population as a kind — a typed gap, never a silently wrong number
+  "missing_kind_prior", // emergence/jati: the reader has no received understanding of this population as a kind — a typed gap, never a silently wrong number
   "slack_ground", // sustained regularity: a run of censored-below placements longer than reseeding noise explains. A finding, not a failure — the remedy is investigation at finer grain, never reZero.
   "anchor_ground", // asked to perceive through a ground held only to be tended, never judged through (SEED.md §7's ambient ground)
   "no_candidate", // host/sing: the reader's own search found nothing it has not already met — the run is over, and the ending is a result (SEED #8)

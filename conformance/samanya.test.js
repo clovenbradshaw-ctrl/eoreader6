@@ -1,11 +1,11 @@
-// eoreader6 · loops/family — the cross-family check for level(): does a
-// relationship survive being asked by shuffle AND resample, not just a
-// fresh seed of one. Two families disagreeing is legal and informative
+// eoreader6 · loops/samanya (सामान्य) — the cross-family check for level():
+// does a relationship survive being asked by shuffle AND resample, not just
+// a fresh seed of one. Two families disagreeing is legal and informative
 // (SEED.md #6), not a failure of the mechanism.
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { crossFamilyLevel } from "../packages/engine/loops/family.js";
+import { crossFamilyLevel } from "../packages/engine/loops/samanya.js";
 
 // A genuine step-change: own material is flat, target material has a real
 // jump partway through. This should read as a stable relationship under
