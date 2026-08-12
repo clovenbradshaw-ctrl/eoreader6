@@ -21,19 +21,15 @@ import { fileURLToPath } from "node:url";
 
 import { openReading, arrive, witnessArrival, offerCandidates, carryEntities } from "../../packages/engine/referents/entity.js";
 import { isGap } from "../../nul/index.js";
+import { stripPgBoilerplate } from "../shared/gutenberg.mjs";
+import { bestMatch } from "../shared/fuzzy-match.mjs";
+import { monteCarloChance } from "../shared/chance.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
 // Declared, never defaulted. `atomsPerUnit` is the grain of the reader's own
 // clock — a "tick" is signal-from-noise local to this holon, never wall time.
 const SPEC = Object.freeze({ window: 8, draws: 99, reseeds: 8, minArrivals: 6, atomsPerUnit: 200, offerEvery: 60 });
-
-const body = (text) => {
-  const s = text.indexOf("*** START OF");
-  const e = text.indexOf("*** END OF");
-  const from = s === -1 ? 0 : text.indexOf("\n", s) + 1;
-  return text.slice(from, e === -1 ? text.length : e);
-};
 
 // Measured, not declared: Han text has whitespace, but its whitespace-delimited
 // runs are whole clauses. Nothing here names a language.
@@ -88,26 +84,6 @@ export const readBook = (text, spec = SPEC) => {
 
 // ── scoring against the frozen third-party cast ──────────────────────────────
 
-const norm = (s) => s.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
-
-/**
- * A discovered surface counts as a reference name when one contains the other
- * after diacritic folding. That is a DECLARED, deliberately weak matcher, and
- * it is weak on purpose: the surfaces genuinely do not line up in any language
- * here — Simplified vs Traditional, Attic lemma vs demotic inflection, 15
- * Finnish cases — and closing that gap is CON · Pattern's job, not the
- * scorer's. Where the matcher cannot bridge, the result is a typed gap naming
- * the missing prior, never a silently wrong number.
- */
-const matches = (surface, refName) => {
-  const a = norm(surface);
-  const b = norm(refName);
-  if (!a || !b) return false;
-  if (a === b) return true;
-  // A reference entry is often "Firstname Lastname"; a reading surfaces one token.
-  return b.split(/\s+/).some((t) => t.length >= 3 && t === a) || (a.length >= 3 && b.includes(a));
-};
-
 const MISSING_PRIOR = {
   zh: "han_script_fold — reference is Simplified, material is Traditional",
   el: "greek_morphology — reference lists Attic lemmas, material is inflected",
@@ -117,10 +93,14 @@ const MISSING_PRIOR = {
 
 const score = (register, cast, lang, poolSize) => {
   const names = cast.entries.map((e) => e.name);
+  // Best-scoring reference name per surface, not the first one that shares
+  // any token — goldens/shared/fuzzy-match.mjs's own header names the bug
+  // this replaced: `.find()` over a boolean matcher took whichever reference
+  // entry happened to sit first in the cast list, not the closest match.
   const found = [];
   const hitNames = new Set();
   for (const e of register) {
-    const hit = names.find((n) => matches(e.surfaces[0], n));
+    const hit = bestMatch(e.surfaces[0], names);
     if (hit) { found.push({ surface: e.surfaces[0], ref: hit }); hitNames.add(hit); }
   }
 
@@ -128,16 +108,7 @@ const score = (register, cast, lang, poolSize) => {
   // pool and count hits. Without this a recall number is uninterpretable —
   // eoreader5's span-golden reported 5/21 for a year with no baseline attached,
   // and 5/21 turns out to sit at roughly the 95th percentile of chance.
-  const trials = 400;
-  let seed = 12345;
-  const next = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-  const hits = [];
-  for (let t = 0; t < trials; t++) {
-    let h = 0;
-    for (let i = 0; i < register.length; i++) if (next() < names.length / Math.max(poolSize, 1)) h++;
-    hits.push(h);
-  }
-  hits.sort((a, b) => a - b);
+  const chance = monteCarloChance({ trials: 400, drawSize: register.length, hitProb: names.length / Math.max(poolSize, 1) });
 
   return {
     registerSize: register.length,
@@ -145,7 +116,7 @@ const score = (register, cast, lang, poolSize) => {
     recall: hitNames.size,
     recallOf: `${hitNames.size}/${names.length}`,
     precision: register.length ? found.length / register.length : 0,
-    chance: { mean: hits.reduce((s, v) => s + v, 0) / trials, p95: hits[Math.floor(trials * 0.95)], max: hits[trials - 1] },
+    chance,
     found: found.slice(0, 20),
     missingPrior: MISSING_PRIOR[lang] ?? null,
   };
@@ -165,7 +136,7 @@ if (fileURLToPath(import.meta.url) === process.argv[1]) {
     if (book && tag !== book) continue;
 
     const ids = [b.pgId, ...(b.companionIds ?? [])];
-    const parts = ids.map((id) => join(HERE, "texts", `pg${id}.txt`)).filter(existsSync).map((p) => body(readFileSync(p, "utf8")));
+    const parts = ids.map((id) => join(HERE, "texts", `pg${id}.txt`)).filter(existsSync).map((p) => stripPgBoilerplate(readFileSync(p, "utf8")));
     if (!parts.length) { console.log(`${tag.padEnd(12)} GAP no_text`); continue; }
 
     const castPath = join(HERE, "cast", `${tag}.cast.json`);
