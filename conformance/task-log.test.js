@@ -322,3 +322,87 @@ test("checkCubeProgression does not merge threads that were never linked by supe
   log = append(log, { kind: ENTRY_KINDS.PROPOSE, task_id: "t2", operator: "SEG", operator_basis: OPERATOR_BASIS.PRODUCED, grain: "Ground" });
   assert.deepEqual(checkCubeProgression(log), []);
 });
+
+// ── produce()'s trace: the bearing log, not just the sighting ─────────────
+
+test("trace records one entry per step, entriesAdded and foldChanged both true on real progress", () => {
+  let log = createTaskLog();
+  log = append(log, { kind: ENTRY_KINDS.PROPOSE, task_id: "root" });
+  const rules = {
+    SEG: (tasks) =>
+      tasks.some((t) => t.task_id === "root/part")
+        ? []
+        : [{ task_id: "root/part", depends_on: ["root"] }],
+  };
+  const { trace, steps } = produce(log, rules);
+  assert.equal(trace.length, steps);
+  assert.equal(trace[0].entriesAdded, 1, "one SEG entry produced on the first step");
+  assert.equal(trace[0].foldChanged, true);
+  assert.equal(trace[trace.length - 1].foldChanged, false, "the closing step is the one that found nothing new");
+});
+
+test("trace distinguishes churn (entries added, fold unchanged) from real progress", () => {
+  let log = createTaskLog();
+  log = append(log, { kind: ENTRY_KINDS.PROPOSE, task_id: "root" });
+  // A rule with no idempotence guard: re-proposes the identical task every
+  // step. Step 1 is real progress — "same" does not exist in the fold yet,
+  // so it is a genuine new task. Step 2 re-proposes IDENTICAL content onto an
+  // already-live task_id: entriesAdded is still 1 (the log grew), but
+  // projectTasks' last-write-wins collapse means the live fold is byte-for-
+  // byte what it already was — foldChanged is false, and THAT is the churn:
+  // an entry appended that changed nothing. The OLD entries.length-only
+  // comparison could not see this distinction at all.
+  const churning = { SEG: () => [{ task_id: "same", description: "always the same" }] };
+  const { trace, closed, halted_by } = produce(log, churning, { maxSteps: 4 });
+  assert.equal(closed, true);
+  assert.equal(halted_by, "operational-closure");
+  assert.deepEqual(trace, [
+    { step: 1, entriesAdded: 1, foldChanged: true },
+    { step: 2, entriesAdded: 1, foldChanged: false },
+  ]);
+});
+
+test("trace shows a branching SEG production growing before it converges — not shrinking", () => {
+  let log = createTaskLog();
+  log = append(log, { kind: ENTRY_KINDS.PROPOSE, task_id: "root", evidence: ["a", "b", "c", "d"] });
+  // Splits by half until each part has one piece of evidence, then stops.
+  // MEASURED (not assumed): total entriesAdded per step is [2, 4, 0] here —
+  // it GROWS before it converges, because step 2 has TWO eligible parents
+  // (root/a, root/b) splitting in parallel, not one. Frontier width can
+  // outpace per-branch shrinkage; that is still bounded, healthy
+  // convergence. See task-log.js's own trace doc for why "entriesAdded
+  // shrinks monotonically" is the wrong universal signature to look for.
+  const rules = {
+    SEG: (tasks) => {
+      const out = [];
+      for (const t of tasks) {
+        const ev = t.evidence ?? [];
+        if (ev.length <= 1) continue;
+        const [a, b] = [`${t.task_id}/a`, `${t.task_id}/b`];
+        if (tasks.some((x) => x.task_id === a)) continue;
+        const half = Math.ceil(ev.length / 2);
+        out.push({ task_id: a, depends_on: [t.task_id], evidence: ev.slice(0, half) });
+        out.push({ task_id: b, depends_on: [t.task_id], evidence: ev.slice(half) });
+      }
+      return out;
+    },
+  };
+  const { trace, closed } = produce(log, rules, { maxSteps: 16 });
+  assert.equal(closed, true, "bounded depth (evidence strictly halves) still terminates");
+  assert.deepEqual(
+    trace.map((s) => s.entriesAdded),
+    [2, 4, 0],
+    "width growth mid-run, then the real closing step — the signal that actually holds is foldChanged reaching false at all, not a monotone entriesAdded",
+  );
+  assert.deepEqual(trace.map((s) => s.foldChanged), [true, true, false]);
+});
+
+test("a runaway production's trace shows sustained entriesAdded through every step to the guard", () => {
+  let log = createTaskLog();
+  log = append(log, { kind: ENTRY_KINDS.PROPOSE, task_id: "seed" });
+  const runaway = { SYN: (tasks) => [{ task_id: `t${tasks.length}`, description: "another" }] };
+  const { trace, halted_by } = produce(log, runaway, { maxSteps: 5 });
+  assert.equal(halted_by, "max-steps-guard");
+  assert.equal(trace.length, 5, "every step ran and left a bearing, right up to the guard");
+  assert.ok(trace.every((s) => s.foldChanged), "never once stabilized — this is drift, not slow convergence");
+});
