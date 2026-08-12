@@ -123,7 +123,7 @@ const tiers = createTierStack(TIER_NAMES, { window: WINDOW, draws: DRAWS, seed: 
 const reached = [];
 
 for (const f of frames) {
-  const raw = extractRelations(f.text, { verbs });
+  const raw = extractRelations(f.text, { verbs, functionWords });
   const triples = raw
     .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset), said: t }))
     .filter((t) => t.subject && t.object && t.subject !== t.object);

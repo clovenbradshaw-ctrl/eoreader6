@@ -1047,7 +1047,7 @@ function discoveredCast(session, doc) {
       // most permissive reading, appropriate here because this signal is
       // read RELATIVE to other referents in the same document, never
       // against an absolute count.
-      relations = extractRelations(body, { verbs: discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 }).verbs });
+      relations = extractRelations(body, { verbs: discoverRelationVocab(body, { surfaces, functionWords, minSurfaces: 1 }).verbs, functionWords });
       // discoverReferents emits the same gap once per referent, because at
       // that level each referent is the unit. Forwarding 63 identical
       // objects to a reader-facing audit log is noise that buries the gaps

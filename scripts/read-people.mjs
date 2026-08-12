@@ -116,7 +116,7 @@ const graph = createGraph({ gamma: gammaFor(WINDOW), pruneBelow: PRUNE_BELOW });
 let totalTriples = 0, statedTotal = 0;
 
 for (const f of frames) {
-  const raw = extractRelations(f.text, { verbs });
+  const raw = extractRelations(f.text, { verbs, functionWords });
   statedTotal += raw.length;
   const triples = raw
     .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset), said: t }))

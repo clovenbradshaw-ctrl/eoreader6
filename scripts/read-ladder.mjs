@@ -165,7 +165,7 @@ const readPass = (policy) => {
   const referentArrivals = new Map(); // referentId -> [frameOrder, ...]
 
   for (const f of frames) {
-    const raw = extractRelations(f.text, { verbs: policy.vocab });
+    const raw = extractRelations(f.text, { verbs: policy.vocab, functionWords });
     const frameEdges = [];
     const frameClean = [];
 

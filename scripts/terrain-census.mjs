@@ -135,7 +135,7 @@ function ladder(text) {
   const clean = [];
 
   for (const f of frames) {
-    const raw = extractRelations(f.text, { verbs: vocab });
+    const raw = extractRelations(f.text, { verbs: vocab, functionWords });
     statedTotal += raw.length;
     const frameClean = [];
     for (const r of raw) {

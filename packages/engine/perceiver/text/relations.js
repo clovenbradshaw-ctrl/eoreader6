@@ -76,7 +76,7 @@
 // no triple is emitted without a literal verb match in the clause.
 
 import { diaNorm } from "./surfaces.js";
-import { NEGATION_WORDS } from "./priors.js";
+import { NEGATION_WORDS, THIRD_PERSON_SINGULAR } from "./priors.js";
 
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // CON · Link · Binding — subject · verb · object triples; the graph's
@@ -238,24 +238,95 @@ export const discoverRelationVocab = (text, { surfaces, functionWords = null, mi
  * ground to perceive through: the honest answer to "what did this passage
  * say" before a vocabulary exists to hear it with is nothing, not a fallback
  * dictionary.
+ *
+ * `functionWords` (this text's own Zipf-derived closed class,
+ * material.js::functionWordSet — same discipline as discoverRelationVocab's
+ * own `functionWords` param, same file, above): bounds the OBJECT capture at
+ * the next function-word boundary instead of the next clause terminator.
+ * MEASURED (NEXT-RELATION-SLOTS.md, full War and Peace reading, 2,863 bound
+ * pronouns classified by what the object capture did with them): the old
+ * `.+?` clause-final capture swallowed 54.3% of them inside a wider object
+ * (mean width 45 chars) that no filler mechanism could attach to; bounding
+ * at the next function word instead cut that to 13.2% and nearly doubled
+ * the isolated-capture rate a pronoun/name lookup CAN attach to (12.2% ->
+ * 20.5%). Also validated against a scored civic-prose clause-agency golden
+ * this function feeds (see READING-POLICY.md A19 for the number — deliberately
+ * not repeated here: a conformance test pins that no file outside that
+ * golden's own directory may name it by path, so production code is never
+ * tuned toward one eval set): every genre improved, none regressed. Omit
+ * `functionWords` and this bound simply does not run — the object capture
+ * falls back to the original clause-final shape, same discipline as every
+ * other optional filter in this file.
  */
-export const extractRelations = (text, { verbs, limit = Infinity } = {}) => {
+export const extractRelations = (text, { verbs, limit = Infinity, functionWords = null } = {}) => {
   const vocab = verbs instanceof Set ? verbs : new Set(verbs ?? []);
   if (vocab.size === 0) return [];
 
   const VERB_ALT = [...vocab].map(escapeRe).join("|");
-  const MATCHER = new RegExp(`(?<=^|[^\\p{L}])(${W}(?:\\s+${W})?)\\s+(${VERB_ALT})\\s+(.+?)(?:\\.|,|;|$)`, "giu");
-  const SPLITTER = new RegExp(`^(.+?)\\s+(${VERB_ALT})\\s+(.+?)$`, "iu");
+  // The object group always requires at least one token (mandatory first
+  // `${W}`) — a pronoun or name sitting immediately after the verb is never
+  // refused for being function-word-shaped itself ("gave HIM the letter":
+  // "him" is a function word by Zipf frequency, and must still be captured,
+  // or the one case this bound exists to help — a pronoun as the whole
+  // object — would be the one case it broke). Only tokens AFTER that first
+  // one stop at a function-word boundary. No trailing anchor after the
+  // object group (unlike NEGATION_BEFORE_VERB's earlier ReDoS, fixed above)
+  // — the object simply matches as much as it structurally can and the
+  // pattern ends there, so there is nothing for a failed later requirement
+  // to backtrack the object choice against. MEASURED adversarially (a
+  // 5,000-token run with no function word anywhere, and the same run with
+  // no matching verb at all, forcing a full scan): both resolve in single-
+  // digit milliseconds.
+  const OBJECT_GROUP = functionWords && functionWords.size
+    ? `(${W}(?:\\s+(?!(?:${[...functionWords].map(escapeRe).join("|")})\\b)${W})*)`
+    : `(.+?)(?:\\.|,|;|$)`;
+  // Subject and verb and object are ALL read straight from MATCHER's own
+  // m[1]/m[2]/m[3] — a chorus review (CHORUS-LOG.md, Diaconis) found this
+  // file used to re-derive them via a second regex (SPLITTER) applied to
+  // m[0], a bare `.+?` with no dotAll flag. That worked while the object
+  // group was clause-terminator-bounded (never crossed a line break
+  // either), but once OBJECT_GROUP started spanning a Gutenberg hard-wrap
+  // newline (its `\s+` separators match `\n`, by design — the whole point
+  // of NOISE_RUN elsewhere in this file), SPLITTER's `.` could not follow
+  // it across that same newline and silently re-split at a LATER verb
+  // occurrence instead, corrupting the subject to several tokens. Confirmed
+  // reproducing a real corrupted admit in the checked-in civic-prose golden
+  // data before this fix. Two regexes agreeing to parse the same text is a
+  // liability by construction; one is now the only source of truth.
+  const MATCHER = new RegExp(`(?<=^|[^\\p{L}])(${W}(?:\\s+${W})?)\\s+(${VERB_ALT})\\s+${OBJECT_GROUP}`, "giu");
+
+  // The exact terminator set the OLD (pre-function-word-bound) object
+  // capture used to reach: `.`, `,`, `;`, or end of string. Used below only
+  // to find the TRUE clause boundary for polarity-window purposes — never
+  // to bound what is captured as the object, which is now deliberately
+  // narrower (the function-word boundary). Decoupling these two was a
+  // second chorus finding (Dijkstra/Frankfurt/Alexander, independently):
+  // reusing the object's own (now narrower) end as "how far this clause's
+  // territory reaches" left a trailing negation word AFTER a truncated
+  // object ("...never abandoned hope, and...") unclaimed by either match,
+  // so it silently bled into the NEXT relation's polarity window instead of
+  // being walled off with the clause it actually belongs to. Confirmed
+  // reproducing a fabricated negative polarity on an entirely affirmative
+  // clause before this fix.
+  const clauseEndAfter = (from) => {
+    let end = s.length;
+    for (const ch of [".", ",", ";"]) {
+      const idx = s.indexOf(ch, from);
+      if (idx !== -1 && idx < end) end = idx;
+    }
+    return end === s.length ? end : end + 1;
+  };
 
   const rels = [];
   const seen = new Set();
   const s = String(text ?? "");
   let m;
-  // The end of the previous match this SAME pass already found — a triple
-  // with its own verb already claims everything up to here, so a negation
-  // trigger sitting before it belongs to THAT clause, not this one. Real
-  // signal already computed by this loop, not a second vocabulary or a
-  // guessed reach.
+  // The end of the previous match's own CLAUSE (via clauseEndAfter, not
+  // just where its now-narrower object capture stopped) — a triple with
+  // its own verb already claims everything up to its clause boundary, so a
+  // negation trigger sitting before that belongs to THAT clause, not this
+  // one. Real signal already computed by this loop, not a second
+  // vocabulary or a guessed reach.
   let previousMatchEnd = 0;
   // Sentence-terminator scan advances forward ALONGSIDE the main match loop
   // (never rewound to 0) — MATCHER's own m.index is monotonically
@@ -268,22 +339,58 @@ export const extractRelations = (text, { verbs, limit = Infinity } = {}) => {
   SENTENCE_END.lastIndex = 0;
 
   while ((m = MATCHER.exec(s)) !== null) {
-    const parts = m[0].match(SPLITTER);
-    if (!parts) { previousMatchEnd = m.index + m[0].length; continue; }
-    const subject = parts[1].trim();
-    const verb = parts[2].trim().toLowerCase();
-    const object = parts[3].trim().replace(/[.,;]$/, "");
-    if (!subject || !object) { previousMatchEnd = m.index + m[0].length; continue; }
+    // The subject group is at most 2 tokens ("Prince Andrew"), and a leading
+    // conjunction or determiner ("and he", "the King") can occupy the FIRST
+    // of those 2 slots exactly the way a wide object used to swallow a
+    // pronoun — the same defect, mirrored to the other end of the triple.
+    // Post-processed here rather than bounded in MATCHER itself: rejecting a
+    // function-word-shaped token at match-start via the regex would also
+    // reject the single most important case this exists to serve — "He told
+    // her" IS a bare pronoun subject and must stay "He", not be refused for
+    // being function-word-shaped. Stripping only fires when there are TWO
+    // tokens and the FIRST is the function word, so a lone pronoun subject
+    // is never touched (nothing left to strip it down to). Also refused
+    // when the REMAINING token is itself a negation trigger (NEGATION_WORDS,
+    // already imported above) — a chorus finding (Dijkstra): "does not
+    // measure" captures subject "does not", and stripping "does" (a function
+    // word) left "not" standing in as the reported subject, a fabricated
+    // referent that is actually the negation marker for the verb, not an
+    // entity at all. Left as the original 2-token form instead — garbage
+    // that plainly fails referent matching, not garbage disguised as a name.
+    // And refused when the STRIPPED token is itself a third-person singular
+    // pronoun (THIRD_PERSON_SINGULAR, already a received prior elsewhere in
+    // this file's own ladder — priors.js, giver lang/en) — another chorus
+    // finding (Holmes): "his King"/"her King" both strip to bare "King",
+    // and for a caller with no referent-resolution seam of its own
+    // (packages/host/sing.js, wired to this parameter by the same session
+    // that added it), the stripped string IS the identity the belief graph
+    // keys on — two distinct people sharing a title, distinguished only by
+    // a possessive, would silently merge into one graph node. "the King" ->
+    // "King" stays fine ("the" carries no identity of its own to lose);
+    // only a pronoun that itself carries person/gender is refused.
+    let subject = m[1].trim();
+    if (functionWords && functionWords.size) {
+      const subjTokens = subject.split(/\s+/);
+      if (
+        subjTokens.length === 2 &&
+        functionWords.has(subjTokens[0].toLowerCase()) &&
+        !NEGATION_WORDS.has(subjTokens[1].toLowerCase()) &&
+        !(subjTokens[0].toLowerCase() in THIRD_PERSON_SINGULAR)
+      ) subject = subjTokens[1];
+    }
+    const verb = m[2].trim().toLowerCase();
+    const object = m[3].trim().replace(/[.,;]$/, "");
+    if (!subject || !object) { previousMatchEnd = clauseEndAfter(m.index + m[0].length); continue; }
 
     const key = `${subject}|${verb}|${object}`.toLowerCase();
     if (!seen.has(key)) {
       seen.add(key);
 
       // The polarity window's backward bound is whichever is CLOSER: the
-      // previous match's own end (see comment above `previousMatchEnd`), or
-      // the most recent sentence-ending punctuation — both real facts
-      // already in hand, never a character or word count.
-      const subjEnd = m.index + parts[1].length;
+      // previous match's own clause end (see comment above
+      // `previousMatchEnd`), or the most recent sentence-ending punctuation
+      // — both real facts already in hand, never a character or word count.
+      const subjEnd = m.index + m[1].length;
       while (SENTENCE_END.lastIndex <= m.index) {
         const sm = SENTENCE_END.exec(s);
         if (sm === null) break;
@@ -301,9 +408,9 @@ export const extractRelations = (text, { verbs, limit = Infinity } = {}) => {
         object,
         polarity: NEGATION_BEFORE_VERB.test(before) ? "-" : "+",
       });
-      if (rels.length >= limit) { previousMatchEnd = m.index + m[0].length; break; }
+      if (rels.length >= limit) { previousMatchEnd = clauseEndAfter(m.index + m[0].length); break; }
     }
-    previousMatchEnd = m.index + m[0].length;
+    previousMatchEnd = clauseEndAfter(m.index + m[0].length);
   }
 
   return rels;

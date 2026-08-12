@@ -763,3 +763,228 @@ plain string exactly as before. `npm test`: 1053/1055 passing, both
 failures pre-existing and unrelated (`agency-civic-firewall.test.js` and
 `reproducibility.test.js` both fail on absolute-path/reference debt in
 `scripts/experiments/*` — separate in-progress work, untouched here).
+
+### A19 · The slot-typing rewrite A17 asked for — object AND subject, both bounded by a derived class, not a hand list; then a chorus review caught three real integration bugs before any of it shipped
+
+A17 named the fix and refused to attempt it in the same entry: `extractRelations`'s
+object capture is `.+?` — everything to the next terminator — so a pronoun or
+name only resolves when it happens to BE the whole capture. Taken up here,
+scoped exactly as A17 specified: bound the object, validate against
+`goldens/agency-civic` before touching anything else, then sweep the other
+callers.
+
+**Four candidate object-capture bounds were measured before picking one** (not
+assumed): the current clause-final capture, a fixed 3-token cap, stopping at
+the next already-admitted surface, and stopping at the next function-word
+boundary (this text's own Zipf-derived closed class, `material.js::functionWordSet`
+— the same primitive `discoverRelationVocab` already uses for its verb filter,
+never a hardcoded word list). Measured on 2,863 pronoun occurrences
+`resolvePronouns` bound in a full War and Peace reading, checking what the
+object capture did with each one:
+
+| rule | CLEAN_SLOT | SWALLOWED_OBJECT |
+|---|---|---|
+| clause-final (was) | 12.2% | 54.3% |
+| fixed 3-token cap | 14.4% | 33.5% |
+| next admitted surface | 12.5% | 52.7% |
+| **next function word** | **20.5%** | **13.2%** |
+
+Next-function-word won outright — not narrowly — on both axes, and is the
+only candidate whose bound is a text-derived class rather than a picked
+number. (These four numbers were measured against a driver script — not
+`extractRelations` itself — before the mechanism was implemented, so the
+`SPLITTER` defect below does not touch them; they were sound grounds for
+the choice. Everything measured AFTER this point, in the paragraphs below,
+was re-measured against the final, corrected code — see the chorus-review
+section.)
+
+**The object group always keeps its first token even if that token is itself
+function-word-shaped** ("gave HIM the letter" must still capture "him" — a
+pronoun IS a function word by Zipf frequency, and refusing to capture it
+would defeat the fix's own purpose). Only tokens after the first stop at a
+function-word boundary. No trailing anchor follows the object group in
+`MATCHER`, so — unlike A18's `NEGATION_BEFORE_VERB` ReDoS — there is nothing
+for a failed later requirement to backtrack the object choice against;
+confirmed adversarially (a 5,000-token run with no function word anywhere,
+and the same run against a verb that never appears, forcing an exhaustive
+scan): both resolve in single-digit milliseconds.
+
+**The subject side had the mirror-image defect, found while sampling
+its own residual** (SWALLOWED_SUBJECT — A17's smaller bucket, 269 of the
+39.1% SWALLOWED total). Reading the actual samples showed it is NOT one
+defect generalizing from the object fix, but three distinct shapes:
+
+- Inverted dialogue tags ("said **he**") — a different clause order, not a
+  capture-width problem.
+- Possessive pronouns inside a noun phrase ("**his** mouth") — the pronoun
+  is a modifier, not the subject; a different slot entirely.
+- A leading conjunction or determiner swallowed into the subject ("**and**
+  he", "**the** King") — the actual mirror of the object defect: the
+  subject's 2-token cap gets one slot spent on a function word, leaving no
+  room for the pronoun to stand alone.
+
+Only the third shape is the same defect as the object side, and it needed a
+different mechanism, not a copy-paste of the object fix: rejecting a
+function-word-shaped token at the START of a regex match also rejects the
+single most important case this exists to serve ("**He** told her" — a bare
+pronoun subject, itself function-word-shaped, must never be refused).
+Tried and rejected: a lookbehind letting the match start either at the true
+beginning or right after a function word — doesn't work, because the
+engine already succeeds starting at position 0 (via the plain `^`
+lookbehind branch) before it ever needs the skip-forward branch, so "and he"
+matches whole regardless. What works: post-process the already-extracted
+subject STRING (not the regex match position) — strip the first of exactly
+two tokens only when it is function-word-shaped.
+
+**A chorus-lint review (`CHORUS-LOG.md`, this run) found three real
+integration bugs before any of this shipped, none of them visible from
+either fix's own isolated validation.** In order of how they were found:
+
+1. **Diaconis (NUL): `extractRelations` re-derived `{subject, verb, object}`
+   from a SECOND regex (`SPLITTER`, bare `.+?`, no `dotAll`) applied to
+   `MATCHER`'s own `m[0]`, instead of reading `MATCHER`'s own `m[1]`/`m[2]`/
+   `m[3]` directly.** This was latent before this session (SPLITTER already
+   existed) but harmless while the object group was clause-terminator-bounded
+   and so never crossed a line break. Once OBJECT_GROUP could span a
+   Gutenberg hard-wrap newline (its `\s+` separators match `\n` by design —
+   the same reason `NOISE_RUN` exists), `SPLITTER` could no longer follow it
+   across that newline and would silently re-split at a LATER verb
+   occurrence instead — reproduced corrupting a real record in the checked-in
+   golden data (`goldens/agency-civic/data/engine-scores.json`, id
+   `ordinance-metro-ord-25-1528-preamble-s0-c9`), and, once measured at full
+   scale, found to have been silently DROPPING matches far more often than
+   corrupting them (`if (!parts) continue`) — the true cause of the large
+   jump in total triple count below. **Fixed by deleting `SPLITTER`
+   entirely** and reading `m[1]`/`m[2]`/`m[3]` directly; two regexes
+   independently agreeing to parse the same text was a liability by
+   construction, and removing the redundant one is a simplification, not
+   just a patch.
+2. **Dijkstra / Frankfurt / Alexander (three personas, independently, same
+   root cause): narrowing the object capture also narrows what
+   `previousMatchEnd` — A18's own clause-boundary signal for the polarity
+   window — considers "already claimed."** A18's invariant ("a matched
+   triple's own verb already claims everything up to here") was true when
+   the object ran to the clause terminator; once the object could stop
+   earlier, at a function word, a trailing negation word between the
+   truncated object and the real clause boundary was left unclaimed and
+   could bleed into the NEXT relation's polarity window — reproduced
+   fabricating a negative polarity for an affirmative clause
+   ("...never looking back and Paul departed quickly" wrongly read as "Paul
+   did NOT depart"). **Fixed by decoupling the two concerns**: a new
+   `clauseEndAfter` helper finds the true old-style terminator (`.`/`,`/`;`)
+   forward from the match's own end and feeds THAT to `previousMatchEnd`,
+   while the object capture itself stays narrow for triple-reporting
+   purposes. Two different questions — "what should this triple report as
+   its object" and "how far does this clause's territory reach for the NEXT
+   relation's polarity check" — were conflated by reusing one position for
+   both; they are not the same question and now use different answers.
+3. **Dijkstra (second finding): the subject-strip's precondition checked
+   only the FIRST token's function-word-ness, never the second.** For a
+   negated auxiliary construction ("does not measure", "is not V"), BOTH
+   subject-position tokens are ordinary high-frequency function words, so
+   the strip turned "does not" into bare "not" — the negation trigger
+   itself standing in as the "subject," a fabricated referent silently
+   flowing downstream. **Fixed by refusing to strip when the remaining
+   token is itself a member of `NEGATION_WORDS`** (already imported in this
+   file) — left as the original 2-token "does not" instead, garbage that
+   plainly fails referent matching rather than garbage disguised as a name.
+
+**A fourth finding (Holmes) was not a bug in what shipped originally, but a
+real risk the fix as first written would have carried**: the subject-strip
+is, underneath the syntax framing, a coreference decision — "King" and "the
+King" are declared the same referent by dropping "the". For most swept
+callers this is inert (they already resolve the string against a discovered
+referent list by containment, so stripped or not makes no difference), but
+`packages/host/sing.js` has no such seam — the stripped string IS the
+node id `emergence/graph.js::readTriples` keys the belief graph on. Reproduced:
+"his King"/"her King" — two different people sharing a title, distinguished
+only by a possessive — would both strip to bare "King" and silently merge
+into one graph node. **Fixed by also refusing to strip when the leading
+token is a member of `THIRD_PERSON_SINGULAR`** (`priors.js`, an existing
+named prior, giver `lang/en` — not a new hand-set list): a possessive
+pronoun carries person/gender information the strip must not discard,
+where a plain determiner or conjunction carries none. "the King" still
+correctly strips to "King" ("the" was never identity-bearing); "his
+King"/"her King" now stay distinct.
+
+**Two findings were named and deliberately not acted on.** Ostrom and Pearl
+both flagged that the docstring's "every genre improved, none regressed"
+was earned by the object mechanism alone and got read, unqualified, as a
+property of the single `functionWords` flag that actually ships both
+mechanisms together — fixed by not repeating an unqualified golden number
+in the docstring at all (see the code comment) and by this entry keeping
+the object and subject validations reported separately, genre by genre, as
+they were before. Simon and Chekhov found that several more callers
+(`scripts/adversarial/challenge-9-*.mjs`, `challenge-10-*.mjs`,
+`challenge-4-*.mjs`, `scripts/experiments/role-fold-kinds.mjs`) already
+compute a `functionWords` Set for their own `discoverRelationVocab` call
+and simply never thread it to their `extractRelations`/`createSinger` call
+a few lines below — the identical oversight this entry fixes in six other
+scripts. **Not swept this pass** — named here rather than silently left out
+of the accounting, per this project's own discipline of naming what
+remains open. The opt-in design means nothing in these scripts is broken by
+the omission; they simply do not yet benefit.
+
+**Final, corrected numbers** — full War and Peace, all three fixes above
+applied, measured against the actual code that ships (superseding every
+number measured earlier in this entry and in A18, which were measured
+against the pre-chorus-review code):
+
+| | before (pre-session) | after (final) |
+|---|---|---|
+| total triples | 40,659 | 82,421 |
+| negative polarity | 1,167 (2.87%) | 1,395 (1.69%) |
+| object CLEAN_SLOT / SWALLOWED | 0.9% / 45.9% | 4.9% / 22.7% |
+| subject CLEAN_SLOT / SWALLOWED | 8.5% / 11.7% | 21.1% / 23.2% |
+| combined CLEAN_SLOT / SWALLOWED | 9.4% | 26.0% / 46.0% |
+
+The near-doubling of total triples is the `SPLITTER` fix (finding 1 above):
+the old code was silently dropping far more matches on newline-containing
+text than it was corrupting, and removing the redundant regex recovered
+them. `goldens/agency-civic`, re-run against the final code: **22/208 →
+36/208 clauses admitted a Link (17.3%)**, staff-report 4.3%→9.8%, deposition
+23.3%→26.7%, ordinance 7.1%→19.6% — every genre still improved. `npm test`:
+1053/1055, the same two pre-existing, unrelated failures as A18.
+
+**Callers swept**, per A17's own blast-radius note (11 named callers).
+`functionWords` is opt-in — a caller that doesn't pass it gets the exact
+old behavior, nothing breaks by doing nothing:
+
+- `goldens/agency-civic/engine-score.mjs` — updated and validated (numbers
+  above).
+- `scripts/cache-reading.mjs`, `navigation-index-war-and-peace.mjs`,
+  `read-ladder.mjs`, `read-people.mjs`, `read-tiered.mjs`,
+  `terrain-census.mjs` — all already computed a `functionWords` Set for
+  `extractSurfaces`/`discoverRelationVocab` and simply hadn't threaded it
+  to their own `extractRelations` call; each swept for a hardcoded
+  subject/object width or shape assumption first (none found — every
+  caller treats the captured phrase as an opaque string resolved by
+  substring/word-boundary match against known referents, never by token
+  count) before opting in.
+- `packages/host/corpus.js` (`discoveredCast`, the real production path)
+  and `packages/host/sing.js` (`createSinger`/`singPass`, reached via
+  `scripts/sing-book.mjs`) — `sing.js` had no `functionWords` concept at
+  all (its `verbs` are supplied by the caller, not derived internally), so
+  this needed a small signature addition (`functionWords = null` on
+  `createSinger`, carried on the singer record) rather than just
+  threading an already-local variable.
+- `scripts/read-nashville-civic.mjs`, `scripts/full-golden-layered.mjs` —
+  checked (Simon): neither calls `extractRelations` at all, not real
+  callers.
+- **Not swept, named rather than hidden (Simon/Chekhov):**
+  `scripts/adversarial/challenge-9-single-document-vs-cross-document-terrai.mjs`,
+  `scripts/adversarial/challenge-10-noisy-tv-trap-competence-gain-vs-raw-sur.mjs`,
+  `scripts/adversarial/challenge-4-typed-discard-reconstructability.mjs`,
+  `scripts/experiments/role-fold-kinds.mjs` — each already computes
+  `functionWords` in scope and doesn't thread it through; two of them
+  (challenge-4, challenge-10) construct a `createSinger` without it too.
+  challenge-4's own header claims to run "the identical production code
+  path" as `sing-book.mjs` — that claim is presently false, since
+  `sing-book.mjs` is wired and this script is not.
+
+**Blast radius.** `packages/engine/perceiver/text/relations.js`,
+`packages/host/corpus.js`, `packages/host/sing.js`, and the six scripts
+named above. `extractRelations`'s return shape is unchanged (still
+`{subject, verb, object, polarity}`); `functionWords` is a new optional
+parameter, defaulted to `null`, changing nothing for a caller that omits
+it.

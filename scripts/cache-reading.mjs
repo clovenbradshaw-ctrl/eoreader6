@@ -126,7 +126,7 @@ export const readCached = (text, coref, { cacheDir = "/tmp/eoreader6-read-cache"
     // frames before it — vocab is grown AFTER extraction, below, never
     // before, so frame t never reads its own new verbs (read-ladder.mjs's
     // own discipline, reproduced exactly).
-    const raw = extractRelations(f.text, { verbs });
+    const raw = extractRelations(f.text, { verbs, functionWords });
     const triples = raw
       .map((t) => ({ ...t, subject: resolve(t.subject, f.offset), object: resolve(t.object, f.offset) }))
       .filter((t) => t.subject && t.object && t.subject !== t.object);

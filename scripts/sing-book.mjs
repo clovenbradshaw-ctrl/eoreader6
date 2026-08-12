@@ -45,7 +45,7 @@ const { verbs } = discoverRelationVocab(text, { surfaces, functionWords, minSurf
 console.log(`relation vocabulary: ${verbs.size} verbs measured from the text — never a hand-listed set`);
 console.log("");
 
-const singer = createSinger({ session, gamma: GAMMA, pruneBelow: PRUNE_BELOW, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, limit: LIMIT, verbs });
+const singer = createSinger({ session, gamma: GAMMA, pruneBelow: PRUNE_BELOW, reseeds: RESEEDS, seed: SEED, alpha: ALPHA, limit: LIMIT, verbs, functionWords });
 const run = singRun(singer, { passes: PASSES });
 
 const ceiling = run.pass >= PASSES ? ` (reached the declared ${PASSES}-pass ceiling)` : "";

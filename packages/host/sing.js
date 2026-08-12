@@ -77,7 +77,7 @@ const previewOf = (text) => String(text ?? "").replace(/\s+/g, " ").slice(0, 96)
  * triples. The graph gains structural edges (a|polarity|b) that capture
  * co-occurrence patterns text triples miss.
  */
-export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha = 1, limit = 10, verbs, entities, bindingSpec }) => {
+export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha = 1, limit = 10, verbs, entities, bindingSpec, functionWords = null }) => {
   if (!session || !(session.spans instanceof Map)) throw new TypeError("sing: a corpus session is required");
   if (!Number.isFinite(gamma) || gamma <= 0 || gamma > 1)
     throw new TypeError("sing: gamma is the reader's forgetting, declared in (0,1], never defaulted");
@@ -100,6 +100,7 @@ export const createSinger = ({ session, gamma, pruneBelow, reseeds, seed, alpha 
     alpha,
     limit,
     verbs,
+    functionWords: functionWords instanceof Set && functionWords.size ? functionWords : null,
     entities: entities ?? null,
     bindingSpec: bindingSpec ?? null,
     readIds: new Set(),   // spans already experienced — the reader never re-reads
@@ -153,7 +154,7 @@ export const singPass = (singer) => {
   s.readIds.add(span.span_id);
 
   // READ — into triples. The candidate is experienced whether or not it moves.
-  const triples = extractRelations(span.text, { verbs: s.verbs });
+  const triples = extractRelations(span.text, { verbs: s.verbs, functionWords: s.functionWords });
   const record = { pass: s.pass, query, span_id: span.span_id, preview: previewOf(span.text), triples: triples.length };
   if (triples.length === 0) {
     s.gaps.push(record);

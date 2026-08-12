@@ -80,7 +80,7 @@ export const readDocument = (text) => {
     boundBySentence = new Map(resolved.bindings.map((b) => [b.sentenceOrder, b]));
   }
 
-  return { sentences, allSurfaceTexts, boundBySentence, verbs };
+  return { sentences, allSurfaceTexts, boundBySentence, verbs, functionWords };
 };
 
 /**
@@ -90,7 +90,7 @@ export const readDocument = (text) => {
  * so orders line up without re-deriving them here).
  */
 export const scoreClause = (clauseText, sentenceOrder, doc) => {
-  const rels = extractRelations(clauseText, { verbs: doc.verbs });
+  const rels = extractRelations(clauseText, { verbs: doc.verbs, functionWords: doc.functionWords });
   const hasTriple = rels.length > 0;
   const namedSubject = rels.some((r) => referentOwnsSubject(r.subject, doc.allSurfaceTexts));
   const pronounSubject = doc.boundBySentence.has(sentenceOrder);
