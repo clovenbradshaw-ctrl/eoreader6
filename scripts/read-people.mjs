@@ -30,7 +30,7 @@ import { extractSurfaces, discoverReferents, diaNorm } from "../packages/engine/
 import { tokenize, buildFrequencyTable, functionWordSet } from "../packages/engine/perceiver/text/material.js";
 import { projectReferents } from "../packages/engine/referents/index.js";
 import { resolveAllNarratorSpans, narratorAt, isFirstPerson } from "../packages/engine/perceiver/text/narrator.js";
-import { deriveBeingRecords, understand, foldHolons } from "../packages/engine/emergence/people.js";
+import { deriveBeingRecords, understand, foldHolons } from "../packages/engine/emergence/jati.js";
 import { isGap } from "../nul/index.js";
 
 const TEXT_PATH = process.argv[2] || "scripts/adversarial/fixtures/pg84-frankenstein.txt";

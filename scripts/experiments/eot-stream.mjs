@@ -83,7 +83,7 @@ import { tokenize, buildFrequencyTable, functionWordSet } from "../../packages/e
 import { extractSurfaces } from "../../packages/engine/perceiver/text/surfaces.js";
 import { discoverRelationVocab } from "../../packages/engine/perceiver/text/relations.js";
 import { codeOf, recall, encodeFrame, tokens } from "../../packages/engine/emergence/activation.js";
-import { understand } from "../../packages/engine/emergence/people.js";
+import { understand } from "../../packages/engine/emergence/jati.js";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const POCKET_DIR = process.argv[2] || join(HERE, "..", "..", "..", "live_priors", "06-government-legal", "world-legislation", "us");

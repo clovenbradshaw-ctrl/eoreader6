@@ -40,7 +40,7 @@ import { projectReferents } from "../packages/engine/referents/index.js";
 import { discoverRelationVocab, extractRelations } from "../packages/engine/perceiver/text/relations.js";
 import { createGraph, readTriples, edgeKey } from "../packages/engine/emergence/graph.js";
 import { createTierStack, foldThrough, gammaFor } from "../packages/engine/emergence/tiers.js";
-import { deriveBeingRecords, understand } from "../packages/engine/emergence/people.js";
+import { deriveBeingRecords, understand } from "../packages/engine/emergence/jati.js";
 import { createRegimeTracker } from "../packages/engine/loops/atmosphere.js";
 import { openReading, arrive, witnessArrival, offerCandidates, carryEntities } from "../packages/engine/referents/entity.js";
 import { createSession, admitChunked } from "../packages/host/corpus.js";

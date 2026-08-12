@@ -14,7 +14,7 @@
 import { readFileSync } from "node:fs";
 import { stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { resolveNarratorSpans } from "../packages/engine/perceiver/text/narrator.js";
-import { createVoiceLog, enterVoice, exitVoice, voiceAt, voiceTransitions } from "../packages/engine/emergence/voice.js";
+import { createVoiceLog, enterVoice, exitVoice, voiceAt, voiceTransitions } from "../packages/engine/emergence/shabda.js";
 
 const TEXT_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.txt";
 const COREF_PATH = "scripts/adversarial/fixtures/pg84-frankenstein.coref.json";
