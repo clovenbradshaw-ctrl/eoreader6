@@ -659,3 +659,107 @@ trustworthy anywhere else in this list.
 another driver script — the next entry this log should carry, if taken up,
 is a scoped slot-typing rewrite validated against `goldens/agency-civic`
 before touching anything else that depends on it.
+
+### A18 · The polarity window was reading formatting noise as signal — fixed with a derived boundary, not a bigger guess
+
+A separate defect from A17, found while reading `extractRelations`'s polarity
+check rather than its subject/object capture: `NEGATION_BEFORE_VERB` used to
+test a RAW 40-character slice of source text immediately before the verb
+(`s.slice(m.index - 40, ...)`, unbounded by any token regex) against a
+`{0,2}`-word-capped pattern. Both numbers — the 40 and the 2 — were hand-set,
+present since this file's negation handling was written, never measured.
+
+**What was wrong, concretely.** Ordinary mid-window punctuation broke the
+match silently: `"Victor did not, truly, love Elizabeth."` — the comma
+directly after "not" blocks the `\s+` the old pattern required immediately
+after the trigger, so `NEGATION_BEFORE_VERB` never anchors and the triple is
+reported `polarity: "+"` — a fabricated affirmative for a negative clause,
+the exact failure this file's own header already named ("Defaulting to
+affirmative would fabricate the most consequential bit in the triple") but
+did not, in this one path, actually prevent. A second, unrelated bug shared
+the same root cause: the 0-2-word group used ASCII `\w`, not this file's own
+unicode-aware `W`, so a diacritic name in that slot broke the match the same
+way punctuation did, on the same pg2600 (Maude) edition this file's other
+comments already cite.
+
+**Both hand-set constants were removed, not re-tuned.**
+
+- The 40-character slice is gone. It was standing in for a WORD-count need
+  ("enough characters to hold the trigger and a few words") with a
+  CHARACTER-count guess — a category error, not just an unmeasured one.
+- The `{0,2}` word cap is gone. MEASURED by sweeping R from 0 to 6 against
+  every triple in a full War and Peace reading: R=2→3 alone recovered 265
+  more genuine same-clause negations that read correctly by eye ("I have
+  never yet asked you for...", "he did not like the conversation"), and
+  matches kept reading as correct out past R=6 — the cap was never
+  protecting against anything at the values it was silently missing real
+  negations at. Going unbounded outright was tried next and rejected the
+  same way: a constructed counter-example ("Natasha said she would never
+  come, and Pierre truly loved Elizabeth.") confirmed a trigger from one
+  clause can bleed into an unrelated later verb once nothing stops it.
+
+**What replaced both.** A word count was never the real distinction — what
+separates a connected negation from an unrelated one is whether an
+INDEPENDENT clause with its own already-recognized verb sits between the
+trigger and the verb being tested. `extractRelations` already computes this
+as it scans: the polarity window is now bounded backward by whichever is
+closer — the end of the PREVIOUS match this same pass already found (that
+text is already claimed by a different triple's own verb), or the most
+recent sentence-ending punctuation (`.!?;`, deliberately not `,` — commas
+set off parentheticals WITHIN a clause and stopping there would undo the
+fix below). Both are facts already in hand, not tuned numbers. Within that
+derived boundary, `NEGATION_BEFORE_VERB` no longer bounds word count at
+all — once the window is honestly clause-scoped, any trigger inside it is a
+real one.
+
+**Measured net effect**, `extractRelations` on pg2600 end to end (same
+40,659 triples both before and after — this only touches polarity, never
+subject/verb/object): negative-polarity count went from 1,167 (2.87%) to
+2,433 (5.98%) — 1,266 triples recovered from a silently fabricated "+" to a
+correct "-". The remaining, named gap: a negation sitting in a clause whose
+own verb isn't in `verbs` (so MATCHER never claims that span) can still
+bleed forward across a comma+conjunction into a later, unrelated verb if no
+sentence-terminator intervenes — quantified at ~31 of 43,342 candidate
+windows (0.07%) showing the specific "conjunction + a different known
+surface name" shape that risk takes, several of which read as fine on
+inspection. Closing this fully needs real clause-boundary detection (a
+coordinating-conjunction-introduces-a-new-subject test), which was
+considered and deliberately not built here — the "not X but Y"
+same-clause-contrastive construction ("not a joyful but querulous") shares
+surface shape with the risky case (a conjunction near a trigger) but is not
+the same thing, and a blanket stop-at-any-conjunction rule was measured to
+break it.
+
+**A three-valued typed-refusal ("cannot tell") was considered and
+measured, not just discussed, before being rejected**: after the boundary
+fix alone (before removing the word cap), zero triples remained where a
+negation trigger sat unresolved within reach of the verb — so a third
+polarity state would have been unearned complexity, not a real residual, at
+least for the punctuation-noise defect this entry fixes. `NEGATION_BEFORE_VERB`
+matching is also monotonic in the safe direction throughout this fix: cleanup
+and the wider window can only turn a non-match into a match, never the
+reverse, so no sentence that already resolved "-" changed.
+
+**A real ReDoS was found and fixed in the process, not shipped.** The first
+attempt at removing the word cap kept the old anchored shape
+(`\s+(?:W\s+)*$`) with the cap simply deleted — `W` is itself a `+` nested
+inside that `*`, and on a non-match (the common case: most windows are
+affirmative) the regex engine had to try every way of partitioning the
+window into word+space runs before giving up. MEASURED: full-book
+extraction went from 15s to 97-285s (non-deterministic across runs — the
+signature of backtracking blowup, not a real algorithmic cost), concentrated
+on short, contextually-unremarkable sentences with no content reason to be
+slow. The fix was a simplification, not a patch: once the window is
+genuinely clause-bounded, the check is a plain existence test for the
+trigger, which has no repeated group to backtrack through. Full-book timing
+after the fix: 19.3s (the original was 14.9s; the difference is the boundary
+bookkeeping itself, not backtracking — slowest single sentence dropped from
+900ms+ to 41ms).
+
+**Blast radius.** `packages/engine/perceiver/text/relations.js` only —
+`extractRelations`'s return shape (`{subject, verb, object, polarity}`) is
+unchanged, and the 11 callers A17 already named consume `polarity` as a
+plain string exactly as before. `npm test`: 1053/1055 passing, both
+failures pre-existing and unrelated (`agency-civic-firewall.test.js` and
+`reproducibility.test.js` both fail on absolute-path/reference debt in
+`scripts/experiments/*` — separate in-progress work, untouched here).

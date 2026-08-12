@@ -83,20 +83,60 @@ import { NEGATION_WORDS } from "./priors.js";
 // medium-specific mouth. Declared, checked by conformance.
 export const CELL = Object.freeze({ op: "CON", grain: "Figure" });
 
-// A received closed class (Amendment V: a small set of function words is a
-// named prior, not content mined from the material — the same tier as
-// narrator.js's FIRST_PERSON or surfaces.js's Roman-numeral grammar). Held
-// as a Set so discoverRelationVocab can refuse to admit "never" as a verb —
-// measured on Frankenstein at minSurfaces=1: it followed a surface once and
-// nothing here knew to say no. Migrated to the prior register (priors.js).
-const NEGATION_BEFORE_VERB = new RegExp(`\\b(?:${[...NEGATION_WORDS].join("|")}|no longer)\\s+(?:\\w+\\s+){0,2}$`, "i");
-
 // Unicode-aware: translated prose is full of accented names (Natásha, Hélène)
 // that ASCII \w silently truncates mid-name.
 const W = "[\\p{L}\\p{N}_'’]+";
 const TOKEN_STRIP = /^[^\p{L}\p{N}'’]+|[^\p{L}\p{N}'’]+$/gu;
 
 const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// A received closed class (Amendment V: a small set of function words is a
+// named prior, not content mined from the material — the same tier as
+// narrator.js's FIRST_PERSON or surfaces.js's Roman-numeral grammar). Held
+// as a Set so discoverRelationVocab can refuse to admit "never" as a verb —
+// measured on Frankenstein at minSurfaces=1: it followed a surface once and
+// nothing here knew to say no. Migrated to the prior register (priors.js).
+//
+// No word-count cap (`{0,2}` or any other value) gates this — MEASURED
+// against pg2600 (War and Peace), a cap has no principled value: {0,2}
+// silently missed hundreds of real same-clause negations ("I have never yet
+// asked you for...", "he did not like the conversation"), and every value
+// tried up to {0,6} still read as correct by hand, so the cap was measuring
+// nothing except how conservative the guess happened to be. What actually
+// distinguishes a connected negation from an unrelated one is not word
+// count — it's whether an INDEPENDENT clause with its own verb sits between
+// the trigger and this verb, which is exactly what the window this pattern
+// is tested against (built in extractRelations, see `windowStart` below) is
+// already bounded by. Once that's true, the check reduces to a plain
+// existence test: ANY trigger anywhere in an already-clause-bounded window
+// is a real one — this regex does not need to also anchor "and nothing but
+// words after it to the end", so it doesn't try to. That anchored shape
+// was tried first (`\s+(?:W\s+)*$`) and measured to be a real ReDoS: `W`
+// itself is a `+` nested inside the outer `*`, so on a non-match (the
+// common case — most windows are affirmative) the engine had to try every
+// way of partitioning the window into word+space runs before giving up.
+// MEASURED: switching {0,2} to that unbounded anchored form took full-book
+// extraction from 15s to 97-285s (non-deterministic — classic backtracking
+// blowup, worse on some runs than others), concentrated on short, unrelated
+// sentences with no real cause to be slow. This plain existence form has no
+// repeated group to backtrack through at all.
+const NEGATION_BEFORE_VERB = new RegExp(`\\b(?:${[...NEGATION_WORDS].join("|")}|no longer)\\b`, "iu");
+
+// The exact complement of W: any run of characters that is not part of a
+// word — whitespace, commas, parens, quote marks, em-dashes, a Gutenberg
+// hard-wrap newline. Collapsing every such run to one space before testing
+// NEGATION_BEFORE_VERB lets it see past formatting exactly as it already
+// sees past ordinary whitespace — it can only turn a non-match into a match
+// (it never deletes, splits, or reorders a word), so no sentence that
+// already resolved "-" changes.
+const NOISE_RUN = /[^\p{L}\p{N}_'’]+/gu;
+
+// Sentence-ending punctuation — a real boundary already used elsewhere in
+// this file's own design (MATCHER's object terminator below), not a
+// negation-specific invention. Commas are deliberately excluded: they set
+// off parenthetical asides WITHIN a clause ("did not, truly, love") and
+// stopping there would undo the NOISE_RUN collapse above.
+const SENTENCE_END = /[.!?;]/g;
 
 /**
  * The text's own relation vocabulary — measured, not typed in.
@@ -211,27 +251,59 @@ export const extractRelations = (text, { verbs, limit = Infinity } = {}) => {
   const seen = new Set();
   const s = String(text ?? "");
   let m;
+  // The end of the previous match this SAME pass already found — a triple
+  // with its own verb already claims everything up to here, so a negation
+  // trigger sitting before it belongs to THAT clause, not this one. Real
+  // signal already computed by this loop, not a second vocabulary or a
+  // guessed reach.
+  let previousMatchEnd = 0;
+  // Sentence-terminator scan advances forward ALONGSIDE the main match loop
+  // (never rewound to 0) — MATCHER's own m.index is monotonically
+  // increasing, so each terminator is visited once across the whole call,
+  // not once per match. Re-scanning from the start of `s` for every match
+  // would make this O(document length × match count) instead of O(document
+  // length), the exact cost this file's existing 40-char-slice design used
+  // to avoid by staying small — this stays cheap by staying forward-only.
+  let lastSentenceEnd = -1;
+  SENTENCE_END.lastIndex = 0;
 
   while ((m = MATCHER.exec(s)) !== null) {
     const parts = m[0].match(SPLITTER);
-    if (!parts) continue;
+    if (!parts) { previousMatchEnd = m.index + m[0].length; continue; }
     const subject = parts[1].trim();
     const verb = parts[2].trim().toLowerCase();
     const object = parts[3].trim().replace(/[.,;]$/, "");
-    if (!subject || !object) continue;
+    if (!subject || !object) { previousMatchEnd = m.index + m[0].length; continue; }
 
     const key = `${subject}|${verb}|${object}`.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
+    if (!seen.has(key)) {
+      seen.add(key);
 
-    const before = s.slice(Math.max(0, m.index - 40), m.index + parts[1].length + 1);
-    rels.push({
-      subject,
-      verb,
-      object,
-      polarity: NEGATION_BEFORE_VERB.test(before) ? "-" : "+",
-    });
-    if (rels.length >= limit) break;
+      // The polarity window's backward bound is whichever is CLOSER: the
+      // previous match's own end (see comment above `previousMatchEnd`), or
+      // the most recent sentence-ending punctuation — both real facts
+      // already in hand, never a character or word count.
+      const subjEnd = m.index + parts[1].length;
+      while (SENTENCE_END.lastIndex <= m.index) {
+        const sm = SENTENCE_END.exec(s);
+        if (sm === null) break;
+        // Overshot this match — put the cursor back exactly on it (not all
+        // the way to 0) so the NEXT match's scan still finds it; exec()
+        // otherwise advances lastIndex past it permanently.
+        if (sm.index >= m.index) { SENTENCE_END.lastIndex = sm.index; break; }
+        lastSentenceEnd = sm.index;
+      }
+      const windowStart = Math.max(previousMatchEnd, lastSentenceEnd + 1, 0);
+      const before = s.slice(windowStart, subjEnd + 1).replace(NOISE_RUN, " ");
+      rels.push({
+        subject,
+        verb,
+        object,
+        polarity: NEGATION_BEFORE_VERB.test(before) ? "-" : "+",
+      });
+      if (rels.length >= limit) { previousMatchEnd = m.index + m[0].length; break; }
+    }
+    previousMatchEnd = m.index + m[0].length;
   }
 
   return rels;
