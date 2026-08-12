@@ -19,9 +19,12 @@
 //   copy (application-side eo-cube.js / an invented HELIX ordering). Both are
 //   now read from THIS package's own operators.js — GRAINS, cellOf,
 //   OPERATOR_ORDER, validateChain — the single source the rest of the engine
-//   already answers to. `isProductionOrder` below is a thin wrapper over
-//   `validateChain`, not a second ordinal table that could silently drift
-//   from the real one.
+//   already answers to: NUL (ground) -> SEG (split) -> SIG (signal) -> CON
+//   (bind) -> EVA (gate) -> DEF (define) -> INS (instantiate) -> SYN
+//   (synthesize) -> REC (recognize), the actual earned dependency order, not
+//   the (mode, domain) grid's own declaration order. `isProductionOrder`
+//   below is a thin wrapper over `validateChain`, not a second ordinal table
+//   that could silently drift from the real one.
 //
 //   `deriveLevels`' existence-dependency is DECLARED, not MEASURED, and says
 //   so in its own doc comment below. `holon_level/index.js` already has a
@@ -586,6 +589,45 @@ export const GRAIN_RANK = Object.freeze(Object.fromEntries(GRAINS.map((g, i) => 
 export function isGrainProgression(priorGrain, nextGrain) {
   if (!isGrain(priorGrain) || !isGrain(nextGrain)) return null;
   return GRAIN_RANK[nextGrain] >= GRAIN_RANK[priorGrain];
+}
+
+/**
+ * Every cell legally reachable NEXT from a given cell — a lookup against the
+ * two fixed, declared orderings this module already enforces
+ * (`isProductionOrder`, `isGrainProgression`), never a classification of
+ * content and never a runtime derivation of the rule itself. The algebra's
+ * own geometry already says which moves do not run backward; this function
+ * only enumerates the (at most 27) candidates and keeps the ones neither
+ * check refuses.
+ *
+ * "Legal" here means solely "does not run the algebra backward" — the same
+ * scope `isProductionOrder`/`isGrainProgression` already have. Existence-
+ * dependency (`depends_on`) is a SEPARATE, additional constraint about the
+ * fold's actual content that this function does not and should not know
+ * about; a cell can be geometrically reachable and still be blocked by a
+ * prerequisite that has not completed. The two are checked separately on
+ * purpose — conflating them would mean a content fact (is X done) silently
+ * gating a structural fact (is X→Y a legal move in the algebra), which is
+ * exactly the kind of collapse `no-classifier-in-gates` refuses one level
+ * up, for a different reason: geometry and content answer different
+ * questions and neither should stand in for the other.
+ *
+ * `admits` narrows the operator axis to what a specific log accepts (see
+ * `createTaskLog`), defaulting to all nine — the same declared-choice
+ * discipline `admits` already has everywhere else in this module.
+ */
+export function legalNextCells(fromOperator, fromGrain, { admits = OPERATOR_ORDER } = {}) {
+  if (!isCurrentOperator(fromOperator)) throw new TypeError(`legalNextCells: ${JSON.stringify(fromOperator)} is not one of the nine operators`);
+  if (!isGrain(fromGrain)) throw new TypeError(`legalNextCells: ${JSON.stringify(fromGrain)} is not one of the three grains (${GRAINS.join(", ")})`);
+  const cells = [];
+  for (const op of admits) {
+    if (isProductionOrder(fromOperator, op) === false) continue;
+    for (const grain of GRAINS) {
+      if (isGrainProgression(fromGrain, grain) === false) continue;
+      cells.push(cellOf(op, grain));
+    }
+  }
+  return cells;
 }
 
 function threadRootOf(task_id, supersedes) {

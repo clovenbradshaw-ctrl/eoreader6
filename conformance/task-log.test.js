@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 import {
   createTaskLog, append, projectTasks, deriveLevels, foldToWorkingSet, produce,
   proposeDiscovered, proposeGaps, readyToSynthesize,
-  isGrainProgression, isProductionOrder, checkCubeProgression,
+  isGrainProgression, isProductionOrder, checkCubeProgression, legalNextCells,
   ENTRY_KINDS, OPERATOR_BASIS, STRUCTURE_ROW, REFUSAL_OPERATOR,
 } from "../packages/engine/holon/task-log.js";
 import { GRAINS, OPERATOR_ORDER, cellOf, validateChain } from "../packages/engine/operators.js";
@@ -405,4 +405,68 @@ test("a runaway production's trace shows sustained entriesAdded through every st
   assert.equal(halted_by, "max-steps-guard");
   assert.equal(trace.length, 5, "every step ran and left a bearing, right up to the guard");
   assert.ok(trace.every((s) => s.foldChanged), "never once stabilized — this is drift, not slow convergence");
+});
+
+// ── legalNextCells: the algebra's own geometry, no classification ─────────
+
+test("legalNextCells from SEG.Ground: every operator at or after SEG in the real dependency order, every grain at or after Ground", () => {
+  // OPERATOR_ORDER = [NUL, SEG, SIG, CON, EVA, DEF, INS, SYN, REC] — SEG is
+  // index 1, so everything except NUL (the ground every chain starts from
+  // and nothing depends on) qualifies operator-wise.
+  const cells = legalNextCells("SEG", "Ground");
+  const pairs = cells.map((c) => `${c.op}.${c.grain}`).sort();
+  assert.deepEqual(pairs, [
+    "CON.Figure", "CON.Ground", "CON.Pattern",
+    "DEF.Figure", "DEF.Ground", "DEF.Pattern",
+    "EVA.Figure", "EVA.Ground", "EVA.Pattern",
+    "INS.Figure", "INS.Ground", "INS.Pattern",
+    "REC.Figure", "REC.Ground", "REC.Pattern",
+    "SEG.Figure", "SEG.Ground", "SEG.Pattern",
+    "SIG.Figure", "SIG.Ground", "SIG.Pattern",
+    "SYN.Figure", "SYN.Ground", "SYN.Pattern",
+  ], "NUL never appears — it fires strictly before SEG in the real dependency order");
+});
+
+test("legalNextCells narrows sharply near the end of the real order: from SYN.Pattern only REC and itself remain", () => {
+  // SYN is index 7 of 8 (REC is last) — only SYN and REC qualify operator-
+  // wise, and Pattern is the deepest grain, so only Pattern-grain survives.
+  const cells = legalNextCells("SYN", "Pattern");
+  const pairs = cells.map((c) => `${c.op}.${c.grain}`).sort();
+  assert.deepEqual(pairs, ["REC.Pattern", "SYN.Pattern"],
+    "Ground and Figure are both a coarsening from Pattern; DEF/EVA/INS/SEG/CON/SIG all fire before SYN");
+});
+
+test("legalNextCells from REC.Pattern (the terminal cell) admits only itself", () => {
+  const cells = legalNextCells("REC", "Pattern");
+  assert.equal(cells.length, 1);
+  assert.equal(cells[0].op, "REC");
+  assert.equal(cells[0].grain, "Pattern");
+});
+
+test("legalNextCells respects a narrowed admits set — DEF/EVA/REC never appear for a Structure-only log", () => {
+  const cells = legalNextCells("SEG", "Ground", { admits: STRUCTURE_ROW });
+  const ops = new Set(cells.map((c) => c.op));
+  assert.deepEqual([...ops].sort(), ["CON", "SEG", "SYN"]);
+});
+
+test("legalNextCells returns real cube cells — terrain and stance included, not just the address", () => {
+  const cells = legalNextCells("SEG", "Ground");
+  const segGround = cells.find((c) => c.op === "SEG" && c.grain === "Ground");
+  assert.equal(segGround.mode, "Differentiate");
+  assert.equal(segGround.domain, "Structure");
+  assert.ok(segGround.terrain, "a real terrain, not derived by this function — cellOf's own job");
+  assert.ok(segGround.stance);
+});
+
+test("legalNextCells throws on an unrecognized operator or grain rather than guessing", () => {
+  assert.throws(() => legalNextCells("NOPE", "Ground"), /not one of the nine operators/);
+  assert.throws(() => legalNextCells("SEG", "Depth"), /not one of the three grains/);
+});
+
+test("legalNextCells knows nothing about existence-dependency — it is pure geometry, no fold argument exists to consult", () => {
+  // The function's own signature is the proof: (operator, grain, { admits })
+  // — no log, no tasks, no depends_on. A cell can be geometrically legal here
+  // and still blocked by an incomplete prerequisite; that is a fold question
+  // for readyToSynthesize/deriveLevels, never this function's to answer.
+  assert.equal(legalNextCells.length, 2, "arity is (operator, grain) plus an options object — nothing fold-shaped");
 });
