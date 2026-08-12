@@ -33,7 +33,7 @@
 
 import { readFileSync } from "node:fs";
 import { lineIndex, outlineOfIndex } from "../packages/engine/perceiver/text/segments.js";
-import { deriveBeingRecords, understand } from "../packages/engine/emergence/people.js";
+import { deriveBeingRecords, understand } from "../packages/engine/emergence/jati.js";
 import { connectedComponents, communityDetection } from "../packages/engine/emergence/segment.js";
 import { refuseParadigm, rezeroParadigm } from "../packages/engine/emergence/paradigm.js";
 import { readCached } from "./cache-reading.mjs";

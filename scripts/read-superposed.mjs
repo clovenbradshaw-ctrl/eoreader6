@@ -41,7 +41,7 @@ import { readFileSync } from "node:fs";
 import { splitSentences, stripContainer } from "../packages/engine/perceiver/text/spans.js";
 import { bayesianSurprise } from "../packages/engine/emergence/surprise.js";
 import { ground, difference, pattern, disagreement, isGap } from "../nul/index.js";
-import { crossFamilyLevel } from "../packages/engine/loops/family.js";
+import { crossFamilyLevel } from "../packages/engine/loops/samanya.js";
 import { createTierStack, foldThrough } from "../packages/engine/emergence/tiers.js";
 import { shuffleControl } from "./lib/surrogates.mjs";
 
