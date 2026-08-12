@@ -611,3 +611,51 @@ a normal reading takes. Only the six import fixes and this policy file itself
 are actually in the repo. **Proven and wired are different claims, and this
 log has not been keeping them apart — every A-entry above should be read as
 "measured against the organs," not "shipped."**
+
+### A17 · Why 57% of correct bindings never reach a triple — measured, and it splits in two
+Classified all 2,868 pronoun occurrences `resolvePronouns` bound, by what
+`extractRelations` actually did with the sentence each one sits in:
+
+| bucket | n | % | what it means |
+|---|---|---|---|
+| `NO_VERB` | 1,469 | **51.2%** | zero triples proposed anywhere in the sentence |
+| `SWALLOWED_OBJECT` | 853 | 29.7% | a triple was proposed; the pronoun sits inside the object capture, mean width **6.2 words**, but is not itself the isolated capture |
+| `SWALLOWED_SUBJECT` | 269 | 9.4% | same defect, subject side |
+| `CLEAN_SLOT` | 277 | 9.7% | pronoun is the isolated 1-token capture — this is the ~1,250 that already resolve |
+
+**The `SWALLOWED_*` buckets (39.1% combined) are exactly the defect the
+indirection reframe predicts, mechanically confirmed.** `relations.js`'s
+object group is `.+?` — everything to the next terminator — not a bounded
+slot. A pronoun resolves only when it happens to BE the whole capture, by
+accident of sentence shape. That is not a slot a filler attaches to by any
+means (name lookup, pronoun binding, an epithet prior, the same general
+mechanism a foreign key or a bound variable is); it is already-decided
+literal text that resolution can only pattern-match against post hoc. The
+general fix implied is real: emit `{subject_span, verb, object_span}` as
+bounded token positions, typed as filled-or-not, and let every filler
+mechanism already built (`surfaceToId` lookup, `resolvePronouns`, a coref
+prior) attach to the SAME slot uniformly — never a special pronoun case
+bolted onto a text-shaped capture.
+
+**But the larger bucket, `NO_VERB` at 51.2%, is a different and prior
+defect that slot-typing does not touch.** These are sentences where no
+`discoverRelationVocab` verb sits in immediate `subject VERB object`
+adjacency near the pronoun at all — not a capture-width problem, an
+extraction-shape and vocabulary-recall problem: adverbials, auxiliaries, and
+subordinate clauses routinely separate a subject from its verb in ordinary
+narrative prose, and the matcher requires literal adjacency
+(`relations.js:207`, `\s+` between capture groups, nothing else). Fixing the
+slot shape recovers at most the 39.1% swallowed bucket; the 51.2% majority
+needs the extractor's own clause-shape assumption revisited, which is a
+larger, separate change.
+
+**Blast radius, checked before proposing anything:** `extractRelations`/
+`discoverRelationVocab` are consumed by 11 real callers, including
+`goldens/agency-civic/` — a SCORED golden with its own reference. Any change
+to extraction shape must be validated against that golden before it is
+trustworthy anywhere else in this list.
+
+**Not attempted.** This is a real organ change with real blast radius, not
+another driver script — the next entry this log should carry, if taken up,
+is a scoped slot-typing rewrite validated against `goldens/agency-civic`
+before touching anything else that depends on it.
