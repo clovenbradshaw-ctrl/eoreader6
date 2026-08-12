@@ -716,13 +716,30 @@ export function executePrompt(session, prompt, { sourceFilter, radius, admission
 
 // THE WAYFINDER — etak, one integrated act with the star compass (surf) and
 // dead reckoning (climb), not a fourth instrument bolted on top. Both of
-// those run on every call, cheap and checked constantly. wayfind is the
-// discipline of refusing to trust a narrow reading alone when it comes back
-// without a confirmed bearing (`content_match.ambiguous`) — DEF (the ground
-// refuses to confirm at this width) triggers REC (rezero: widen the
-// admission pool, the SAME `admissionWidth` hyperparameter contentAddress
-// already reads) and EVA re-reads the wider ground through the UNCHANGED
-// mechanical+graph+regime-calibration pipeline.
+// those run on every call, cheap and checked constantly.
+//
+// NOT THREE PHASES — ONE FORK. contentAddress's Born-null gate is a single
+// test (`nulDifference`, one call) with two mutually exclusive verdicts: EVA
+// (confirmed — the ground holds, return the bearing, nothing follows) or DEF
+// (refused — `content_match.ambiguous`). REC is not a third phase beside
+// them; it is what only the DEF verdict does next: widen the admission pool
+// (the SAME `admissionWidth` hyperparameter contentAddress already reads)
+// and re-enter the identical gate at that width. This is the same
+// domain/mode shape atmosphere.js runs at Interpretation·Ground — DEF/EVA/
+// REC are one row of the operator grid's domain×mode table (engine/
+// operators.js's OP_MODE/OP_DOMAIN), not a pipeline order; OPERATOR_ORDER's
+// NUL→...→REC law governs a chain that crosses domains, which this loop
+// never does.
+//
+// WAYFIND'S ONE DELIBERATE DIVERGENCE from atmosphere.js's own use of this
+// shape: no `tolerance`. Atmosphere only concedes the ground after
+// `clearings >= tolerance` consecutive DEF verdicts, because it is guarding
+// a REAL, STILL-ARRIVING stream against re-zeroing on one blip — a second
+// look later might vindicate the ground. Wayfind's material is already
+// fully in hand at every width; there is no later frame to wait for, only a
+// wider pool to ask for now. Porting `tolerance` in here would not be a
+// missing safeguard — it would just waste rounds waiting for a second bad
+// verdict that can't tell it anything the first one didn't.
 //
 // THE STEP SIZE IS DERIVED, NOT A FIXED MULTIPLIER. A flat doubling is the
 // same "handset margin" this project's growth rule keeps having to refuse —

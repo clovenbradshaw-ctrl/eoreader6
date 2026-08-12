@@ -1,9 +1,13 @@
-// eoreader6 · loops/family — the cross-family check level() is missing.
-// Not a reseed loop (same perturbation, fresh seed — still one algebraic
-// family, no matter how deep). This asks whether an above/below/peer
-// relationship survives being built from a STRUCTURALLY DIFFERENT
-// perturbation (shuffle vs resample), the same two families disagreement()
-// already compares for a single figure — just never extended to level().
+// eoreader6 · loops/samanya (सामान्य) — the cross-family check level() is
+// missing. Nyāya's word for a UNIVERSAL: what genuinely holds across
+// particulars, as opposed to a viśeṣa that only looks general because it was
+// only ever tested one way. Not a reseed loop (same perturbation, fresh seed
+// — still one algebraic family, no matter how deep). This asks whether an
+// above/below/peer relationship survives being built from a STRUCTURALLY
+// DIFFERENT perturbation (shuffle vs resample), the same two families
+// disagreement() already compares for a single figure — just never extended
+// to level(). A relationship that only holds under one perturbation family
+// is a viśeṣa wearing sāmānya's clothes.
 //
 // SEED.md #6, re-read in this light: "Plural grounds for one figure are
 // legal, and their disagreement is the only self-check... a bad

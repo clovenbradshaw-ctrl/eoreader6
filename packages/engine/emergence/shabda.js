@@ -1,6 +1,9 @@
-// eoreader6 · emergence/voice — WHO IS SPEAKING, OR BEING CITED.
+// eoreader6 · emergence/shabda (शब्द) — WHO IS SPEAKING, OR BEING CITED.
 //
-// The best current assertion, nested to any depth, always revisable.
+// Nyāya's word for testimony — śabda pramāṇa, knowledge carried by an
+// utterance rather than witnessed directly — is exactly this organ's claim:
+// the best CURRENT testimony for an assertion, nested to any depth, always
+// revisable.
 //
 // Frankenstein is Walton > Victor > Creature, and inside the creature's tale
 // the cottagers' history and Safie's letters go deeper still. A flat list of
@@ -39,32 +42,32 @@ export const CELL = Object.freeze({ op: "DEF", grain: "Figure" });
 
 export const MODES = Object.freeze(["speaks", "cited"]);
 
-export const createVoiceLog = () => ({ events: [], seq: 0 });
+export const createShabdaLog = () => ({ events: [], seq: 0 });
 
 const push = (log, event) => {
-  if (!event.basis) throw new TypeError("voice: every assertion must name its basis");
-  if (!TIERS.includes(event.tier)) throw new TypeError(`voice: unknown tier ${event.tier}`);
+  if (!event.basis) throw new TypeError("shabda: every assertion must name its basis");
+  if (!TIERS.includes(event.tier)) throw new TypeError(`shabda: unknown tier ${event.tier}`);
   log.events.push(Object.freeze({ ...event, seq: log.seq++ }));
   return log;
 };
 
 /** Assert that a voice opens here. `mode` distinguishes speaking from being quoted. */
-export const enterVoice = (log, { referentId, at, basis, tier, mode = "speaks" }) => {
-  if (!MODES.includes(mode)) throw new TypeError(`voice: unknown mode ${mode}`);
-  return push(log, { type: "VOICE.enter", referentId, at, basis, tier, mode });
+export const enterShabda = (log, { referentId, at, basis, tier, mode = "speaks" }) => {
+  if (!MODES.includes(mode)) throw new TypeError(`shabda: unknown mode ${mode}`);
+  return push(log, { type: "SHABDA.enter", referentId, at, basis, tier, mode });
 };
 
 /** Assert that the innermost open voice closes here. */
-export const exitVoice = (log, { at, basis, tier }) =>
-  push(log, { type: "VOICE.exit", at, basis, tier });
+export const exitShabda = (log, { at, basis, tier }) =>
+  push(log, { type: "SHABDA.exit", at, basis, tier });
 
 /**
  * Revise an earlier assertion. Not an edit — a later event that supersedes an
  * earlier one, so the original claim and the correction both stay in the log
  * and the change is auditable.
  */
-export const reviseVoice = (log, { supersedes, referentId, at, basis, tier, mode = "speaks" }) =>
-  push(log, { type: "VOICE.revise", supersedes, referentId, at, basis, tier, mode });
+export const reviseShabda = (log, { supersedes, referentId, at, basis, tier, mode = "speaks" }) =>
+  push(log, { type: "SHABDA.revise", supersedes, referentId, at, basis, tier, mode });
 
 const RANK = { received: 0, derived: 1 };
 
@@ -75,7 +78,7 @@ const RANK = { received: 0, derived: 1 };
  * first — for Frankenstein at the right offset, [walton, victor, creature].
  * `speaker` is the innermost voice: whoever is talking right now.
  */
-export const voiceAt = (log, offset) => {
+export const shabdaAt = (log, offset) => {
   const superseded = new Set(log.events.filter((e) => e.supersedes != null).map((e) => e.supersedes));
   const events = log.events
     .filter((e) => !superseded.has(e.seq) && e.at <= offset)
@@ -83,14 +86,14 @@ export const voiceAt = (log, offset) => {
 
   const stack = [];
   for (const e of events) {
-    if (e.type === "VOICE.exit") stack.pop();
+    if (e.type === "SHABDA.exit") stack.pop();
     else stack.push({ referentId: e.referentId, from: e.at, basis: e.basis, tier: e.tier, mode: e.mode });
   }
 
   // Competing assertions at the same depth: the received one holds, and the
   // conflict is surfaced rather than dissolved.
   const contested = [];
-  const atThisOffset = log.events.filter((e) => !superseded.has(e.seq) && e.type !== "VOICE.exit" && e.at === offset);
+  const atThisOffset = log.events.filter((e) => !superseded.has(e.seq) && e.type !== "SHABDA.exit" && e.at === offset);
   if (atThisOffset.length > 1) {
     const ids = new Set(atThisOffset.map((e) => e.referentId));
     if (ids.size > 1) {
@@ -103,7 +106,7 @@ export const voiceAt = (log, offset) => {
     return {
       stack: [], speaker: null, depth: 0, contested,
       gap: {
-        reason: "voice_unasserted_at_offset",
+        reason: "shabda_unasserted_at_offset",
         tier: "model",
         needsWitness: true,
         offset,
@@ -116,14 +119,14 @@ export const voiceAt = (log, offset) => {
 };
 
 /** Every position where the innermost voice changes — the attribution spine. */
-export const voiceTransitions = (log) => {
+export const shabdaTransitions = (log) => {
   const superseded = new Set(log.events.filter((e) => e.supersedes != null).map((e) => e.supersedes));
   const events = log.events.filter((e) => !superseded.has(e.seq)).sort((a, b) => a.at - b.at || a.seq - b.seq);
   const out = [];
   const stack = [];
   for (const e of events) {
     const before = stack.length ? stack[stack.length - 1].referentId : null;
-    if (e.type === "VOICE.exit") stack.pop();
+    if (e.type === "SHABDA.exit") stack.pop();
     else stack.push({ referentId: e.referentId, tier: e.tier });
     const after = stack.length ? stack[stack.length - 1].referentId : null;
     if (before !== after) out.push({ at: e.at, from: before, to: after, depth: stack.length, tier: e.tier });

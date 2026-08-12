@@ -1,7 +1,7 @@
 // eoreader6 · loops/corpus — CON · Paradigm · Tracing: relating ONE reading's
 // ground to a POOL of other readings', at Pattern grain, across documents.
 //
-// `loops/family.js` already builds two INDEPENDENT grounds and asks level()
+// `loops/samanya.js` already builds two INDEPENDENT grounds and asks level()
 // whether the relationship between them survives a different perturbation
 // family. Nothing in it assumes the two materials come from the same
 // document — it was just never pointed at two different books. Tested for

@@ -1,15 +1,19 @@
-// eoreader6 · emergence/people — UNDERSTANDING A POPULATION AS A KIND, OR
-// INVENTING THE KIND, ON THE ONE NEURAL NET.
+// eoreader6 · emergence/jati (जाति) — UNDERSTANDING A POPULATION AS A KIND,
+// OR INVENTING THE KIND, ON THE ONE NEURAL NET.
+//
+// Nyāya's word for a natural-kind universal — jāti is a species of sāmānya
+// (loops/samanya.js): the same "does this genuinely hold" question, asked
+// specifically of a population of beings rather than of a relationship.
 //
 // The reader meets content full of beings — people in a text, agents in a
 // video, voices in a score — and asks the question this organ exists for:
 //
 //     Do I already understand what these are, or do I have to learn it?
 //
-// "People" is text's name for the general case; the mechanism never reads one
-// (II.1). A leitmotif does not need the word "person", and nothing here
-// depends on a name string. The population is a set of records carrying
-// structural facts, whatever modality handed them in.
+// "People" was only ever text's name for the general case; the mechanism
+// never reads one (II.1). A leitmotif does not need the word "person", and
+// nothing here depends on a name string. The population is a set of records
+// carrying structural facts, whatever modality handed them in.
 //
 // THE SUBSTRATE IS THE GRAPH (emergence/graph.js) — the reader's neural net,
 // and the only belief the engine holds. Nodes are beings, edges are weighted
