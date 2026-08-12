@@ -558,3 +558,56 @@ has **no callers** in either repo (not even a conformance test naming it),
 places and read by nothing that routes. **Untyped widening is measurably
 inert — which leaves the discrete (mode × grain) ordinal already derived in
 `operators.js` as the untried axis, not a bigger pool.**
+
+### A15 · Typed escalation vs untyped widening — a real, bounded win
+Direct test of the stance argument: route by WHICH doubt `pronoun_below_floor`
+(thin evidence — a breadth problem) vs `pronoun_no_margin` (two candidates
+TIED — a depth problem, per A14, unfixable by more candidates) actually is,
+using `activation.js::recall`'s two distinct knobs — `topEdges`/`edgeSlots`
+(breadth) and `completion` (one-hop associative depth) — instead of scaling
+one undifferentiated pool. `minActivation`/`minMargin` held fixed throughout,
+as in A13/A14: what's BELIEVED never moves, only what's TESTED and how.
+
+**Census first, and it reframes the whole test:** of 11,638 gaps,
+**`pronoun_no_margin` is 99.1%** and `pronoun_below_floor` is **0%** — in this
+text, once a referent is named and active, the failure mode is almost always
+a tie, never thin evidence. The breadth branch of the typed routing never
+fired; this measured depth-only routing of ties, cleaner than designed.
+
+| condition | bound | vs baseline | triples | surprise/triple |
+|---|---|---|---|---|
+| R0 baseline | 2872 | — | 890 | 0.00535 |
+| UNTYPED ×2 (both knobs, everyone) | 2802 | **−2.4%** | 893 | −0.21% ↓ |
+| TYPED (depth only, routed to ties) | **3398** | **+18.3%** | 893 | −0.10% ↓ |
+
+Untyped uniform escalation **lost bindings net**, confirming A14 again:
+admitting more candidates into an already-tied contest breaks more ties the
+wrong way than it resolves. Typed escalation — depth only, applied only where
+the gap reason says depth is the right remedy — recovered **596 more
+bindings than untyped, 526 more than baseline, with no confirmation loss.**
+That is the stance argument's mechanism working: not a bigger search, the
+*right kind* of search for the doubt that was actually raised.
+
+**The honest ceiling.** Both escalations converge to the identical 893
+triples and near-identical surprise/triple. TYPED's 526 additional correct
+bindings barely move surprise, because **most of them land where
+`extractRelations` proposes no triple at all** — the same 57%-lost ceiling
+A14 already measured. Typed routing is a real, clean win for identity
+resolution itself; it is bottlenecked, same as before, by relation
+extraction's own recall, not by retrieval depth or breadth. **Confirms the
+essay's claim in the metric it actually moves (binding recovery), and is
+honest that the metric everyone wants moved (surprise) is gated upstream.**
+
+### A16 · Everything above the import fixes is proven, not wired
+Checked directly: `packages/host/corpus.js::discoveredCast` calls
+`resolvePronouns` exactly once, with fixed default knobs, uniformly — nothing
+reads a gap's `reason` to route. The typed escalation A15 measured (+18.3%
+binding recovery, no confirmation loss) exists only in a standalone driver
+script. The same is true of everything else this session proved: the
+Born-gated population filter (A8), the hypergraph export, the plural-nulls
+check on kinds (A10). All of it calls real, unmodified engine organs; none of
+it is reachable from `host/corpus.js`, `scripts/read-people.mjs`, or any path
+a normal reading takes. Only the six import fixes and this policy file itself
+are actually in the repo. **Proven and wired are different claims, and this
+log has not been keeping them apart — every A-entry above should be read as
+"measured against the organs," not "shipped."**
