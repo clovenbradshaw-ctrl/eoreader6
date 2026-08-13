@@ -29,6 +29,7 @@
 
 import { ground, difference, isGap, gap, volume, PERTURBATIONS } from "../../../nul/index.js";
 import { cellOf } from "../operators.js";
+import { GROUND_FLOOR_DIFFERENCE } from "../ground-floor.js";
 
 // The cells this organ occupies on the operator grid (engine/operators.js):
 // DEF · Atmosphere · Clearing, EVA · Atmosphere · Tending, REC · Atmosphere ·
@@ -258,8 +259,11 @@ export const readAtmosphere = ({ material, window, draws, tolerance, hop = 1, se
   // `window` itself, declared, not a derived multiple of the material's
   // length — and still a real cost worth naming, not hidden: a caller now
   // waits `10 * window` arrivals (60, at speak-from-here.mjs's window=6)
-  // before atmosphere can report anything at all.
-  const MIN_GROUND = (window) => 10 * window;
+  // before atmosphere can report anything at all. The value itself now
+  // lives in engine/ground-floor.js's GROUND_FLOOR_DIFFERENCE — this
+  // comment stays as the calibration record; change the number there, not
+  // here.
+  const MIN_GROUND = GROUND_FLOOR_DIFFERENCE;
 
   const groundFrom = (start, end) => {
     if (end - start < MIN_GROUND(window)) return null;
@@ -423,12 +427,13 @@ export const createRegimeTracker = ({ window, draws, tolerance, seed = 0, statis
   let sinceSlackSample = 0;
 
   // Same measured minimum as readAtmosphere's `groundFrom` — see its header
-  // comment for the calibration. Duplicated here rather than shared because
-  // the two closures already are (material.slice vs seen.slice); this keeps
-  // that existing duplication rather than adding a new cross-closure import
-  // for one constant.
+  // comment for the calibration. The two CLOSURES stay separate on purpose
+  // (material.slice vs seen.slice); a module-level import doesn't create the
+  // cross-closure coupling that was the actual objection, so the VALUE is no
+  // longer a second hand-copied literal — see engine/ground-floor.js's
+  // GROUND_FLOOR_DIFFERENCE.
   const groundFrom = (start, end) => {
-    if (end - start < 10 * window) return null;
+    if (end - start < GROUND_FLOOR_DIFFERENCE(window)) return null;
     const built = ground({ material: seen.slice(start, end), draws, window, statistic, seed: seed + start });
     return isGap(built) ? null : built;
   };
