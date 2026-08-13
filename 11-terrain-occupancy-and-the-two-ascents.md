@@ -238,6 +238,23 @@ between what those settings predicted and what was witnessed — climbs back up.
 Here that means the Lens may re-parameterize each tracker's `window`/`tolerance`;
 it may not contribute a score to either tracker's placement decision.
 
+**Nearest ancestors, cited because C4 makes the shape checkable against them.**
+Nothing found plays both halves at once — continuous re-dial fused with a
+discrete gate, one hyperparameter set feeding another tier's residual — but the
+two halves separately have real lineages: variable-forgetting-factor RLS
+(Fortescue, Kershenbaum & Ydstie, "Implementation of Self-tuning Regulators
+with Variable Forgetting Factors," *Automatica* 17(6), 1981) adapts a filter's
+own memory continuously from its prediction error, which is the shape of "the
+residual climbs back up" without the discreteness C4 requires; streaming
+concept-drift detectors — DDM (Gama, Medas, Castillo & Rodrigues, "Learning
+with Drift Detection," SBIA 2004) and ADWIN (Bifet & Gavaldà, "Learning from
+Time-Changing Data with Adaptive Windowing," SDM 2007) — fire a discrete
+retrain/reset signal from an error stream, which is the gate without the
+continuous re-dial. C4's own acceptance criterion (a discrete typed
+re-parameterization event, not a continuous adjustment) already refuses to let
+this collapse into either lineage read straight; recorded here so that when C
+is built, the comparison is to these two, not reinvented from nothing.
+
 **Acceptance.**
 
 - C1. Disagreement series over Frankenstein is non-trivial (the two trackers do not
