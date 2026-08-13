@@ -326,6 +326,17 @@ export function deriveLevels(tasks) {
         b: b.task_id,
         relation: aAboveB ? "a-above-b" : bAboveA ? "b-above-a" : "peer",
         earned_by: aAboveB || bAboveA ? "existence-dependency" : null,
+        // DECLARED, NOT MEASURED (see this function's own doc comment and
+        // this module's header). No caller currently branches on this field
+        // — it exists so a future one can, without re-deriving which
+        // relations here were ever Born-null-gated. It is NOT a claim that
+        // holon_level::holonLevelRelation (holon_level/index.js:178-184)
+        // already returns a comparable flag today: that function currently
+        // returns a bare "above"/"peer"/"unstable" string and nothing else,
+        // so there is no live cross-module contract to compare against yet
+        // — only a name reserved for one, once a Born-null gate exists for
+        // discrete (depends_on-graph) material.
+        measured: false,
       });
     }
   }

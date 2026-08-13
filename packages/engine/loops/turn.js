@@ -47,6 +47,7 @@
 import { ground, difference, pattern, admissible, volume, isGap, gap, anchor } from "../../../nul/index.js";
 import { cellOf } from "../operators.js";
 import { slackRunNull } from "./atmosphere.js";
+import { GROUND_FLOOR_DIFFERENCE } from "../ground-floor.js";
 
 // The cells this organ occupies on the operator grid (engine/operators.js):
 // one complete turn fires all nine at Ground grain. Declared, checked by
@@ -335,8 +336,11 @@ export const runTurn = ({ material, grain = "Ground", window, draws, reseeds, to
   // Only at `10 * window` do BOTH negative controls clear to 0/20 while the
   // real seam (Book IX -> cookery) is still found on 20/20 — for both
   // parameter sets atmosphere.js's own calibration used — and the region is a
-  // plateau through `16 * window`, not a single lucky cell.
-  const MIN_GROUND = 10 * window;
+  // plateau through `16 * window`, not a single lucky cell. The value itself
+  // now lives in engine/ground-floor.js's GROUND_FLOOR_DIFFERENCE — this
+  // comment stays as the calibration record; change the number there, not
+  // here.
+  const MIN_GROUND = GROUND_FLOOR_DIFFERENCE(window);
   const buildAt = (start, end, s) => {
     if (end - start < MIN_GROUND) return null;
     // ① NUL · Void · Clearing

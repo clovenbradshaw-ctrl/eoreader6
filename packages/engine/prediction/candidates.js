@@ -84,6 +84,7 @@ import { ground, volume, isGap } from "../../../nul/index.js";
 import { createRegimeTracker, PLACEMENT } from "../loops/atmosphere.js";
 import { existenceDependencyTest, possibilityConstraintTest, holonLevelRelation } from "../../../holon_level/index.js";
 import { gaussianOrPoint } from "./baselines.js";
+import { CANDIDATE_TRUST_FLOOR } from "../ground-floor.js";
 
 const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
@@ -205,12 +206,13 @@ export const holonGatedRegimeMean = ({ window, draws, tolerance, reseeds, seed =
 
   const evaluateProposedReset = () => {
     const regime = { start: trustedStart, end: tracker.regimeStart };
-    if (regime.end - regime.start < window + 2) {
+    if (regime.end - regime.start < CANDIDATE_TRUST_FLOOR(window)) {
       // NOT a stand-in for atmosphere's own floor — that claim was checked
-      // and was wrong twice over. atmosphere.js's MIN_GROUND has since moved
-      // window+2 -> 3*window -> 10*window (see its header comment), so
-      // "matches groundFrom's floor" stopped being true regardless of which
-      // value it named. More basically, the two floors are not the same KIND
+      // and was wrong twice over. atmosphere.js's own floor has since moved
+      // window+2 -> 3*window -> 10*window (see engine/ground-floor.js's
+      // GROUND_FLOOR_DIFFERENCE), so "matches groundFrom's floor" stopped
+      // being true regardless of which value it named. More basically, the
+      // two floors are not the same KIND
       // of guard: groundFrom's floor refuses to even BUILD a ground, because
       // burstiness is a max-over-sub-windows statistic whose bootstrap null
       // collapses to near-zero-width when too few sub-window positions exist
