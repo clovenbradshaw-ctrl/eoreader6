@@ -214,6 +214,27 @@ const log2 = (x) => Math.log(x) / LOG2;
  *   TE(X→Y) = Σ p(x_t, y_t, y_{t+1}=1) · log2[ p(y_{t+1}=1 | x_t, y_t)
  *                                                   / p(y_{t+1}=1 | y_t) ]
  *
+ * WHAT THIS MEASURES, AND WHAT IT DOES NOT. This is DIRECTED PREDICTIVE
+ * STRUCTURE, not causation, and the gap between those is not a matter of
+ * degree. Measured on data built with a common cause driving X at lag 1 and Y
+ * at lag 2 and NO direct X→Y edge, `reversalNull` over this statistic reported
+ * significant directed structure in 100 trials out of 100, median p = 0.000
+ * (eo-evidence assays/causality-synthetic/causality-golden.mjs). The confounded
+ * signal ran at 44% the strength of a true one, which is unusable as a
+ * discriminator: separating them by threshold requires already knowing which
+ * case you are in.
+ *
+ * This is not a defect and there is nothing here to fix. Every bivariate
+ * directed-information measure has this property, because two worlds — "X
+ * causes Y" and "Z causes both" — can emit identical series, and no function of
+ * those series distinguishes what the series do not encode. Separating them
+ * takes a measured confounder to condition on, or a design in which assignment
+ * was decided by something unrelated to the outcome.
+ *
+ * A caller who needs causation needs a different instrument. A caller who needs
+ * to know whether A's arrivals make B's arrivals more predictable is in the
+ * right place. See eo-evidence LAWS.md L9.
+ *
  * The sum runs over triples whose target state is OCCURRENCE. The claim
  * is "A's presence makes B's occurrence more predictable" — the same
  * directed information flow the deleted link.js measured. The
@@ -301,10 +322,30 @@ export const reversalNull = (aArrivals, bArrivals, { totalUnits, draws, seed } =
   let state = seed | 0;
   const rnd = () => { state = (state * 1664525 + 1013904223) | 0; return (state >>> 0) / 4294967296; };
 
-  // Pool: all positions NOT occupied by A's arrivals.
-  const aSet = new Set(aArrivals);
+  // Pool: EVERY position. B's arrivals are re-placed anywhere the real B could
+  // have been, A's own positions included.
+  //
+  // This read `if (!aSet.has(p))` until 2026-08-15 — excluding A's positions,
+  // so no null draw could ever put a B arrival on the same index as an A
+  // arrival. The observation has no such restriction: real co-occurring
+  // arrivals land on the same index all the time. The null was therefore drawn
+  // from a strictly smaller space than the observation it was being compared
+  // against, which pushes the observed asymmetry out toward the tail of a
+  // distribution that could not reach it, and inflates significance.
+  //
+  // Measured on independent series, 500 trials per density, nominal alpha 0.05
+  // (eo-evidence assays/causality-synthetic/fpr-check.mjs):
+  //
+  //            density  events   excluding-A   every-position
+  //              0.18     216        13.4%          6.5%
+  //              0.08      96         9.2%          7.3%
+  //              0.03      36         9.8%          5.8%
+  //
+  // The general rule this is an instance of: if a perturbation cannot reach a
+  // configuration the real material can exhibit, it is not a null of the same
+  // thing. See eo-evidence LAWS.md L1a.
   const pool = [];
-  for (let p = 0; p < totalUnits; p++) if (!aSet.has(p)) pool.push(p);
+  for (let p = 0; p < totalUnits; p++) pool.push(p);
 
   const samples = [];
   for (let d = 0; d < draws; d++) {

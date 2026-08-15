@@ -20,6 +20,20 @@
 // boundaries, p≈0.005 against a rotation null), not a law, and Assembly C
 // depends on this function being callable per channel.
 //
+// NOT YET BUILT HERE, NAMED SO THE CITATION LANDS IN THE RIGHT FILE. Assembly
+// C's "high tier sets the low tier's own hyperparameters and only the
+// residual climbs back up, gated" (11-terrain-occupancy-and-the-two-ascents.md
+// §5) is this codebase's nearest approach to two established lineages —
+// variable-forgetting-factor RLS (Fortescue, Kershenbaum & Ydstie 1981) for
+// the continuous re-dial from residual, and streaming drift detection (DDM,
+// Gama, Medas, Castillo & Rodrigues 2004; ADWIN, Bifet & Gavaldà 2007) for the
+// discrete gate. Cited here rather than claimed here: this file only wires a
+// declared channel through to a single tracker (below), and Assembly C's own
+// acceptance criteria (C4) already require the re-parameterization to be a
+// discrete typed event, not a continuous adjustment — closer to a drift-gated
+// re-dial than to either lineage read straight, and unmeasured until C is
+// built.
+//
 // ONE CHANNEL, ONE TRACKER — never summed. Feeding a blend of `recalled` and
 // `activation` into one tracker reproduces a failure shape this project has
 // refuted three times already (lemma abstraction, null-witnessed slot
