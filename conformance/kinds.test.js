@@ -27,6 +27,7 @@ import {
   deriveCohesionThreshold,
   parameterProfiles,
   conSimilarity,
+  admitToKind,
 } from "../packages/engine/emergence/kinds.js";
 import {
   OPERATORS,
@@ -191,4 +192,67 @@ test("buildVocabulary synthesizes the kinds and their members", () => {
 
 test("declared options are never defaulted", () => {
   assert.throws(() => induceKinds(TERMS, { population: "x" }), /declared, never defaulted/);
+});
+
+// ── admitToKind: upamāna's actual shape — recognising an unseen item by ────
+// structural resemblance to an already-certified kind, not by surface lookup.
+//
+// A dedicated, larger population, because "admitted" needs a null with real
+// information on BOTH gates at once: existence needs some non-members with
+// genuine partial resemblance (not every outsider at flat zero, which is
+// `degenerate_ground`, honestly, not a finding), and presence-only
+// possibility-constraint needs the core field to be rare enough in the whole
+// population that ONE candidate carrying it is actually an outlier — a single
+// item carries less evidence than the cluster-fraction discovery itself
+// tests, so the population has to earn the same discrimination discovery got
+// for free from cluster size.
+const ADMIT_FAMILY = Array.from({ length: 8 }, (_, i) => ({
+  id: `admit:fam${i}`,
+  // Half the family also carries `kin_context` — the field a partial
+  // outsider carries alone — so a genuine newcomer sharing both fields has
+  // real, graded overlap with SOME members, not an all-or-nothing profile.
+  attributes: i < 4 ? [A("anchor_shared"), A("kin_context")] : [A("anchor_shared")],
+}));
+const ADMIT_PARTIAL = Array.from({ length: 5 }, (_, i) => ({ id: `admit:kin${i}`, attributes: [A("kin_context")] }));
+const ADMIT_BULK = Array.from({ length: 260 }, (_, i) => ({ id: `admit:friend${i}`, attributes: [] }));
+const ADMIT_POPULATION = [...ADMIT_FAMILY, ...ADMIT_PARTIAL, ...ADMIT_BULK];
+const ADMIT_OPTS = { population: "admit-toy", minPrevalence: 0.01, minKindSize: 3, permutations: 800, quantile: 0.95, reseeds: 24, seed: 42 };
+
+test("admitToKind: a genuinely family-shaped newcomer is admitted to the family kind", () => {
+  const kinds = induceKinds(ADMIT_POPULATION, ADMIT_OPTS);
+  const family = kinds.find((k) => k.label === "anchor_shared" && k.members.length === 4);
+  assert.ok(family, "the four-member anchor_shared+kin_context kind must cohere");
+  // Never in ADMIT_POPULATION, never part of the population that certified
+  // `family` — the whole point is recognising it without having induced on it.
+  const cousin = { id: "admit:cousin", attributes: [A("anchor_shared"), A("kin_context")] };
+  const result = admitToKind(cousin, family, ADMIT_POPULATION, ADMIT_OPTS);
+  assert.equal(result.relation, "admitted");
+  assert.equal(result.admitted, true);
+  assert.equal(result.heightGate.existence.passed, true);
+  assert.equal(result.heightGate.constraint.passed, true);
+});
+
+test("admitToKind: an item with no resemblance to the kind is refused, not silently admitted", () => {
+  const kinds = induceKinds(TERMS, OPTS);
+  const family = kinds.find((k) => k.label === "anchor_shared");
+  const stranger = { id: "term:stranger", label: "stranger", attributes: [] };
+  const result = admitToKind(stranger, family, TERMS, OPTS);
+  assert.notEqual(result.relation, "admitted");
+  assert.equal(result.admitted, false);
+});
+
+test("admitToKind: a member already in the kind is a typed gap, not a re-admission", () => {
+  const kinds = induceKinds(TERMS, OPTS);
+  const family = kinds.find((k) => k.label === "anchor_shared");
+  const sister = TERMS.find((t) => t.id === "term:sister");
+  const result = admitToKind(sister, family, TERMS, OPTS);
+  assert.ok(isGap(result));
+  assert.equal(result.gap, "already_member");
+});
+
+test("admitToKind: declared options are never defaulted", () => {
+  const kinds = induceKinds(TERMS, OPTS);
+  const family = kinds.find((k) => k.label === "anchor_shared");
+  const cousin = { id: "term:cousin", label: "cousin", attributes: [A("anchor_shared")] };
+  assert.throws(() => admitToKind(cousin, family, TERMS, { population: "x" }), /declared, never defaulted/);
 });

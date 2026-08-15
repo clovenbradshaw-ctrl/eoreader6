@@ -66,6 +66,10 @@ export const GAP_TYPES = Object.freeze([
   "payoff_not_confirmed", // model-as-contracted-part: a model's output was cited as resolving a planted commitment, but the mechanical check could not find the required terms in it — refused admission to the tape, never silently kept as if resolved
   "model_unreachable", // scripts/write-novella.mjs: the one live/reactive network call anywhere in this repo failed — surfaced as a typed gap, never a raw, unclassified exception (challenge #14)
   "trending_material", // loops/atmosphere::stationarityGap: the material carries a trend, so a ground built over a trailing window of it is a lagging estimate of a slope, not a rebuilt nothing. Every placement against such a ground is exceeded structurally, whatever the content says. Measured on emergence/activation's `recalled` over the committed Frankenstein fixture: re-zeros exactly 122 frames apart, and 30 shuffled-order controls returned mean 6.00 ± 0.00, identical to the real reading — a metronome set by the minimum ground size. The trend was never cleared out of the ground; it became the ground.
+  "already_member", // emergence/kinds::admitToKind: the candidate is already among the kind's certified members — admission is asked of what is already held, not a fresh recognition
+  "no_source", // emergence/kinds::admitToKind: none of a kind's certified members are present in the population handed in to test admission against — there is no ground here to test resemblance to
+  "no_core", // emergence/kinds::admitToKind: the kind being admitted to has no core field (DEF found none) — there is nothing for possibility-constraint to ask of
+  "no_field", // emergence/kinds::admitToKind: the candidate carries none of the kind's core field — possibility-constraint has no value of the candidate's own to test
 ]);
 
 export const gap = (type, detail = {}) => {

@@ -68,6 +68,7 @@ import { CURRENT_OPERATOR_EPOCH, OPERATORS, validateChain } from "../operators.j
 import {
   fieldScales,
   valuedSimilarity,
+  valuedJaccard,
   agreement,
   readsValues,
   scaleGaps,
@@ -813,6 +814,134 @@ export const induceKinds = (records, opts = {}) => {
     kinds.push(def({ cluster, cohesion, existence, searched, warrant, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));
   }
   return kinds.sort((a, b) => b.cohesion - a.cohesion);
+};
+
+// ── admit · the same two Born gates, retargeted at ONE unseen item ─────────
+//
+// `induceKinds` DISCOVERS: it searches a population for clusters and certifies
+// the ones that clear both gates. This is the other half of that same
+// discipline — ADMIT: given a kind already certified by `induceKinds` (or by
+// `def` directly) and one item that was never part of the population that
+// certified it, does this item's own distributional profile earn a place
+// inside that kind, the way a cluster earns a kind in the first place?
+//
+// This is upamāna's actual shape, not `induction/typology.js`'s exact-lookup
+// `tagSequence` wearing its clothes: recognising something never seen before
+// because it resembles, structurally, something already certified — not
+// because it matches a surface form seen during induction. A concept built
+// this way is a certified Kind plus this admission test, not a cached string.
+//
+// Same two gates as `eva`/`def`, same null discipline (a random OTHER member
+// of the population the candidate is drawn from stands in for "admitted by
+// chance"), retargeted:
+//
+//   existence-dependency, admit mode   does the candidate's own similarity to
+//                                      the FIXED member set exceed what a
+//                                      random NON-member's similarity to that
+//                                      same set would be? The question is
+//                                      discrimination — an outsider drawn
+//                                      from the kind's own membership would
+//                                      trivially "resemble" it, so the null
+//                                      pool for this gate is the population
+//                                      minus the kind's own members.
+//   possibility-constraint, admit mode does the candidate's value on the
+//                                      kind's own core field agree with the
+//                                      kind's centre more than a random draw
+//                                      from the WHOLE population would? This
+//                                      is `def`'s own constraint question,
+//                                      unmodified — a random partition of the
+//                                      population the kind was certified
+//                                      from, members included, exactly as
+//                                      `def` itself draws it. Excluding the
+//                                      kind's own members here would starve a
+//                                      shared-key-pool population of the only
+//                                      records that carry the core field at
+//                                      all, manufacturing a `degenerate_ground`
+//                                      that has nothing to do with the
+//                                      candidate.
+//
+// Neither null is ever drawn from the candidate's own document, so the
+// giver-test discipline (the vocabulary this test is licensed by comes from
+// somewhere named and separate from what is being classified) holds the same
+// way it holds for the corpus priors this reuses (`bin/priors/`).
+export const admitToKind = (candidate, kind, records, opts = {}) => {
+  const { minPrevalence, permutations, quantile, seed } = opts;
+  for (const [name, v] of [["minPrevalence", minPrevalence], ["permutations", permutations], ["quantile", quantile], ["seed", seed]]) {
+    if (typeof v !== "number" || !Number.isFinite(v)) throw new TypeError(`admitToKind: ${name} is declared, never defaulted (got ${v})`);
+  }
+  if (!candidate || typeof candidate.id !== "string") throw new TypeError("admitToKind: candidate must be a record with an id");
+  if (!kind || !Array.isArray(kind.members)) throw new TypeError("admitToKind: kind must be an induceKinds/def result");
+  if (!Array.isArray(records) || records.length === 0) throw new TypeError("admitToKind: records must be the population the kind was certified from");
+
+  const memberSet = new Set(kind.members);
+  if (memberSet.has(candidate.id))
+    return gap("already_member", { reason: "the candidate is already a member of this kind", kind: kind.id });
+
+  const params = sig(records, { minPrevalence, permutations, quantile, seed });
+  if (params.length === 0) return gap("empty_material", { reason: "no field admitted this population at the declared prevalence bar" });
+  const { keys } = parameterProfiles(records, params);
+  const scales = fieldScales(records);
+
+  const byId = new Map(records.map((r) => [r.id, r]));
+  const members = kind.members.map((id) => byId.get(id)).filter(Boolean);
+  if (members.length === 0)
+    return gap("no_source", { reason: "none of the kind's members are present in the supplied population", kind: kind.id });
+
+  const outsiders = records.filter((r) => !memberSet.has(r.id) && r.id !== candidate.id);
+  if (outsiders.length === 0)
+    return gap("empty_material", { reason: "no non-member records in this population to draw the existence null from" });
+  const population = records.filter((r) => r.id !== candidate.id);
+
+  const rnd = prng(seed ^ 0xadd17);
+  const meanSimTo = (rec) =>
+    members.reduce((s, m) => s + valuedJaccard(rec, m, keys, scales), 0) / members.length;
+
+  const observedExistence = meanSimTo(candidate);
+  const existenceSamples = [];
+  for (let p = 0; p < permutations; p++) existenceSamples.push(meanSimTo(outsiders[Math.floor(rnd() * outsiders.length)]));
+  const existence = partitionNull({ samples: existenceSamples, observed: observedExistence, quantile, seed: seed + 1 });
+
+  let constraint = gap("no_core", { reason: "this kind has no core field to test admission against" });
+  if (kind.core) {
+    const scale = scales.get(kind.core.field_id);
+    const candAttr = (candidate.attributes ?? []).find((a) => a.field_id === kind.core.field_id);
+    if (!candAttr) {
+      constraint = gap("no_field", { reason: `candidate carries no ${kind.core.field_id} attribute — cannot test admission against the kind's core` });
+    } else {
+      const coreIsValued = scale?.mode === "value" && kind.core.centre !== undefined;
+      const rnd2 = prng(seed ^ 0xbadc0de);
+      const constraintSamples = [];
+      let observedConstraint;
+      if (coreIsValued) {
+        observedConstraint = agreement(candAttr.value, kind.core.centre, scale);
+        for (let p = 0; p < permutations; p++) {
+          const other = population[Math.floor(rnd2() * population.length)];
+          const oAttr = (other.attributes ?? []).find((a) => a.field_id === kind.core.field_id);
+          constraintSamples.push(oAttr === undefined ? 0 : agreement(oAttr.value, kind.core.centre, scale));
+        }
+      } else {
+        // Presence-only core: agreement collapses to "carries the field at all".
+        observedConstraint = 1;
+        for (let p = 0; p < permutations; p++) {
+          const other = population[Math.floor(rnd2() * population.length)];
+          constraintSamples.push((other.attributes ?? []).some((a) => a.field_id === kind.core.field_id) ? 1 : 0);
+        }
+      }
+      constraint = partitionNull({ samples: constraintSamples, observed: observedConstraint, quantile, seed: seed + 2 });
+    }
+  }
+
+  const relation = isGap(existence) || isGap(constraint)
+    ? "unstable"
+    : existence.passed && constraint.passed ? "admitted" : "refused";
+
+  return Object.freeze({
+    candidate: candidate.id,
+    kind: kind.id,
+    relation,
+    admitted: relation === "admitted",
+    heightGate: Object.freeze({ existence, constraint }),
+  });
 };
 
 /** The induction's own account of how it read the material: which fields

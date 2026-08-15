@@ -767,15 +767,34 @@ export function executePrompt(session, prompt, { sourceFilter, radius, admission
 // that (`wayfinder.void: true`), with the widest pool actually tried
 // attached (`content_match.tiedCandidates`, from the last round) — never a
 // guess dressed as a confirmation.
+// Each round's tied set is gone the instant the next round widens and
+// overwrites `result` — a refusal at width 6 leaves no trace once width 11
+// runs. `rounds` keeps the trail: what was refused, at what width, and why,
+// append-only the same as everything else this project logs, so a caller can
+// see "refused at width 6 for reason X, refused at width 11 for reason Y,
+// confirmed at width 20" instead of only the last line of that story.
+const roundEntry = (round, width, result) => {
+  const match = result.content_match;
+  return Object.freeze({
+    round,
+    width: width ?? CONTENT_SHORTLIST_CAP,
+    ambiguous: match?.ambiguous === true,
+    gap: result.gap ?? null,
+    tied: match?.tiedCandidates ? Object.freeze([...match.tiedCandidates]) : null,
+  });
+};
+
 export function wayfind(session, prompt, { sourceFilter, radius, maxRounds = 3 } = {}) {
   let result = null;
   let width = null;
+  const rounds = [];
   for (let round = 0; round <= maxRounds; round++) {
     result = executePrompt(session, prompt, { sourceFilter, radius, admissionWidth: width });
+    rounds.push(roundEntry(round, width, result));
     const match = result.content_match;
     const ambiguous = match?.ambiguous === true;
     if (!ambiguous) {
-      return { ...result, wayfinder: { void: false, escalations: round, admissionWidth: width } };
+      return { ...result, wayfinder: { void: false, escalations: round, admissionWidth: width, rounds: Object.freeze(rounds) } };
     }
     const currentWidth = width ?? CONTENT_SHORTLIST_CAP;
     // Coefficient of variation of THIS round's admitted-pool scores — the
@@ -787,7 +806,7 @@ export function wayfind(session, prompt, { sourceFilter, radius, maxRounds = 3 }
     const cv = match?.scoreMean > 0 && Number.isFinite(match.scoreSD) ? match.scoreSD / match.scoreMean : 1;
     width = Math.ceil(currentWidth * (1 + Math.max(cv, 0.1)));
   }
-  return { ...result, wayfinder: { void: true, escalations: maxRounds, admissionWidth: width } };
+  return { ...result, wayfinder: { void: true, escalations: maxRounds, admissionWidth: width, rounds: Object.freeze(rounds) } };
 }
 
 // Address the prompt inside one document: the whole ladder, one target.
