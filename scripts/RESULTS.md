@@ -646,3 +646,38 @@ signal that does not — a **grain leak in `level()`**, not a fact about the
 material. If M1 fails, the diagnosis is wrong and P3's refusal stands
 undiagnosed. The instruments emitting M1 and M2 were added and committed
 before the numbers they report were read.
+
+### Read — M1 held, M2's operationalization refused on a dip, the leak is real
+
+| `same-law`, reseeds=48 | draws=60 | 120 | 300 | 600 |
+|---|---|---|---|---|
+| mean `reseedNull` (the threshold) | 0.180 | 0.119 | 0.071 | 0.049 |
+| mean `\|displacement\|` (the signal) | 0.165 | 0.144 | 0.142 | 0.140 |
+| false-ladder rate | 36.3% | 47.7% | 66.3% | 73.4% |
+
+- **M1 HELD** at every `reseeds` setting: mean `reseedNull` falls monotonically
+  as draws rises — a 3.6× collapse across a 10× change in `draws`.
+- **M2**: mean `|displacement|` runs 0.148 → 0.139 → 0.140 → 0.140 on the
+  floor-only row — flat within 0.6% after a 6.5% dip at the first step. **The
+  pre-registered test as coded (monotone non-decreasing) printed REFUSED on that
+  dip and that is what is recorded.** The sentence M2 was written to test ("does
+  not fall as draws rises") is supported by the same numbers. The
+  operationalization was stricter than the sentence; that is an error in the
+  pre-registration and it is left visible rather than restated to match.
+
+The threshold collapses while the signal it must clear stays flat, and the
+verdict follows the threshold. `level()`'s two declared numbers pull **opposite
+ways on one quantity** — `reseeds` widens the threshold, `draws` narrows it — so
+"declare more resolution" is ambiguous in this organ depending on which number
+is meant.
+
+**The kind of defect this is: a grain leak** — a quantity belonging to one grain
+denominated in another grain's units. Invisible to the operator face (the act is
+`EVA` either way) and to the terrain face (the object is a Network either way).
+Only the stance face carries resolution, so only the stance face can see it.
+
+Two things `level()` is missing, both recorded and neither fixed here: the
+`incommensurate_extent` guard `pattern()` has twice, and a draws-invariant form
+of its verdict — which `nul/index.js` already contains, thirty lines further
+down, in `objectify()`'s `displacement / reseedNull`. Spec 13 Assembly E states
+what would have to be measured before either is called a fix.

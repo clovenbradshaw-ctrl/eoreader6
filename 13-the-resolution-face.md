@@ -1,9 +1,10 @@
 # 13 — The stance face is the resolution face
 
 **Repo:** eoreader6, at `a0cbaf5`.
-**Status:** finding + spec. No production code changed by this document.
+**Status:** finding + spec, **with its own discriminating prediction refused
+and the refusal diagnosed** (§5). No production code changed by this document.
 Assembly A (the measurement) ships with it as `scripts/resolution-knob-cross.mjs`;
-B through E are proposed and unbuilt.
+B through F are proposed and unbuilt.
 **Governs:** `CUBE.md` (the over-determination claim in "Three faces"),
 `SEED.md` ("Three declared numbers"), `packages/engine/operators.js`
 (`cellOf`), `nul/index.js` (`difference`, `pattern`, `level`), and any future
@@ -43,6 +44,17 @@ which the code has never actually supplied.
 And the resolution reading is not an interpretation added from outside. It is
 already in the engine, one number per grain, sitting unassembled.
 
+**What came of pointing it at something (§5, read it before the argument if you
+only read one section).** The document's own discriminating prediction was
+refused, and the refusal is the useful part: `level()` — the engine's growth-rule
+admission test — turns out to hold a Pattern-grain threshold denominated in
+Figure-grain units, so its two declared numbers pull opposite ways on one
+quantity and "declare more resolution" is ambiguous in it. That defect is
+invisible to the operator face and invisible to the terrain face. It has a name
+now, **a grain leak**, and the first thing the instrument was pointed at had
+one. A second, unrelated hole surfaced on the way: `level()` has no
+`incommensurate_extent` guard where `pattern()` has two.
+
 ---
 
 ## 1. The three declared numbers are the grain axis
@@ -53,7 +65,7 @@ are three grains, and two of the three are already named by their grain:
 
 | grain | declared number | `SEED.md`'s own words | reported in code as |
 |---|---|---|---|
-| Ground | `window` | "the reach of the present: how much of the material is contemporary with itself" | `ground.spec.window` — no `censoredAt` (§6, Assembly E) |
+| Ground | `window` | "the reach of the present: how much of the material is contemporary with itself" | `ground.spec.window` — no `censoredAt` (§6, Assembly F) |
 | Figure | `draws` | "the resolution of testimony. The finest rank sayable is 1/draws" | `difference()` → `censoredAt: 1 / s.length` |
 | Pattern | `reseeds` | "the resolution of pattern" | `pattern()` → `censoredAt: 1 / reseeds` |
 
@@ -239,9 +251,90 @@ claim.
 score, and nothing in this assembly proposes an operating point for any organ.
 The response surface *is* the finding.
 
+### 5.1 What the run said
+
+Full tables in `scripts/RESULTS.md`. Three results, in the order they arrived.
+
+**The control was refused first, by its own stated check.** `level()`'s own
+docstring's material — white noise coarsened by block-averaging — produced **0
+above / 528 below** and ~100% laddering. Block-averaging halves the extent at
+each step, and `pattern()`'s docstring already says why that is fatal:
+*"burstiness is a max over windows, so its expectation rises with extent for no
+reason but extent."* The control was measuring the extent artefact.
+
+That is also a finding about `level()` rather than only about the control:
+**`pattern()` refuses mismatched extents by type — `incommensurate_extent`,
+twice, under the banner "Type error before null, both ways round (SEED.md #7)"
+— and `level()` has no such guard at all.** It will level two grounds built over
+materials of different extent, and on an extent-sensitive statistic the verdict
+is then fully determined and fully wrong. Recorded; no fix attempted here.
+
+**On the replacement controls (extent, statistic, perturbation, window all held
+fixed):**
+
+| threshold (`same-law`) | draws=60 | 120 | 300 | 600 |
+|---|---|---|---|---|
+| floor only | 81.5% | 89.2% | 93.5% | 96.8% |
+| reseeds=6 | 57.5% | 63.0% | 74.2% | 80.9% |
+| reseeds=12 | 51.8% | 58.7% | 72.0% | 78.7% |
+| reseeds=24 | 42.7% | 50.5% | 68.5% | 77.7% |
+| reseeds=48 | 36.3% | 47.7% | 66.3% | 73.4% |
+
+*False-ladder rate where only `peer` is true; 96 trials; direction balance 602
+above / 643 below, so this control passes its own design check. The `seed-only`
+control — two grounds over the same material, the growth rule's actual
+use-shape — laddered **0 times in all 20 cells**, so its verdicts are vacuous
+and are counted as support for nothing.*
+
+- **P1 HELD.** Floor-only laddering rises with draws, 81.5 → 96.8% —
+  replicating, blind, the direction the docstring records (3.08 → 4.42 of 5).
+- **P2 HELD** at every `draws`. The Pattern knob improves the Pattern answer,
+  monotonically, at every setting of the Figure knob.
+- **P3 REFUSED.** The rate still climbs 36.3 → 73.4% with draws at reseeds=48.
+  The Figure knob does **not** stop governing once the Pattern knob is working.
+
+**P3 was the discriminating test and it failed, so the strong form of this
+document's claim is refused, not repaired.** What survives is P1 + P2: the
+right knob improves the answer and the wrong knob degrades it — §3's shape,
+now replicated blind on material with nothing in it.
+
+### 5.2 The diagnosis, filed post hoc with its own numbers pre-registered
+
+`reseedNull` is measured in **rank** units, and rank resolution is `1/draws` —
+a Figure-grain quantity. Two instruments were added and committed before the
+numbers they report were read:
+
+- **M1 HELD**, at every `reseeds`: mean `reseedNull` falls monotonically as
+  draws rises — e.g. at reseeds=48, `0.180 → 0.119 → 0.071 → 0.049`, a 3.6×
+  collapse across a 10× change in `draws`.
+- **M2**: mean `|displacement|` runs `0.148 → 0.139 → 0.140 → 0.140` — flat
+  within 0.6% after a 6.5% dip at the first step. **The pre-registered test as
+  coded ("monotone non-decreasing") printed REFUSED on that dip**, and that is
+  what is recorded; the sentence M2 was written to test ("does not fall") is
+  supported by the same numbers. The operationalization was stricter than the
+  sentence, which is an error in the pre-registration and is left visible.
+
+So the threshold collapses 3.6× while the signal it must clear stays flat, and
+the verdict follows the threshold. **`level()`'s two knobs pull opposite ways
+on one quantity**: `reseeds` widens the threshold, `draws` narrows it, and
+"declare more resolution" is therefore ambiguous in this organ — the answer
+depends on which number is meant.
+
+That is the thing this document is for, and it is worth naming as a kind:
+
+> **A grain leak: a quantity belonging to one grain, denominated in another
+> grain's units.** It is invisible to the operator face (the act is `EVA`
+> either way) and invisible to the terrain face (the object is a Network either
+> way). Only the stance face can see it, because only the stance face carries
+> resolution.
+
+The first time the instrument was pointed at anything, it found one, in the
+engine's own admission test. §3's three incidents were all this same defect
+without a name.
+
 ---
 
-## 6. Assemblies B–E — proposed, unbuilt
+## 6. Assemblies B–F — proposed, unbuilt
 
 **B — make the third face computable.** `operators.js` gains
 `resolutionOf(grain)` (`Ground → "window"`, `Figure → "draws"`, `Pattern →
@@ -274,7 +367,30 @@ every claim the finer grain made is either still placeable at the coarser bound
 or **explicitly censored**, never silently coarsened. No fold in this repo
 reports either.
 
-**E — the Ground-grain bound, deferred with the question stated.** `window` is
+**E — close `level()`'s grain leak with a form that already exists in the same
+file.** The leak in §5.2 is that a Pattern-grain threshold is denominated in
+Figure-grain rank units. `nul/index.js` already carries the draws-invariant
+form of exactly this ratio, thirty lines further down, in `objectify()`:
+*"displacement in units of the reseeding null: how far this figure moved the
+ground beyond what the material moves it by itself"* — `record.pattern.displacement
+/ record.pattern.reseedNull`. A `level()` that reported its verdict in units of
+its own null would be porting a form this file already trusts, not inventing
+one, which is the only reason this assembly is worth proposing at all (the
+repo's standing complaint against itself is that everything gets reinvented,
+worse).
+
+**It is not proposed as a fix, because it is not yet established as one.** The
+ratio's own null is not free: `objectify()` can use it because `pattern()`'s
+`reseedNull` is a calibrated ceiling (mean + 3·std of the reseed displacement
+samples), and `level()`'s is a bare maximum over `reseeds` draws — the same
+raw-maximum defect `pattern()` was already corrected for and `level()` was not.
+Acceptance would be: the false-ladder rate on `same-law` becomes flat in
+`draws` (the P3 that just failed), the `seed-only` control stays at zero, and
+the growth rule's standing licenses are re-checked and reported as moved or
+not moved. Also blocking: `level()` gains the `incommensurate_extent` guard
+`pattern()` has, which §5.1 shows it needs on its own account.
+
+**F — the Ground-grain bound, deferred with the question stated.** `window` is
 "the reach of the present", and the table in §1 has a hole: no organ reports a
 Ground-grain `censoredAt` the way `difference()` and `pattern()` report theirs.
 The natural reading — nothing separated by less than one `window` is separable
@@ -288,6 +404,13 @@ than a printed string, and saying so is cheaper than guessing.
 
 ## 7. What this document does not claim
 
+- **It does not claim P3.** The prediction that supplying a question's own
+  grain's number makes every other grain's number stop governing was
+  pre-registered as the discriminating test, and it was refused (§5.1). What is
+  claimed is the weaker, replicated pair: the right knob improves the answer
+  monotonically, the wrong knob degrades it. The diagnosis in §5.2 is post hoc
+  and is labelled as such, with its own numbers pre-registered — it is a
+  hypothesis about `level()`, not a rescue of P3.
 - It does not resurrect the cube as a classifier. Nothing here derives a cell
   from content; every cell discussed is one an organ already declares.
 - It does not propose an operating point for `draws`, `reseeds`, or `window`.
