@@ -53,6 +53,7 @@
 // Pure: no clock, no randomness, no I/O. Read SEED.md first.
 
 import { ground, difference, volume, isGap, gap } from "../../../nul/index.js";
+import { GROUND_FLOOR_DIFFERENCE } from "../ground-floor.js";
 
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // SYN · Network · Composing — a whole composed from parts that already exist
@@ -188,8 +189,10 @@ export const fold = ({ material, here, window, draws, seed = 0, perturbation = "
   // chosen anyway to keep one shared floor across the four organs built on
   // this identical mechanism (atmosphere.js, turn.js, this file, formation/
   // index.js): confirmed 0% throughout the `6*window`-`16*window` plateau,
-  // so the extra margin costs nothing measured.
-  const MIN_GROUND = 10 * window;
+  // so the extra margin costs nothing measured. The value itself now lives
+  // in engine/ground-floor.js's GROUND_FLOOR_DIFFERENCE — this comment stays
+  // as the calibration record; change the number there, not here.
+  const MIN_GROUND = GROUND_FLOOR_DIFFERENCE(window);
   if (region.start < MIN_GROUND)
     return gap("no_ground", {
       reason: "a standpoint with nothing settled behind it cannot grow a ground; the first one must be received, not derived",

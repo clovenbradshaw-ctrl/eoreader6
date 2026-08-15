@@ -44,6 +44,7 @@ import {
   PERTURBATIONS,
 } from "../nul/index.js";
 import { existenceDependencyTest, possibilityConstraintTest, holonLevelRelation } from "../holon_level/index.js";
+import { GROUND_FLOOR_DIFFERENCE } from "../packages/engine/ground-floor.js";
 
 export const PHASES = Object.freeze(["emanon", "protogon", "holon"]);
 
@@ -157,8 +158,10 @@ export const collapse = ({ emanon: e, observed, regime = null, ground: cutGround
     // controls, purely from content-independent drift; 0% from `6 * window`
     // through `16 * window`. `10 * window` sits inside that confirmed-safe
     // plateau and keeps one shared floor across the four organs sharing this
-    // mechanism, at no measured cost.
-    const MIN_GROUND = 10 * e.spec.window;
+    // mechanism, at no measured cost. The value itself now lives in
+    // engine/ground-floor.js's GROUND_FLOOR_DIFFERENCE — this comment stays
+    // as the calibration record; change the number there, not here.
+    const MIN_GROUND = GROUND_FLOOR_DIFFERENCE(e.spec.window);
     if (regime != null && regime.start < MIN_GROUND)
       return gap("no_ground", {
         reason: "a cut with nothing settled behind it cannot grow a ground; the first one must be received, not derived",

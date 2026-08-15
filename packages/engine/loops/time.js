@@ -6,6 +6,7 @@
 // reusable thing instead of one script's private implementation detail.
 
 import { ground, pattern, volume, isGap } from "../../../nul/index.js";
+import { TIME_PATTERN_FLOOR } from "../ground-floor.js";
 
 // The cell this organ occupies on the operator grid (engine/operators.js):
 // EVA · Paradigm · Tracing — the reader-assimilation loop: a growing fraction
@@ -102,9 +103,12 @@ export const timeLoop = ({ reduce, units, passes, window, draws, reseeds }) => {
     // rescoring already-read chunks against a new, non-causal, whole-fraction
     // table every pass — a different organ's defect, out of this fix's scope,
     // and one a MIN_GROUND change here cannot buy back. Left as a named, open
-    // question rather than silently patched over.
-    if (material.length < 3 * window) {
-      results.push({ pass: p, fraction, gap: { reason: "not enough real material read yet", have: material.length, need: 3 * window } });
+    // question rather than silently patched over. This floor is
+    // DELIBERATELY not GROUND_FLOOR_DIFFERENCE — see engine/ground-floor.js's
+    // TIME_PATTERN_FLOOR for why raising it to match would not even help.
+    const need = TIME_PATTERN_FLOOR(window);
+    if (material.length < need) {
+      results.push({ pass: p, fraction, gap: { reason: "not enough real material read yet", have: material.length, need } });
       continue;
     }
 

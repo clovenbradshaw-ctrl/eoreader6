@@ -103,6 +103,14 @@ export function deriveTestimonyLevels(commits) {
         a, b,
         relation: aWholeOfB ? "a-whole-of-b" : bWholeOfA ? "b-whole-of-a" : "peer",
         earned_by: aWholeOfB || bWholeOfA ? "contains" : null,
+        // DECLARED, NOT MEASURED (see this module's header) — the same
+        // reserved-not-yet-consumed marker engine/holon/task-log.js's
+        // deriveLevels now carries for its own declared-only relations. No
+        // caller branches on it today. It is NOT a claim that
+        // holon_level::holonLevelRelation (holon_level/index.js:178-184)
+        // already returns a comparable flag: that function currently
+        // returns a bare "above"/"peer"/"unstable" string, nothing else.
+        measured: false,
       }));
     }
   }
