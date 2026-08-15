@@ -514,3 +514,48 @@ specified.** A Lens built over disagreement between two regime trackers
 inherits whichever of them is a metronome; two metronomes at different
 periods would produce a "disagreement series" with no reading-act content
 in it at all.
+
+## Spec 13 Assembly A: the two-knob cross — pre-registered prediction
+
+*Written and committed **before** `scripts/resolution-knob-cross.mjs` was run
+for the first time. Spec: `13-the-resolution-face.md` §5.*
+
+**The claim under test.** `SEED.md`'s three declared numbers are one per grain
+— `window` at Ground, `draws` at Figure (`difference()` reports `censoredAt =
+1/draws`), `reseeds` at Pattern (`pattern()` reports `censoredAt = 1/reseeds`).
+If that is real, a question is governed by the declared number of the grain it
+is asked at, and no other.
+
+**The question.** `level()` asks a Pattern-grain question. Its threshold is
+`max(floor, reseedNull)` where `floor = 2/draws` (the Figure knob) and
+`reseedNull` comes from `reseeds` (the Pattern knob). Material: white noise
+coarsened by successive block-averaging, adjacent scales, where every relation
+should be `peer` — `level()`'s own control, per its docstring.
+
+**Predictions.**
+
+- **P1** — floor only (no reseeding null supplied): the false-ladder rate does
+  **not fall** as `draws` rises across 60 → 120 → 300 → 600. This is a
+  replication of the direction `level()`'s docstring already records (3.08 →
+  4.42 of 5).
+- **P2** — with the reseeding null supplied: at fixed `draws`, the false-ladder
+  rate **falls** as `reseeds` rises across 6 → 12 → 24 → 48.
+- **P3 (discriminating)** — with the reseeding null supplied, the false-ladder
+  rate is approximately **flat in `draws`**: its spread across the four `draws`
+  settings is smaller, at every `reseeds > 0`, than the spread across the same
+  four settings with the floor alone.
+
+**What refuses the claim.** P3. If `draws` still governs strongly once the
+reseeding null is doing the work, `draws` is not specifically the Figure-grain
+resolution and spec 13 §1's assignment is wrong.
+
+**What refuses the design (not the claim).** A systematic direction in the
+above/below balance would mean coarsening induces a real level, the ground truth
+`peer` is false, and this control cannot answer the question at all.
+
+**Nothing here is tuned.** The `draws` settings are the docstring's own, so the
+floor-only row is a replication; the `reseeds` settings span the range
+`pattern()`'s own false-positive table already measured. No value is chosen by
+what it does to a score and no operating point is proposed.
+
+*Result appended below after the run.*
