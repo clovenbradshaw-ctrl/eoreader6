@@ -681,7 +681,38 @@ export const searchKeyCohesions = (profiles, targetSize, { minKindSize, permutat
     const { sim, idxOf } = conSimilarity(permuted);
     const conResult = con(permuted, sim, idxOf, { minKindSize, permutations, quantile, seed: seed + r });
     if (isGap(conResult)) continue; // this reseed's swapped population was too small to cohere against — not a finding, just skipped
-    for (const c of conResult.clusters) if (c.length === targetSize) samples.push(meanPairwiseSim(c, sim, idxOf));
+    // EVERY cluster the same search returned, at whatever size it chose.
+    //
+    // Until 2026-08-15 this read `if (c.length === targetSize)`, keeping only
+    // permuted clusters exactly as large as the observed one. That is not a
+    // commensurability requirement and it inverted the organ. SIZE WAS AN
+    // OUTPUT OF THE SEARCH, NOT A CONSTRAINT ON IT: `con` returns whatever
+    // clusters clear its derived threshold, so the matched counterfactual
+    // (II.10, "the null undergoes what the observation underwent") is "a
+    // cluster con() returned on permuted material" — every one of them.
+    //
+    // Filtering on size starved the null to n=3..24 samples, below what the
+    // family-wise quantile it is compared at can resolve: at n=6 the smallest
+    // achievable p is 1/7 = 0.143 against a required 0.0167, so the gate could
+    // not pass — unless the few samples happened to be identical, which
+    // returned `degenerate_ground` and skipped the gate entirely. Admission
+    // therefore turned on whether the null happened to degenerate rather than
+    // on structure: measured on a planted three-block population, the PERFECT
+    // size-20 block at cohesion 1.000 was rejected on 24 real samples while
+    // weaker size-18 and size-22 clusters were admitted on degenerate ones.
+    //
+    // Measured on a stage-0-validated fixture (blocks whose members share
+    // several fields, where permuteFieldSwap demonstrably destroys 66.5% of
+    // planted cohesion), 25 trials each, eo-evidence
+    // assays/kinds-induction/fix-power-check.mjs:
+    //
+    //                    power   false positives   separation
+    //     exact-size       100%              68%         32pt
+    //     every cluster     96%               8%         88pt
+    //
+    // Four points of power for an 8.5x reduction in fabrication. The null pool
+    // goes from a median of 6 samples to 115.
+    for (const c of conResult.clusters) samples.push(meanPairwiseSim(c, sim, idxOf));
   }
   return samples;
 };
@@ -807,7 +838,54 @@ export const induceKinds = (records, opts = {}) => {
       // tuned number — the same status as `k` in `deriveCohesionThreshold`.
       const familyQuantile = 1 - (1 - quantile) / clusters.length;
       searched = partitionNull({ samples: keySearch, observed: cohesion, quantile: familyQuantile, seed: seed + 2 });
-      if (!isGap(searched) && !searched.passed) continue; // a rich-enough vocabulary that the search null resolves, and this cluster did not beat it even once the multiple candidates con() considered are corrected for: the selection effect the header names, not a kind
+      // AN UNRESOLVED SEARCH NULL IS NOT A WARRANT. This read
+      // `if (!isGap(searched) && !searched.passed) continue`, so a gap ADMITTED
+      // — resting the whole verdict on `eva`'s existence gate, on the reasoning
+      // that where the vocabulary is a handful of keys the search null is
+      // quantised and eva is the remaining warrant.
+      //
+      // That reasoning requires eva to be a gate. It is not: eva nulls a
+      // cluster that best-first agglomeration CHOSE for being the most cohesive
+      // grouping available against subsets drawn AT RANDOM, which is exactly
+      // the selection effect II.10 refuses ("selection is an axis; a cluster
+      // chosen for being extreme is not placed against subsets drawn at
+      // random"). Measured, it returns p=0.0000 passed=true for every cluster
+      // on planted structure and on structureless noise alike — it has never
+      // rejected anything. Admitting on a gap therefore admitted on nothing.
+      //
+      // With the size filter removed above, a degenerate search null is rare
+      // rather than routine, so this refuses the residual case instead of
+      // rubber-stamping it. Fixing eva's own commensurability is the larger
+      // repair and is not attempted here.
+      // A GAP STILL ADMITS HERE, AND THAT IS DELIBERATE — but it is now the
+      // rare residual case rather than the routine one.
+      //
+      // Refusing on a gap was tried on 2026-08-15 and reverted: it takes the
+      // Emma fixture from 2 kinds to 0 and fails conformance/kinds.test.js
+      // outright. Emma carries three fields and near-one-hot profiles, so its
+      // search null legitimately degenerates, and the fallback to `eva` is
+      // load-bearing on exactly the sparse material this organ was built for.
+      //
+      // The honest caveat, recorded rather than smoothed: `eva` is a weak
+      // fallback. It nulls a cluster that best-first agglomeration CHOSE for
+      // being the most cohesive grouping available against subsets drawn AT
+      // RANDOM — the selection effect II.10 refuses ("selection is an axis") —
+      // and measured, it returns p=0.0000 passed=true for every cluster on
+      // planted structure and on structureless noise alike. So where this gap
+      // fires, the kind rests on a gate that has never rejected anything.
+      //
+      // Two things make that tolerable rather than fatal. Removing the size
+      // filter above turns a degenerate search null from the common case into
+      // an uncommon one (median pool 6 samples -> 115). And the material where
+      // it still degenerates is precisely the material where `permuteFieldSwap`
+      // — a curveball, fixed-margin swap — cannot destroy the structure being
+      // tested: with near-one-hot profiles every row sum is 1, so a
+      // margin-preserving swap only relabels which column each row's single 1
+      // occupies and the permuted matrix carries the same blocks. That is a
+      // PERTURBATION problem, not a sampling one, and the real repair is to
+      // route this organ's NUL through nul/index.js's PERTURBATIONS/LICENSED
+      // rather than holding a private one here.
+      if (!isGap(searched) && !searched.passed) continue;
     }
 
     kinds.push(def({ cluster, cohesion, existence, searched, warrant, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));
