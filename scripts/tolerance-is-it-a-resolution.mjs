@@ -65,14 +65,36 @@
 //   is a runtime choice, not a score choice, and it costs power (stated with
 //   the result), not validity.
 
-import { createRegimeTracker } from "../packages/engine/loops/atmosphere.js";
+// ── THE FIRST MATERIAL COULD NOT ASK THE QUESTION ──────────────────────────
+// First run, recorded rather than repaired: IID uniform noise produced ZERO
+// re-zeros at every setting of every knob, and a +0.6 planted shift was
+// detected 100% of the time at every setting. Both axes were pinned, so every
+// verdict came back unanswerable — correctly, as a gap rather than a zero.
+//
+// The reason is in the organ's own header: against `burstiness` only surfeit
+// clears, because the observation is one window's mean and the samples are a
+// max over many, so an ordinary window sits BELOW the ground (measured there
+// at 79-87% of steps). Uniform IID noise essentially never exceeds its own
+// ground from above, so the false-alarm axis is dead by construction.
+//
+// Fixed in the MATERIAL, not in the predictions. Two changes, both properties
+// of what is read rather than of how it is read:
+//
+//   - a second null law with a heavy tail (exponential), still IID and so
+//     still regime-free — every re-zero on it is still false — but able to
+//     produce the surfeit that uniform noise cannot.
+//   - the planted shift is SWEPT rather than picked. A single shift size
+//     chosen after seeing detection rates would be calibrating the material
+//     against the answer; the whole curve is reported instead.
+import { createRegimeTracker, PLACEMENT } from "../packages/engine/loops/atmosphere.js";
 
 // ── declared, never defaulted — two-clearings.mjs's SPEC ───────────────────
 const BASE = { window: 12, draws: 200, tolerance: 3, reseeds: 5, seed: 17, statistic: "burstiness", findOn: [] };
 const EXTENT = 320;
 const REALISATIONS = 8;
 const SHIFT_AT = 0.5; // the planted boundary, mid-series
-const SHIFT_BY = 0.6; // a level shift; burstiness is a max windowed mean, so it moves
+const SHIFTS = [0.1, 0.2, 0.4, 0.8]; // swept, never picked
+const LAWS = ["uniform", "exponential"]; // both IID, so both regime-free
 const DETECT_WITHIN = (window) => 2 * window;
 
 const SWEEPS = {
@@ -91,15 +113,20 @@ const rngLocal = (seed) => {
   };
 };
 
-const nullSeries = (seed) => {
+// Both laws are IID: no regime exists in either, so every re-zero on a null
+// series is false regardless of law. Exponential is the heavy tail that can
+// produce the surfeit uniform cannot.
+const draw = (r, law) => (law === "exponential" ? -Math.log(Math.max(1e-12, r())) : r());
+
+const nullSeries = (seed, law) => {
   const r = rngLocal(seed);
-  return Array.from({ length: EXTENT }, () => r());
+  return Array.from({ length: EXTENT }, () => draw(r, law));
 };
 
-const plantedSeries = (seed) => {
+const plantedSeries = (seed, law, shift) => {
   const r = rngLocal(seed);
   const at = Math.floor(EXTENT * SHIFT_AT);
-  return Array.from({ length: EXTENT }, (_, i) => r() + (i >= at ? SHIFT_BY : 0));
+  return Array.from({ length: EXTENT }, (_, i) => draw(r, law) + (i >= at ? shift : 0));
 };
 
 /** Every index at which this tracker conceded its ground. */
@@ -112,81 +139,212 @@ const rezeroIndices = (series, spec) => {
   return out;
 };
 
-const runSetting = (spec) => {
+// ── THE TYPE TEST, which is the one that should have been asked first ──────
+// SEED.md #7: "refusal has two tiers: type error before null. Never spend a
+// measurement on what the algebra catches." The ROC sweep above spends a
+// measurement. This does not, and it is decisive where the ROC sweep is only
+// underpowered.
+//
+// A resolution bounds what can be SEEN. Each of the three enters the
+// computation of a difference: `window` sizes the sample the statistic is
+// taken over, `draws` sizes the ground and therefore the rank and the
+// censoring bound, `reseeds` sizes the null a pattern is placed against.
+// Change any of them and `difference()` returns something else.
+//
+// `tolerance` enters no difference anywhere. In `createRegimeTracker` it
+// appears in exactly two places — `clearings >= tolerance` and `run >=
+// tolerance` — both of them comparisons against a COUNT of differences
+// already computed. In `readAtmosphere` and `runTurn` it appears in the same
+// one shape. It cannot change what is perceived; it can only change how much
+// accumulated perception is required before the ground is conceded.
+//
+// So the criterion, stated generally enough to point at the other 52 numbers
+// the census found:
+//
+//   A number is a RESOLUTION iff it enters the computation of a difference.
+//   A number that only gates an action on differences already computed is a
+//   POLICY, whatever its gloss says.
+//
+// That is a dataflow question, decidable by reading, and it is what the stance
+// face promises: an address refused by type before a measurement is spent.
+//
+// Measured here anyway — not to decide it, but because a claim about dataflow
+// that is never checked against running behaviour is how this repo's own
+// docstrings acquired the numbers spec 13 had to go and replicate. STRAINED is
+// the placement that IS a clearing, and it is orders of magnitude denser than
+// a re-zero, so this is well-powered where the ROC sweep above is not.
+const strainRate = (series, spec) => {
+  const tracker = createRegimeTracker(spec);
+  let strained = 0;
+  let placed = 0;
+  for (const x of series) {
+    const r = tracker.push(x);
+    if (r.placement === PLACEMENT.STRAINED) strained++;
+    if (r.placement === PLACEMENT.STRAINED || r.placement === PLACEMENT.PLACED || r.placement === PLACEMENT.OTHER) placed++;
+  }
+  return { strained, placed };
+};
+
+const runSetting = (spec, law, shift) => {
   const at = Math.floor(EXTENT * SHIFT_AT);
   const within = DETECT_WITHIN(spec.window);
   let falseAlarms = 0;
   let pushes = 0;
   let detected = 0;
-  let plantedFalseAlarms = 0;
   for (let i = 0; i < REALISATIONS; i++) {
-    falseAlarms += rezeroIndices(nullSeries(20260815 + i * 7919), spec).length;
+    falseAlarms += rezeroIndices(nullSeries(20260815 + i * 7919, law), spec).length;
     pushes += EXTENT;
-    const hits = rezeroIndices(plantedSeries(20260815 + i * 7919), spec);
+    const hits = rezeroIndices(plantedSeries(20260815 + i * 7919, law, shift), spec);
     if (hits.some((h) => h >= at && h <= at + within)) detected++;
-    plantedFalseAlarms += hits.filter((h) => h < at || h > at + within).length;
   }
-  return {
-    falsePer1000: (falseAlarms / pushes) * 1000,
-    detection: detected / REALISATIONS,
-    plantedFalsePer1000: (plantedFalseAlarms / (REALISATIONS * EXTENT)) * 1000,
-  };
+  return { falsePer1000: (falseAlarms / pushes) * 1000, detection: detected / REALISATIONS };
 };
 
 console.log("── tolerance-is-it-a-resolution ────────────────────────────────────");
 console.log(`base spec (two-clearings.mjs): ${JSON.stringify(BASE)}`);
-console.log(`extent ${EXTENT} · ${REALISATIONS} realisations per cell · planted shift +${SHIFT_BY} at ${SHIFT_AT * EXTENT}`);
+console.log(`extent ${EXTENT} · ${REALISATIONS} realisations per cell · laws ${LAWS.join("/")} · shifts ${SHIFTS.join("/")} at ${SHIFT_AT * EXTENT}`);
 console.log("PRE-REGISTERED: T1 tolerance TRADES (detection falls with false alarms)");
 console.log("                T2 draws does not trade in that sense");
-console.log("                T3 T1 & T2 → tolerance is a threshold, SEED's invariant survives\n");
+console.log("                T3 T1 & T2 → tolerance is a threshold, SEED's invariant survives");
+console.log("First material could not ask the question (0 false alarms, 100% detection everywhere);");
+console.log("fixed in the material — a heavy-tailed IID law added, planted shift swept not picked.\n");
 
-const results = {};
-for (const [knob, values] of Object.entries(SWEEPS)) {
-  console.log(`── sweeping ${knob} ──`);
-  results[knob] = [];
-  for (const v of values) {
-    const spec = { ...BASE, [knob]: v };
-    const r = runSetting(spec);
-    results[knob].push({ v, ...r });
-    console.log(
-      `  ${knob}=${String(v).padEnd(5)} false alarms ${r.falsePer1000.toFixed(2).padStart(6)}/1000 pushes   ` +
-        `detection ${(r.detection * 100).toFixed(0).padStart(3)}%   (planted-series false alarms ${r.plantedFalsePer1000.toFixed(2)}/1000)`,
-    );
+// False alarms depend only on (law, spec): a null series carries no shift.
+const fpCache = new Map();
+const falseAlarmsFor = (law, spec, key) => {
+  const k = `${law}|${key}`;
+  if (!fpCache.has(k)) {
+    let n = 0;
+    for (let i = 0; i < REALISATIONS; i++) n += rezeroIndices(nullSeries(20260815 + i * 7919, law), spec).length;
+    fpCache.set(k, (n / (REALISATIONS * EXTENT)) * 1000);
   }
-  console.log();
-}
+  return fpCache.get(k);
+};
 
-// ── the pre-registered readings ────────────────────────────────────────────
+const detectionFor = (law, shift, spec) => {
+  const at = Math.floor(EXTENT * SHIFT_AT);
+  const within = DETECT_WITHIN(spec.window);
+  let detected = 0;
+  for (let i = 0; i < REALISATIONS; i++) {
+    const hits = rezeroIndices(plantedSeries(20260815 + i * 7919, law, shift), spec);
+    if (hits.some((h) => h >= at && h <= at + within)) detected++;
+  }
+  return detected / REALISATIONS;
+};
+
 // "Trades" = across the swept range, detection falls by at least half the
 // proportion the false-alarm rate falls by. A resolution buys the fall in
-// false alarms without paying for it in detection.
+// false alarms without paying for it in detection. Unanswerable when either
+// axis is pinned — a gap, never a zero, and never a REFUSED.
 const tradeRatio = (row) => {
   const first = row[0];
   const last = row[row.length - 1];
-  if (!(first.falsePer1000 > 0)) return null;
-  const faDrop = (first.falsePer1000 - last.falsePer1000) / first.falsePer1000;
-  const detDrop = first.detection > 0 ? (first.detection - last.detection) / first.detection : 0;
-  return { faDrop, detDrop, ratio: faDrop > 0 ? detDrop / faDrop : null };
+  if (!(first.fp > 0)) return { why: "no false alarms at the low end" };
+  if (!(first.detection > 0)) return { why: "nothing detected at the low end" };
+  const faDrop = (first.fp - last.fp) / first.fp;
+  if (!(faDrop > 0)) return { why: "false alarms did not fall across the sweep" };
+  const detDrop = (first.detection - last.detection) / first.detection;
+  return { faDrop, detDrop, ratio: detDrop / faDrop };
 };
 
-console.log("── verdicts ────────────────────────────────────────────────────────");
-for (const knob of Object.keys(SWEEPS)) {
-  const t = tradeRatio(results[knob]);
-  if (!t) {
-    console.log(`${knob}: no false alarms at the low end — the trade question is unanswerable here (a gap, not a zero)`);
-    continue;
+const answerable = [];
+for (const law of LAWS) {
+  for (const shift of SHIFTS) {
+    console.log(`══ law=${law}  planted shift=+${shift} ══`);
+    const perKnob = {};
+    for (const [knob, values] of Object.entries(SWEEPS)) {
+      const row = values.map((v) => {
+        const spec = { ...BASE, [knob]: v };
+        return { v, fp: falseAlarmsFor(law, spec, `${knob}=${v}`), detection: detectionFor(law, shift, spec) };
+      });
+      perKnob[knob] = row;
+      const cells = row
+        .map((c) => `${knob}=${c.v}: fp ${c.fp.toFixed(2)} det ${(c.detection * 100).toFixed(0)}%`)
+        .join("  |  ");
+      const t = tradeRatio(row);
+      const verdict = t.why ? `unanswerable (${t.why})` : `paid/bought ${t.ratio.toFixed(2)} → ${t.ratio >= 0.5 ? "TRADES" : "does not trade"}`;
+      console.log(`  ${knob.padEnd(10)} ${cells}`);
+      console.log(`  ${" ".repeat(10)} ${verdict}`);
+      if (!t.why) answerable.push({ law, shift, knob, ...t });
+    }
+    console.log();
   }
+}
+
+// ── the pre-registered readings ────────────────────────────────────────────
+console.log("── verdicts ────────────────────────────────────────────────────────");
+if (answerable.length === 0) {
+  console.log("Every cell unanswerable: this material still cannot ask the question. A gap, not a zero.");
+} else {
+  for (const knob of Object.keys(SWEEPS)) {
+    const rows = answerable.filter((a) => a.knob === knob);
+    if (rows.length === 0) {
+      console.log(`${knob.padEnd(10)} no answerable cell`);
+      continue;
+    }
+    const mean = rows.reduce((s, r) => s + r.ratio, 0) / rows.length;
+    console.log(
+      `${knob.padEnd(10)} answerable in ${rows.length} cell(s) · mean paid/bought ${mean.toFixed(2)} · ` +
+        `${rows.filter((r) => r.ratio >= 0.5).length}/${rows.length} TRADE`,
+    );
+  }
+  const tolRows = answerable.filter((a) => a.knob === "tolerance");
+  const drawRows = answerable.filter((a) => a.knob === "draws");
+  const meanOf = (rs) => (rs.length ? rs.reduce((s, r) => s + r.ratio, 0) / rs.length : null);
+  const tol = meanOf(tolRows);
+  const dr = meanOf(drawRows);
+  console.log(`\nT1 tolerance TRADES: ${tol === null ? "unanswerable" : tol >= 0.5 ? "HELD" : "REFUSED"}`);
   console.log(
-    `${knob.padEnd(10)} false alarms fell ${(t.faDrop * 100).toFixed(1)}% · detection fell ${(t.detDrop * 100).toFixed(1)}% · ` +
-      `paid/bought = ${t.ratio === null ? "n/a" : t.ratio.toFixed(2)}  → ${t.ratio !== null && t.ratio >= 0.5 ? "TRADES" : "does not trade"}`,
+    `T2 draws does not trade as tolerance does: ${tol === null || dr === null ? "unanswerable" : dr < tol ? "HELD" : "REFUSED"}`,
+  );
+  console.log(
+    `T3 tolerance is a threshold wearing "resolution", SEED's invariant survives: ${
+      tol !== null && dr !== null && tol >= 0.5 && dr < tol ? "HELD" : "NOT ESTABLISHED — read the cells above"
+    }`,
   );
 }
 
-const tol = tradeRatio(results.tolerance);
-const dr = tradeRatio(results.draws);
-console.log(
-  `\nT1 tolerance TRADES: ${tol && tol.ratio !== null && tol.ratio >= 0.5 ? "HELD" : "REFUSED"}` +
-    `\nT2 draws does not trade as tolerance does: ${
-      tol && dr && tol.ratio !== null ? (dr.ratio === null || dr.ratio < tol.ratio ? "HELD" : "REFUSED") : "unanswerable"
-    }`,
-);
+// ── the type test, measured ────────────────────────────────────────────────
+console.log("\n── the type test: does the knob change what is SEEN, or only what is DONE? ──");
+console.log("STRAINED is the placement that IS a clearing — the evidence tolerance counts.");
+console.log("PRE-REGISTERED: V1 draws and window move the strain rate (they enter the difference).");
+console.log("                V2 tolerance does not move it AT ALL (it enters no difference).\n");
+
+const strainFor = (spec, law) => {
+  let strained = 0;
+  let placed = 0;
+  for (let i = 0; i < REALISATIONS; i++) {
+    const r = strainRate(nullSeries(20260815 + i * 7919, law), spec);
+    strained += r.strained;
+    placed += r.placed;
+  }
+  return placed ? strained / placed : null;
+};
+
+const strainTable = {};
+for (const law of LAWS) {
+  console.log(`  law=${law}`);
+  strainTable[law] = {};
+  for (const [knob, values] of Object.entries(SWEEPS)) {
+    const rates = values.map((v) => ({ v, rate: strainFor({ ...BASE, [knob]: v }, law) }));
+    strainTable[law][knob] = rates;
+    const spread = Math.max(...rates.map((r) => r.rate)) - Math.min(...rates.map((r) => r.rate));
+    console.log(
+      `    ${knob.padEnd(10)} ${rates.map((r) => `${r.v}: ${(r.rate * 100).toFixed(2)}%`).join("  ")}   spread ${(spread * 100).toFixed(3)}pp`,
+    );
+  }
+}
+
+console.log("\n── verdicts · the type test ──");
+for (const law of LAWS) {
+  for (const knob of Object.keys(SWEEPS)) {
+    const rates = strainTable[law][knob].map((r) => r.rate);
+    const spread = Math.max(...rates) - Math.min(...rates);
+    const moves = spread > 0;
+    const expected = knob === "tolerance" ? false : true;
+    console.log(
+      `  ${law.padEnd(12)} ${knob.padEnd(10)} strain-rate spread ${(spread * 100).toFixed(4)}pp → ${moves ? "MOVES the seeing" : "does not touch the seeing"}` +
+        `  ${moves === expected ? "(as predicted)" : "(AGAINST prediction)"}`,
+    );
+  }
+}

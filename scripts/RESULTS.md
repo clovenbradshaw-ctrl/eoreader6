@@ -681,3 +681,83 @@ Two things `level()` is missing, both recorded and neither fixed here: the
 of its verdict — which `nul/index.js` already contains, thirty lines further
 down, in `objectify()`'s `displacement / reseedNull`. Spec 13 Assembly E states
 what would have to be measured before either is called a fix.
+
+## Spec 13, systematic pass: the resolution census and its one candidate
+
+**The census** (`scripts/resolution-census.mjs`). 107 engine-tier source files,
+122 declared-never-defaulted guard sites, **53 distinct numbers**. Split on the
+code's own words rather than on the script's opinion — deciding by hand which
+numbers "are really resolutions" would be the classifier act `CUBE.md` already
+refuted. Exactly one number is glossed by the code as a resolution, is not one
+of `SEED.md`'s three, and is a word `SEED.md` has never once contained:
+
+| number | gloss | modules |
+|---|---|---|
+| `tolerance` | "the resolution of refusal is never a default" | `loops/atmosphere.js`, `loops/turn.js` |
+
+`SEED.md` states "**No fourth declared number.** Three declared numbers still."
+twice. `runTurn` — the organ that fires all nine operators — requires a fourth
+and calls it a resolution in its own `TypeError`. The other 49 numbers beyond
+the three are thresholds, ids and policy knobs, correctly declared and correctly
+not called resolutions; the census's own split is what keeps this to one
+candidate instead of fifty.
+
+### Read — the ROC sweep is underpowered and does not decide it
+
+`scripts/tolerance-is-it-a-resolution.mjs`, T1/T2/T3 pre-registered. The first
+material could not ask the question at all — IID uniform noise produced **zero**
+re-zeros at every setting and a +0.6 shift was detected 100% of the time
+everywhere, so every verdict came back unanswerable. Fixed in the material (a
+heavy-tailed IID law added, the planted shift swept rather than picked), not in
+the predictions.
+
+With that fixed the script prints T1 HELD, T2 HELD, T3 HELD — **and those
+verdicts should not be relied on.** Only 3 of 24 cells were answerable at all,
+and each rests on differences of one or two events (false-alarm rates of
+0.39/1000 are a single re-zero across 2,560 pushes; detection rates of 13–25%
+are one or two hits out of eight). Recorded as underpowered, not as support.
+Getting real power on this axis needs ~100× the pushes, which the tracker's
+O(N²·draws·window) cost puts out of reach of a session.
+
+### Read — the type test, and **V2 refused**
+
+The sharper question, and the one `SEED.md` #7 says to ask first ("type error
+before null; never spend a measurement on what the algebra catches"): does the
+knob change what is **seen**, or only what is **done** about what was seen?
+STRAINED is the placement that *is* a clearing — the evidence `tolerance`
+counts — and it is orders of magnitude denser than a re-zero, so this is
+well-powered where the ROC sweep is not.
+
+| law=exponential | sweep | strain rate | spread |
+|---|---|---|---|
+| `draws` | 50 → 800 | 0.22 → 0.14 → 0.07 → 0.00 → 0.00 % | 0.215pp |
+| `window` | 6 → 24 | 0.10 → 0.07 → 0.00 % | 0.101pp |
+| `tolerance` | 1 → 8 | 0.00 → 0.07 → 0.07 → 0.07 → 0.07 % | **0.066pp** |
+
+- **V1 HELD** — `draws` and `window` move the strain rate. They enter the
+  difference, so they change what is perceived.
+- **V2 REFUSED** — `tolerance` was predicted to leave the strain rate *exactly*
+  unchanged, on the grounds that it appears only in `clearings >= tolerance`
+  and `run >= tolerance`, never inside a difference. It moved it.
+
+**The measurement corrected a claim made by reading the code, which is the whole
+reason it was run.** `tolerance` does not enter a difference directly — that
+part of the reading is right — but it sets `regimeStart` when the ground is
+conceded, and `groundFrom(regimeStart, …)` builds every subsequent ground from
+there. So it reaches perception through a feedback path: it does not change how
+finely the ground is built, it changes **where the ground starts**.
+
+That relocates the answer rather than settling it in favour of either side.
+`window` sets how far forward the present reaches; `tolerance` sets how long the
+present survives contradiction. Both are extents of the ground. So the honest
+conclusion is a **correction to spec 13 §1**: its "one declared number per
+grain" is refuted in the strong form — **Ground carries two.** `draws` at Figure
+and `reseeds` at Pattern are untouched, and `tolerance` is a Ground-grain
+quantity rather than a fourth grain, which is why the grid survives even though
+the tidy one-to-one does not.
+
+What is still not established, and should not be asserted from this run: whether
+`tolerance` is a *resolution* of the ground in the sense `1/draws` and
+`1/reseeds` are resolutions — that needs the Ground-grain censoring bound spec
+13 §6 Assembly F already flags as an open question, and this run does not supply
+it.
