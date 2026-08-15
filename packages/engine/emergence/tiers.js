@@ -62,6 +62,17 @@
 // this file reinvented a percentile of its own history instead, and the
 // percentile is what the hand-picked quantiles were tuning.
 //
+// "Runs of exceedance ARE the windows" is this file's own boundary-detection
+// claim, and it has a literature: unsupervised text/audio segmentation by
+// local statistical departure, without a topic label or trained model — Foote
+// (2000)'s self-similarity-matrix novelty for audio, Hearst (1997)'s
+// TextTiling lexical-cohesion valleys for text. Cited here, not applied: both
+// score a FIXED comparison (a similarity kernel; adjacent-block cohesion)
+// against its own local history, where this gate scores KL-divergence
+// exceedance against a null GENERATED from the tier's own prior
+// (`priorContinuationNull`, above) — a different statistic solving the same
+// problem, not an instance of theirs.
+//
 // This also retires `history`/`minFelt`: the null is rebuilt per observation
 // from the prior as it stands, so there is no felt-history buffer to size and
 // nothing to declare about how much of its own past a tier keeps.

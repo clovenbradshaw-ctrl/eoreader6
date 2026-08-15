@@ -164,3 +164,26 @@ domains) and claims a 9×9×9 space. It predates the algebra.
 Note that Ramakrishna's own cell is among the five the algebra refuses. Either
 the hand-list encoded an intuition the algebra has not yet earned, or the
 intuition is wrong. Unresolved, and deliberately not resolved by fiat.
+
+## Representation standard (companion doc)
+
+The Site face — this file's `terrain = (domain, grain)` — is also the
+address space for how data gets *shown*, not only how the engine measures
+it. `12-nine-terrains-as-representation-standard.md` files that standard:
+each of the nine terrains has a native class of representation (a
+spreadsheet row is Entity, an EKG strip is Atmosphere, a legend is
+Paradigm), and no representation has two native terrains. It is a
+downstream, application-facing use of this same grid, not a runtime change
+here — same discipline as the rest of this file: the cube stays an
+instrument, never a data structure.
+
+On the naming used a few paragraphs up ("Existence / Structure /
+Significance — the layering this engine's significance work is built on
+this session — is the same axis as Existence · Structure · Interpretation,
+not an analogy to it"): the representation standard formalizes that as two
+live aliases for one axis, not a resolved rename. `DOMAINS` in
+`packages/engine/operators.js` is frozen as `Existence, Structure,
+Interpretation` — that stays the engine name. `writing-code-in-eo` uses
+Significance throughout — that stays the application name. Both are canon
+at their own tier; unifying them lineage-wide is a separate, larger
+proposal this file does not make.

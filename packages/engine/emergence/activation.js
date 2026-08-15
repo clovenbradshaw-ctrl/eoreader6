@@ -22,6 +22,17 @@
 //      hop, not a similarity flood: a diffuse spread pools inside a passage's
 //      own dense vocabulary and drowns the distant target.
 //
+// The three numbered mechanisms name their own anatomy but not, until now,
+// their own literature: sparse coding at the dentate gyrus and one-shot
+// pattern completion at CA3 are Marr's (1971) archicortex model, developed
+// into the sparse/dense complementary-learning-systems account by McClelland,
+// McNaughton & O'Reilly (1995). The nearby-sounding but DIFFERENT lineage is
+// spreading activation (Collins & Loftus 1975; surveyed for IR by Crestani
+// 1997) — cited here because it is the mechanism this one is not: spreading
+// activation propagates across multiple hops with decay, which is exactly
+// the "similarity flood" #3 above names and rejects. One recurrent hop is a
+// deliberate departure from that lineage, not an application of it.
+//
 // WHAT HAD TO CHANGE, AND IT IS THE WHOLE POINT.
 //
 // eoreader5 computes idf, trigram-df, and the df ≥ 2 gate over ALL frames
