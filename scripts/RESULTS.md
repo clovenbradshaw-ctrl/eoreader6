@@ -514,3 +514,170 @@ specified.** A Lens built over disagreement between two regime trackers
 inherits whichever of them is a metronome; two metronomes at different
 periods would produce a "disagreement series" with no reading-act content
 in it at all.
+
+## Spec 13 Assembly A: the two-knob cross — pre-registered prediction
+
+*Written and committed **before** `scripts/resolution-knob-cross.mjs` was run
+for the first time. Spec: `13-the-resolution-face.md` §5.*
+
+**The claim under test.** `SEED.md`'s three declared numbers are one per grain
+— `window` at Ground, `draws` at Figure (`difference()` reports `censoredAt =
+1/draws`), `reseeds` at Pattern (`pattern()` reports `censoredAt = 1/reseeds`).
+If that is real, a question is governed by the declared number of the grain it
+is asked at, and no other.
+
+**The question.** `level()` asks a Pattern-grain question. Its threshold is
+`max(floor, reseedNull)` where `floor = 2/draws` (the Figure knob) and
+`reseedNull` comes from `reseeds` (the Pattern knob). Material: white noise
+coarsened by successive block-averaging, adjacent scales, where every relation
+should be `peer` — `level()`'s own control, per its docstring.
+
+**Predictions.**
+
+- **P1** — floor only (no reseeding null supplied): the false-ladder rate does
+  **not fall** as `draws` rises across 60 → 120 → 300 → 600. This is a
+  replication of the direction `level()`'s docstring already records (3.08 →
+  4.42 of 5).
+- **P2** — with the reseeding null supplied: at fixed `draws`, the false-ladder
+  rate **falls** as `reseeds` rises across 6 → 12 → 24 → 48.
+- **P3 (discriminating)** — with the reseeding null supplied, the false-ladder
+  rate is approximately **flat in `draws`**: its spread across the four `draws`
+  settings is smaller, at every `reseeds > 0`, than the spread across the same
+  four settings with the floor alone.
+
+**What refuses the claim.** P3. If `draws` still governs strongly once the
+reseeding null is doing the work, `draws` is not specifically the Figure-grain
+resolution and spec 13 §1's assignment is wrong.
+
+**What refuses the design (not the claim).** A systematic direction in the
+above/below balance would mean coarsening induces a real level, the ground truth
+`peer` is false, and this control cannot answer the question at all.
+
+**Nothing here is tuned.** The `draws` settings are the docstring's own, so the
+floor-only row is a replication; the `reseeds` settings span the range
+`pattern()`'s own false-positive table already measured. No value is chosen by
+what it does to a score and no operating point is proposed.
+
+*Result appended below after the run.*
+
+### Read — first control refused by its own design check
+
+The first control was `level()`'s own docstring's material: white noise
+coarsened by successive block-averaging, own = the finer scale, target = the
+next coarser. The design check fired unambiguously — **0 above / 528 below**
+across every cell of the cross, with the laddered rate at 100% almost
+everywhere. Coarsening halves the extent at each step, and `pattern()`'s own
+docstring already records why that is fatal here: *"burstiness is a max over
+windows, so its expectation rises with extent for no reason but extent."* The
+control was measuring the extent artefact, not a level.
+
+**That is a finding about `level()`, not only about the control.** `pattern()`
+refuses mismatched extents by type (`incommensurate_extent`, twice, under the
+banner "Type error before null, both ways round (SEED.md #7)"). `level()` has
+no such guard: it will happily level two grounds built over materials of
+different extent, and on an extent-sensitive statistic the verdict is then
+100% laddered in a single direction. Recorded here; no fix attempted in this
+change.
+
+Two replacement controls, both holding extent, statistic, perturbation and
+window exactly fixed:
+
+- **seed-only** — own and target are grounds over the *same* material with the
+  *same* spec, differing only in perturbation seed. This is the shape `level()`
+  is actually used in by the growth rule (own = candidate's ground, core =
+  shuffle's ground, same material) with the candidate set equal to the core.
+- **same-law** — own and target are grounds over two *independent* white-noise
+  series of identical length. No level exists by exchangeability, but the
+  variation to be cleared is material-to-material rather than seed-to-seed.
+
+### Read — P1 held, P2 held, **P3 refused**
+
+`seed-only` (96 trials): **0 false ladders in every one of the 20 cells**, at
+every `draws` and every `reseeds`, floor-only included. The growth rule's own
+use-shape is safe: when two grounds share their material, displacement is far
+inside even the smallest floor. The P1/P2/P3 verdicts this control prints are
+therefore **vacuous** — a rate that is 0 everywhere cannot rise, fall, or
+spread — and are not counted as support for anything.
+
+`same-law` (96 trials) is the informative one:
+
+| threshold | draws=60 | 120 | 300 | 600 |
+|---|---|---|---|---|
+| floor only | 81.5% | 89.2% | 93.5% | 96.8% |
+| reseeds=6 | 57.5% | 63.0% | 74.2% | 80.9% |
+| reseeds=12 | 51.8% | 58.7% | 72.0% | 78.7% |
+| reseeds=24 | 42.7% | 50.5% | 68.5% | 77.7% |
+| reseeds=48 | 36.3% | 47.7% | 66.3% | 73.4% |
+
+*(false-ladder rate — `above` or `below` where only `peer` is true. Direction
+balance across all cells 602 above / 643 below, so the control itself carries
+no level: the design check passes.)*
+
+- **P1 HELD.** Floor-only laddering rises with draws, 81.5 → 96.8%,
+  replicating the direction `level()`'s docstring records (3.08 → 4.42 of 5).
+  Paying for more Figure resolution buys a worse Pattern answer.
+- **P2 HELD** at every `draws`. Turning the Pattern knob improves the Pattern
+  answer, monotonically, at every setting of the Figure knob.
+- **P3 REFUSED.** The rate keeps rising steeply with `draws` even with the
+  reseeding null supplied — 36.3 → 73.4% at reseeds=48 — and the spread across
+  draws is *larger* with the null than without it. The Figure knob does **not**
+  stop governing the Pattern verdict once the Pattern knob is doing the work.
+
+**P3 was the pre-registered discriminating test and it failed.** Spec 13 §5
+said in advance that this refuses the strong form of the claim, and it does:
+the assignment `reseeds → Pattern` is not sufficient to make `draws` stop
+governing a Pattern-grain verdict. What survives is the weaker pair P1 + P2 —
+the right knob improves the answer and the wrong knob degrades it — which is
+the direction the three incidents in spec 13 §3 already showed, now replicated
+blind on material with nothing in it.
+
+### Pre-registered: the mechanism behind P3's refusal (post hoc diagnosis, own numbers stated first)
+
+One diagnosis is available and it is post hoc, so it is filed as a prediction
+with its own numbers rather than as a conclusion. `reseedNull` is measured in
+**rank** units, and rank resolution is `1/draws` — a Figure-grain quantity. If
+that is the route by which `draws` leaks into a Pattern verdict:
+
+- **M1** — mean `reseedNull` falls as `draws` rises, at fixed `reseeds`.
+- **M2** — mean `|displacement|` does not fall as `draws` rises.
+
+Together those would mean the Pattern-grain threshold shrinks underneath a
+signal that does not — a **grain leak in `level()`**, not a fact about the
+material. If M1 fails, the diagnosis is wrong and P3's refusal stands
+undiagnosed. The instruments emitting M1 and M2 were added and committed
+before the numbers they report were read.
+
+### Read — M1 held, M2's operationalization refused on a dip, the leak is real
+
+| `same-law`, reseeds=48 | draws=60 | 120 | 300 | 600 |
+|---|---|---|---|---|
+| mean `reseedNull` (the threshold) | 0.180 | 0.119 | 0.071 | 0.049 |
+| mean `\|displacement\|` (the signal) | 0.165 | 0.144 | 0.142 | 0.140 |
+| false-ladder rate | 36.3% | 47.7% | 66.3% | 73.4% |
+
+- **M1 HELD** at every `reseeds` setting: mean `reseedNull` falls monotonically
+  as draws rises — a 3.6× collapse across a 10× change in `draws`.
+- **M2**: mean `|displacement|` runs 0.148 → 0.139 → 0.140 → 0.140 on the
+  floor-only row — flat within 0.6% after a 6.5% dip at the first step. **The
+  pre-registered test as coded (monotone non-decreasing) printed REFUSED on that
+  dip and that is what is recorded.** The sentence M2 was written to test ("does
+  not fall as draws rises") is supported by the same numbers. The
+  operationalization was stricter than the sentence; that is an error in the
+  pre-registration and it is left visible rather than restated to match.
+
+The threshold collapses while the signal it must clear stays flat, and the
+verdict follows the threshold. `level()`'s two declared numbers pull **opposite
+ways on one quantity** — `reseeds` widens the threshold, `draws` narrows it — so
+"declare more resolution" is ambiguous in this organ depending on which number
+is meant.
+
+**The kind of defect this is: a grain leak** — a quantity belonging to one grain
+denominated in another grain's units. Invisible to the operator face (the act is
+`EVA` either way) and to the terrain face (the object is a Network either way).
+Only the stance face carries resolution, so only the stance face can see it.
+
+Two things `level()` is missing, both recorded and neither fixed here: the
+`incommensurate_extent` guard `pattern()` has twice, and a draws-invariant form
+of its verdict — which `nul/index.js` already contains, thirty lines further
+down, in `objectify()`'s `displacement / reseedNull`. Spec 13 Assembly E states
+what would have to be measured before either is called a fix.
