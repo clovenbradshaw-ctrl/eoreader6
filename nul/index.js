@@ -547,6 +547,24 @@ export const PRESERVES = Object.freeze({
   shuffle: Object.freeze(["multiset"]),
   resample: Object.freeze(["support"]),
   phase: Object.freeze(["spectrum", "autocorrelation", "mean", "variance"]),
+  // The curveball / fixed-margin swap over a binary profile matrix, held by
+  // emergence/kinds.js as `permuteFieldSwap`. Declared here so that organ's NUL
+  // is described where every other one is, rather than only in the file using it.
+  //
+  // WHAT IT HOLDS FIXED IS MATERIAL-DEPENDENT, and that is the trap this entry
+  // exists to name. Stated statically it preserves the row and column margins
+  // and nothing else — the right null for "is this association more than the
+  // margins force." But when every row sum is 1 (near-one-hot profiles, the
+  // sparse case this organ was built for) a margin-preserving swap can only
+  // relabel WHICH column each row's single 1 occupies: the multiset of rows is
+  // invariant, the permuted matrix carries exactly the same blocks, and the
+  // null reproduces the observation it is supposed to be a nothing for.
+  //
+  // A static table cannot catch that, because it is a property of the material
+  // rather than of the perturbation. `perturbationMoves` in emergence/kinds.js
+  // is the runtime companion to this entry, and every caller of `fieldSwap` is
+  // expected to ask it before trusting the samples it gets back.
+  fieldSwap: Object.freeze(["rowMargins", "colMargins"]),
 });
 
 export const preserves = (perturbation, what) => (PRESERVES[perturbation] ?? []).includes(what);

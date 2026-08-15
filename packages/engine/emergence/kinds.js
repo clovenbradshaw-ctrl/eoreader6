@@ -672,7 +672,40 @@ export const permuteFieldSwap = (profiles, rnd) => {
  *  of too few informative reseeds is a short (or empty) sample list, which
  *  `partitionNull` already reads as `empty_material`, never a fabricated
  *  pass or fail. */
+/**
+ * DOES THIS PERTURBATION MOVE THIS MATERIAL? The runtime companion to
+ * `nul/index.js`'s `PRESERVES.fieldSwap`.
+ *
+ * A fixed-margin swap preserves the row and column margins by construction.
+ * What it preserves BEYOND that depends on the material, and there is one case
+ * where it preserves everything: if every row sum is 1, the only move available
+ * is relabelling which column each row's single 1 occupies, so the multiset of
+ * rows comes back identical and every cluster survives at its original
+ * cohesion. A null built that way reproduces the observation it is supposed to
+ * be a nothing for, and cannot reject anything — the failure II.10 describes as
+ * failing invisibly and globally, since the record shows a real ground, a real
+ * rank and a real spec throughout.
+ *
+ * Returns whether ANY reseed changed the multiset of profile rows. Exact
+ * equality, so there is no threshold here — the question is whether the
+ * perturbation is inert, not how inert it is.
+ */
+export const perturbationMoves = (profiles, { seed, reseeds }) => {
+  const key = (m) => [...m.values()].map((v) => v.join("")).sort().join("|");
+  const before = key(profiles);
+  for (let r = 0; r < reseeds; r++) {
+    const rnd = prng((seed ^ 0x2eed1e) + r * 0x9e3779b1);
+    if (key(permuteFieldSwap(profiles, rnd)) !== before) return true;
+  }
+  return false;
+};
+
 export const searchKeyCohesions = (profiles, targetSize, { minKindSize, permutations, quantile, seed, reseeds }) => {
+  // An inert perturbation yields a null that reproduces the observation. Report
+  // no samples rather than samples that cannot reject, so the caller sees a
+  // typed gap (III.3: a missing ground is a typed gap, never a silently wrong
+  // number) instead of a resolved-looking null with no power in it.
+  if (!perturbationMoves(profiles, { seed, reseeds })) return [];
   const samples = [];
   for (let r = 0; r < reseeds; r++) {
     const rnd = prng((seed ^ 0x2eed1e) + r * 0x9e3779b1);
@@ -827,6 +860,13 @@ export const induceKinds = (records, opts = {}) => {
       warrant = keySupported && valueSupported ? "both" : keySupported ? "key" : "value";
     } else {
       const keySearch = searchKeyCohesions(profiles, cluster.length, { minKindSize, permutations, quantile, seed, reseeds });
+      // Where the perturbation is inert on this material, the search null has
+      // no power and the kind rests on `eva` alone — which has never rejected
+      // anything in measurement, because it nulls a best-first-SELECTED cluster
+      // against RANDOM subsets. That is a real weakening of the warrant and it
+      // is carried on the kind rather than left implicit, so a reader can tell
+      // a kind the search null cleared from one it never spoke to.
+      if (keySearch.length === 0) warrant = "eva-only";
       // FAMILY-WISE CORRECTION ACROSS THE SIMULTANEOUS CANDIDATES. `con` hands
       // back `clusters.length` candidates from ONE search over ONE population,
       // each gated here independently — the identical multiple-comparisons
