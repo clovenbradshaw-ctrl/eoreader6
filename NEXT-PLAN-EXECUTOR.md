@@ -406,3 +406,35 @@ the measured answer to whether clause-shaped objects were detectable, with
 the v1 scope named either way. Full suite: `node --test "conformance/*.test.js"`
 stays at 100% pass, checked before and after, the way every commit in this
 lineage does.
+
+## Addendum (same session): the germline path, v0 built
+
+The residual-code categories above ("a new perceiver at the admission
+boundary or a new organ that enters the roster once") now have their first
+mechanical entry path: `packages/host/germline.js` — template with typed
+holes (enzyme), fillings that name their giver (guide), a complementarity
+scan (no clocks, no I/O, no imports, no eval in a hole; statements holes
+must return), and four selection gates (imports → contract → behavior →
+physics), every refusal a typed gap. The perceiver template is built;
+organ and adapter templates follow the same shape and are not yet built.
+
+Two boundaries this path must keep, both load-bearing:
+
+- **Germline runs outside plans.** `execute.js` dispatches only organs
+  that already exist. A running read can never grow itself new mechanism
+  mid-flight, and the roster stays ratification-edited — `germline.js`
+  writes no file and touches no registry.
+- **Selection is contract, not intent.** The gates prove a candidate
+  speaks the engine's material shape; they do not prove it answers the
+  task that prompted it (measured immediately: the first surviving
+  model-guided organ split on sentence punctuation when the task said
+  whitespace — see `goldens/germline/README.md`). Intent verification is
+  the missing fifth gate, and it must arrive as a mechanical, task-derived
+  property check supplied with the guide, never as review-by-impression.
+
+Measured (goldens/germline, local Qwen2.5-1.5B on CPU): three runs — one
+guide refused for a JSON-mangled escape it could not repair even with a
+typed hint, one refused before assembly by the return-scan that refusal
+taught us to add, one survived all four gates after its single bounded
+repair round. A working perceiver now exists that no human wrote, and both
+refusals are recorded beside it with equal weight.
