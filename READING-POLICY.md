@@ -988,3 +988,44 @@ named above. `extractRelations`'s return shape is unchanged (still
 `{subject, verb, object, polarity}`); `functionWords` is a new optional
 parameter, defaulted to `null`, changing nothing for a caller that omits
 it.
+
+---
+
+### A20 · Admission does not strip the container, and the cap is silent
+
+Measured while wiring `packages/host` into a separate reader (`the-fold`),
+against War and Peace (`pg2600.txt`, 3,293,655 chars).
+
+**The container survives admission.** P5.3 says strip it, `spans.js` exports
+`stripContainer` for exactly that, and `admitChunked` does not call it.
+`wp:chunk-0` is the Project Gutenberg header followed by the book's entire
+table of contents — admitted, indexed, retrievable, quotable. The reader that
+found this had the same defect and fixed it: 47 of its 11,190 passages were
+the licence and the donation appeal, and dropping them cost nothing but a
+regex and an offset carried forward.
+
+**The unit is a byte budget, not a unit.** `CHUNK_SIZE = 2000` cuts every
+2000 chars regardless of sentence, paragraph or chapter: 1,647 units, all
+exactly 2000 long except the tail. The file's own comment already grants this
+is "an engineering starting point, not yet validated" — recorded here so the
+next reader does not mistake an admission unit for a segment. The same book
+through `segments.js` yields 376 boundaries found by form, which is what a
+passage should be cut at, and what a citation should be able to name.
+
+**The cap does not announce itself.** `spanCap` defaults to 2000 and
+admission is `if (session.spans.size < session.spanCap)`. War and Peace needs
+1,647. A book a quarter longer stops being admitted part way through, with no
+gap emitted and nothing in the return value to say so — `{chunks, admitted}`
+reports what was taken, never what was refused. P4 says a gap is a result;
+this one is silence. **The fix is a typed gap (`cast_truncated` already
+exists for this shape), not a bigger default.**
+
+### A21 · `searchSpans` does not fold diacritics
+
+Same session, same corpus. `searchSpans(session, {query: "Natásha"})` returns
+three spans; `"Natasha"` returns zero, against a text that writes the name
+1,213 times. The reader is told the material lacks her, which is the worst
+shape this failure can take: it reads as retrieval working and the corpus
+being thin. Folding NFD combining marks before tokenising costs one line and
+is the same rule already applied in `surfaces.js::diaNorm` — the organ that
+`segments.js` imports for exactly this reason. The two paths disagree.
