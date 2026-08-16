@@ -530,32 +530,85 @@ export function foldExtract({ text, charStart, charEnd, word, budgetSentences } 
   if (!scoped.length) {
     return { scope, gap: { silence: "computed-and-empty", detail: "no sentences in this scope" } };
   }
-  const table = buildFrequencyTable(tokenize(text));
-  // A sentence with fewer than two word tokens cannot carry a claim — a
-  // structural minimum, not a tuned floor (measured: "6." and "7." from a
-  // numbered list outranked whole sentences, their rarity wearing novelty's
-  // clothes). Mean surprisal over one token is a token statistic, not a
-  // sentence's.
-  const scored = scoped
+
+  // CANDIDACY. Structure lines — markdown headings, table rows, fences —
+  // are addresses and scaffolding, not claims; the outline already holds
+  // them (measured: a novelty-ranked fold returned "## One operation" and
+  // two orphaned list markers as a "summary"). And a sentence with fewer
+  // than two word tokens cannot carry a claim — a structural minimum.
+  // A leading pipe is a table fragment even when sentence-splitting broke
+  // the row mid-way (measured: "| Line | Held by |…" survived an
+  // ends-with-pipe test and shipped in a fold).
+  const structureLine = /^\s*(#{1,6}\s|\||```)/;
+  const candidates = scoped
+    .filter((s) => !structureLine.test(s.text))
     .map((s) => ({ ...s, tokens: tokenize(s.text) }))
-    .filter((s) => s.tokens.length >= 2)
-    .map((s) => ({ ...s, microbits: surprisalMicrobits(s.tokens, table) }));
-  if (!scored.length) {
-    return { scope, gap: { silence: "computed-and-empty", detail: "no sentence in this scope carries at least two word tokens" } };
+    .filter((s) => s.tokens.length >= 2);
+  if (!candidates.length) {
+    return { scope, gap: { silence: "computed-and-empty", detail: "no sentence in this scope carries a claim (structure lines and sub-two-token fragments are not candidates)" } };
   }
-  const lines = scored
-    .slice()
-    .sort((a, b) => b.microbits - a.microbits)
-    .slice(0, budgetSentences)
+
+  // COVERAGE, not novelty. A summary answers "what is this about", so the
+  // fold greedily picks the sentences that together carry the most of the
+  // scope's own recurring content vocabulary — the same Zipf-filtered,
+  // arrivals ≥ 2 forms the belief graph binds (TERM_FORMS_CAP, one
+  // standing, one dial). Novelty (surprisal) stays licensed for "what is
+  // most surprising" — a different question this function does not answer.
+  const table = buildFrequencyTable(tokenize(text));
+  const functionWords = functionWordSet(table);
+  const arrivals = new Map();
+  for (const s of candidates) {
+    for (const w of new Set(s.tokens)) {
+      if (functionWords.has(w) || w.length < 2) continue;
+      arrivals.set(w, (arrivals.get(w) ?? 0) + 1);
+    }
+  }
+  const forms = [...arrivals.entries()]
+    .filter(([, n]) => n >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, TERM_FORMS_CAP)
+    .map(([w]) => w);
+  const formSet = new Set(forms);
+  if (!formSet.size) {
+    return { scope, gap: { silence: "computed-and-empty", detail: "nothing recurs in this scope — no vocabulary to cover" } };
+  }
+
+  const uncovered = new Set(formSet);
+  const picked = [];
+  const pool = candidates.map((s) => ({ ...s, forms: new Set(s.tokens.filter((w) => formSet.has(w))) }));
+  while (picked.length < budgetSentences && uncovered.size) {
+    let best = null;
+    let bestGain = 0;
+    for (const s of pool) {
+      if (picked.includes(s)) continue;
+      let gain = 0;
+      for (const w of s.forms) if (uncovered.has(w)) gain++;
+      if (gain > bestGain || (gain === bestGain && gain > 0 && best && s.tokens.length < best.tokens.length)) {
+        best = s;
+        bestGain = gain;
+      }
+    }
+    if (!best || bestGain === 0) break; // nothing left adds coverage — an honest short fold
+    picked.push(best);
+    for (const w of best.forms) uncovered.delete(w);
+  }
+
+  const lines = picked
     .sort((a, b) => a.offset - b.offset)
-    .map((s) => ({ text: s.text, charStart: s.offset, charEnd: s.offset + s.text.length, microbits: s.microbits }));
+    .map((s) => ({
+      text: s.text,
+      charStart: s.offset,
+      charEnd: s.offset + s.text.length,
+      covers: forms.filter((w) => s.forms.has(w)),
+    }));
   return {
     scope,
     lines,
-    of: scored.length,
+    of: candidates.length,
     kept: lines.length,
+    forms: { covered: formSet.size - uncovered.size, of: formSet.size, list: forms },
     method:
-      "extractive fold — the scope's most novel sentences against this document's own frequency table (engine surprisal); verbatim, addressed, in document order",
+      "coverage fold — the fewest sentences that together carry the most of the scope's recurring content vocabulary (Zipf function-words excluded, arrivals ≥ 2, the same forms the belief graph binds); verbatim, addressed, in document order; structure lines are not candidates",
   };
 }
 

@@ -177,15 +177,17 @@ test("sessionKinds builds chunk records, runs the real induction, and carries th
   assert.ok(Number.isInteger(out.nullArm.drawsWithKinds));
 });
 
-test("foldExtract is a lossless change of resolution — verbatim, addressed, in order, budget-bounded, typed gaps", () => {
+test("foldExtract is a coverage fold — verbatim, addressed, in order, budget-bounded, structure excluded, typed gaps", () => {
   const text = frankenstein.slice(0, 30_000);
   const out = foldExtract({ text, budgetSentences: 5 });
   assert.ok(!out.gap, "whole-text fold succeeds on real prose");
   assert.ok(out.lines.length <= 5 && out.lines.length > 0);
   assert.ok(out.of > out.lines.length, "the fold reports what it folded from");
+  assert.ok(out.forms.covered > 0 && out.forms.covered <= out.forms.of, "coverage is counted against the scope's recurring forms");
   for (let i = 0; i < out.lines.length; i++) {
     const l = out.lines[i];
     assert.equal(text.slice(l.charStart, l.charEnd), l.text, "every line is the source's own bytes at its address — resolution, never invention");
+    assert.ok(l.covers.length > 0 && l.covers.every((w) => out.forms.list.includes(w)), "each line says which recurring forms it carries");
     if (i) assert.ok(l.charStart > out.lines[i - 1].charStart, "lines stay in document order");
   }
 
@@ -199,6 +201,13 @@ test("foldExtract is a lossless change of resolution — verbatim, addressed, in
   if (!worded.gap) {
     for (const l of worded.lines) assert.match(l.text.toLowerCase(), /(?<![\p{L}\p{N}])letter(?![\p{L}\p{N}])/u);
   }
+
+  // markdown structure lines are addresses, not claims — never fold lines
+  // (real prose behind the heading: the Zipf function-word classifier is
+  // honestly starved on toy-sized texts and gaps instead of guessing)
+  const md = foldExtract({ text: `# A Planted Heading\n\n${frankenstein.slice(2000, 10000)}`, budgetSentences: 3 });
+  assert.ok(!md.gap);
+  for (const l of md.lines) assert.ok(!/^\s*#/.test(l.text), "headings are excluded from candidacy");
 
   // undeclared budget and empty scopes are typed, never silent
   assert.equal(foldExtract({ text }).gap.reason, "undeclared");
