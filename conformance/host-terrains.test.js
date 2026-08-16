@@ -16,7 +16,7 @@ import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createSession, admitChunked } from "../packages/host/corpus.js";
-import { sessionTerrains, sessionKinds, kindsNullArm, TERRAIN_GRID } from "../packages/host/terrains.js";
+import { sessionTerrains, sessionKinds, kindsNullArm, foldExtract, TERRAIN_GRID } from "../packages/host/terrains.js";
 import { DOMAINS, GRAINS, TERRAIN_BY_DOMAIN } from "../packages/engine/operators.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -175,6 +175,35 @@ test("sessionKinds builds chunk records, runs the real induction, and carries th
   assert.equal(out.nullArm.finestRank, "1/1");
   assert.equal(out.nullArm.perDraw.length, 1);
   assert.ok(Number.isInteger(out.nullArm.drawsWithKinds));
+});
+
+test("foldExtract is a lossless change of resolution — verbatim, addressed, in order, budget-bounded, typed gaps", () => {
+  const text = frankenstein.slice(0, 30_000);
+  const out = foldExtract({ text, budgetSentences: 5 });
+  assert.ok(!out.gap, "whole-text fold succeeds on real prose");
+  assert.ok(out.lines.length <= 5 && out.lines.length > 0);
+  assert.ok(out.of > out.lines.length, "the fold reports what it folded from");
+  for (let i = 0; i < out.lines.length; i++) {
+    const l = out.lines[i];
+    assert.equal(text.slice(l.charStart, l.charEnd), l.text, "every line is the source's own bytes at its address — resolution, never invention");
+    if (i) assert.ok(l.charStart > out.lines[i - 1].charStart, "lines stay in document order");
+  }
+
+  // range scope stays inside the range
+  const ranged = foldExtract({ text, charStart: 5000, charEnd: 12000, budgetSentences: 3 });
+  assert.ok(!ranged.gap);
+  for (const l of ranged.lines) assert.ok(l.charEnd > 5000 && l.charStart < 12000);
+
+  // word scope: every line carries the word, word-bounded
+  const worded = foldExtract({ text, word: "letter", budgetSentences: 3 });
+  if (!worded.gap) {
+    for (const l of worded.lines) assert.match(l.text.toLowerCase(), /(?<![\p{L}\p{N}])letter(?![\p{L}\p{N}])/u);
+  }
+
+  // undeclared budget and empty scopes are typed, never silent
+  assert.equal(foldExtract({ text }).gap.reason, "undeclared");
+  assert.equal(foldExtract({ text, word: "zzzqqqxyzzy", budgetSentences: 3 }).gap.silence, "computed-and-empty");
+  assert.ok(foldExtract({ text: "", budgetSentences: 3 }).gap);
 });
 
 // The dispositions are contract, not calibration — small synthetic records

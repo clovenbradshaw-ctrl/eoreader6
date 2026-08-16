@@ -43,4 +43,4 @@ export { attachSelf, admitSelf, sessionSelfSnapshot, sessionTestimonyHolarchy, S
 
 export { admitReading } from "./reading.js";
 
-export { sessionTerrains, sessionKinds, kindsNullArm, TERRAIN_GRID } from "./terrains.js";
+export { sessionTerrains, sessionKinds, kindsNullArm, foldExtract, TERRAIN_GRID } from "./terrains.js";

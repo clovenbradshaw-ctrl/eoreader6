@@ -60,6 +60,7 @@ import {
   locate,
   buildFrequencyTable,
   functionWordSet,
+  surprisalMicrobits,
 } from "../engine/perceiver/text/material.js";
 import { readAtmosphere } from "../engine/loops/atmosphere.js";
 import { induceKinds, inductionReading } from "../engine/emergence/kinds.js";
@@ -485,6 +486,76 @@ export function sessionTerrains(session, { sourceId, emit } = {}) {
       Lens: lens,
       Paradigm: paradigm,
     },
+  };
+}
+
+/**
+ * An extractive fold of an arbitrary place in a text — the house's one
+ * operation, done without a mouth: the scope's most novel sentences against
+ * the DOCUMENT's own frequency table (material.js::surprisalMicrobits, the
+ * same statistic the atmosphere trace runs on), returned verbatim, in
+ * document order, each line carrying its char address so the fold descends
+ * to the rows (II.3). No model, no paraphrase — a change of resolution that
+ * invents nothing. `budgetSentences` is caller-declared: the fold's
+ * resolution is a claim, and the caller makes it.
+ *
+ * Scope is one of: a char range {charStart, charEnd}; a word (its arrival
+ * sentences, word-bounded, case-folded); or the whole text. An empty scope
+ * is a typed gap, never an empty success.
+ */
+export function foldExtract({ text, charStart, charEnd, word, budgetSentences } = {}) {
+  if (typeof text !== "string" || !text.length) {
+    return { gap: { silence: "computed-and-empty", detail: "no text to fold" } };
+  }
+  if (!Number.isInteger(budgetSentences) || budgetSentences < 1) {
+    return { gap: { reason: "undeclared", detail: "foldExtract: budgetSentences is declared by the caller, never defaulted" } };
+  }
+  const sentences = splitSentences(text);
+  let scoped;
+  let scope;
+  if (word) {
+    const n = diaNorm(String(word));
+    const re = new RegExp(`(?<![\\p{L}\\p{N}])${n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![\\p{L}\\p{N}])`, "u");
+    scoped = sentences.filter((s) => re.test(diaNorm(s.text)));
+    scope = { word: String(word) };
+  } else if (Number.isInteger(charStart) || Number.isInteger(charEnd)) {
+    const a = Math.max(0, charStart ?? 0);
+    const b = Math.min(text.length, charEnd ?? text.length);
+    scoped = sentences.filter((s) => s.offset + s.text.length > a && s.offset < b);
+    scope = { charStart: a, charEnd: b };
+  } else {
+    scoped = sentences;
+    scope = { whole: true };
+  }
+  if (!scoped.length) {
+    return { scope, gap: { silence: "computed-and-empty", detail: "no sentences in this scope" } };
+  }
+  const table = buildFrequencyTable(tokenize(text));
+  // A sentence with fewer than two word tokens cannot carry a claim — a
+  // structural minimum, not a tuned floor (measured: "6." and "7." from a
+  // numbered list outranked whole sentences, their rarity wearing novelty's
+  // clothes). Mean surprisal over one token is a token statistic, not a
+  // sentence's.
+  const scored = scoped
+    .map((s) => ({ ...s, tokens: tokenize(s.text) }))
+    .filter((s) => s.tokens.length >= 2)
+    .map((s) => ({ ...s, microbits: surprisalMicrobits(s.tokens, table) }));
+  if (!scored.length) {
+    return { scope, gap: { silence: "computed-and-empty", detail: "no sentence in this scope carries at least two word tokens" } };
+  }
+  const lines = scored
+    .slice()
+    .sort((a, b) => b.microbits - a.microbits)
+    .slice(0, budgetSentences)
+    .sort((a, b) => a.offset - b.offset)
+    .map((s) => ({ text: s.text, charStart: s.offset, charEnd: s.offset + s.text.length, microbits: s.microbits }));
+  return {
+    scope,
+    lines,
+    of: scored.length,
+    kept: lines.length,
+    method:
+      "extractive fold — the scope's most novel sentences against this document's own frequency table (engine surprisal); verbatim, addressed, in document order",
   };
 }
 
