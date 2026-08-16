@@ -141,7 +141,7 @@ test("a result that both restates and introduces is preserved on the introduced 
 
 test("Amendment I: the (gate, tuple-rotate) pair is sensitive where it can vary, and says zero-width where it cannot", () => {
   // Sensitivity is a property of the (statistic, perturbation) PAIR. The
-  // reseeding null inherits no warrant from revision.js's continuation null;
+  // reseeding null inherits no ground from revision.js's continuation null;
   // it must show its own.
   const capable = judge(readerWhoseGroundCanVary(), [T("a", "meets", "q1")], { reseeds: RESEEDS, seed: 7 });
   assert.ok(capable.operators.INS.support[1] > 0, "rotation destroys pairings, so INS has real width");

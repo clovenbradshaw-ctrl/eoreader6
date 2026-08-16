@@ -49,7 +49,7 @@
 // `unresolved` as a first-class outcome and must keep presentation, event,
 // causal, and measurement order apart rather than projecting them onto one
 // axis. Each new family establishes its own sensitivity (Amendment I); none
-// inherits the shuffle warrant these two hold.
+// inherits the shuffle ground these two hold.
 
 import { ground, difference, isGap, gap, STATISTICS } from "../nul/index.js";
 

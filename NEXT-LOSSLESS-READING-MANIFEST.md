@@ -111,7 +111,7 @@ needs; none of it is captured. Concretely, per organ:
   which nulls it cleared (the same fields A15/A17 already compute and
   currently only print to a console).
 - `emergence/jati.js::understand`/`induceKinds` — a `SYN.kind` event per
-  induced kind, carrying `warrant`, `heightGate`, and — per A10 — which
+  induced kind, carrying `ground`, `heightGate`, and — per A10 — which
   perturbations were run and their p-values, not just the members.
 - `emergence/tiers.js::foldThrough` — a `REC.paradigm` event on each tier
   that clears its null, at minimum atmosphere/lens/paradigm, carrying the

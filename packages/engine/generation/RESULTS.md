@@ -352,7 +352,7 @@ malfunctioning; it is reporting that *a novel does not concede its ground
 again*, at this grain, on this statistic.
 
 So the architecture has no within-book boundary detector. `surf`'s waves are
-the obvious next source and carry a caution rather than a warrant: surf as a
+the obvious next source and carry a caution rather than a ground: surf as a
 CANDIDATE GENERATOR is refuted (bba5b29, 0.66–0.71× chance at matched budget).
 Surf as a boundary is a different question and has earned nothing yet.
 

@@ -30,7 +30,7 @@
 //                        wrong number.
 //   inventKind           kinds.js over the records: the SIG→CON→EVA→DEF→INS→
 //                        SYN chain, the two Born gates, height DISCOVERED
-//                        (above / peer / unstable), warrant (key / value /
+//                        (above / peer / unstable), ground (key / value /
 //                        both).
 //   reviseKinds          revisable like everything else (IV.5): re-derive
 //                        from the advanced net, re-induce, and KEEP what was
@@ -190,7 +190,7 @@ export const checkKindPrior = (priors, { population, readerVersion } = {}) => {
 /**
  * The SYN act: a kind the reader had no prior for, induced from the material's
  * own structural facts. Every kind returns holonically placed — height earned
- * by the two Born gates, warrant naming the channel that carried it — and
+ * by the two Born gates, ground naming the channel that carried it — and
  * stamped as invented, so the difference between a received understanding and
  * an induced one is always visible in the record.
  */

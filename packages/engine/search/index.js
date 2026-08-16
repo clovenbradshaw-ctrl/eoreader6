@@ -24,7 +24,7 @@
 // seeded permutation. That is the perturbation the generative operators
 // actually need — the one revision.js's continuation null is incapable of —
 // and per SEED Amendment I it establishes its OWN sensitivity; it inherits no
-// warrant from revision.js's null family.
+// ground from revision.js's null family.
 //
 // THE GATE NEVER SEES THE QUERY (II.8). Relevance is not a property of a
 // query string and not a property of the result alone; it is a property of the
@@ -130,6 +130,23 @@ const rotateArrival = (edges, next) => {
   return arrival;
 };
 
+// UNLICENSED (Constitution II.10, commensurability): the ceiling below is
+// the raw sample maximum over exactly `reseeds` reseed draws — an order
+// statistic whose own expected value rises with `reseeds`, so a caller who
+// declares FEWER (still validly >=2) reseeds gets a systematically lower
+// ceiling and `exceed` clears more easily under pure noise. nul/index.js's
+// `pattern()` measured and fixed the identical-SHAPED defect in its own
+// reseeding null, but that fix (mean + 3*std) was calibrated by a
+// false-positive sweep specific to ONE statistic/perturbation pair
+// (moved_by displacement under the reseed-bootstrap null; see nul/index.js's
+// `nullMax` comment, dated 2026-08-05). This gate's samples come from a
+// different perturbation (rotateArrival's degree-preserving rewiring) over
+// different statistics (the MEASURED per-operator counts). Transplanting
+// that "3" here without an equivalent measurement was tried and reverted —
+// it is a borrowed calibration, not an earned one, exactly the "null that
+// differs in any other axis... fails invisibly and globally" failure II.10
+// names. Left as the raw max/min pending a real false-positive sweep for
+// THIS statistic/perturbation pair (II.10's "checked by type, not by hope").
 const supportOf = (samples, observedCount) => {
   if (samples.length === 0) {
     // Nothing to draw against: the empty ground. The first clause of a

@@ -124,14 +124,14 @@ null refused kinds that were entirely key-carried. That is the Emma case, i.e.
 the case the organ exists for.
 
 The null was not lying. It answers *"do values add anything here?"* and was being
-read as *"does this kind exist?"* A kind now needs warrant from at least one
+read as *"does this kind exist?"* A kind now needs ground from at least one
 channel, each nulled by the perturbation that can actually speak to it
 (SEED.md #6, plural grounds):
 
 - **key channel** — nulled by the label shuffle, over key-only similarity
 - **value channel** — nulled by the re-run search over within-key permutation
 
-Every kind reports which one carried it in `heightGate.warrant`
+Every kind reports which one carried it in `heightGate.ground`
 (`key` / `value` / `both`).
 
 ## Limitations, stated so they are not mistaken for done

@@ -83,7 +83,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -454,7 +454,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -761,7 +761,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -1068,7 +1068,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -1161,7 +1161,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -1585,7 +1585,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",

@@ -261,7 +261,7 @@ Two counterexamples, both exact rather than approximate:
 The consequence is operational: #4 cannot be discharged once per statistic.
 An organ that perturbs two ways must establish sensitivity twice, and a
 statistic admitted to `STATISTICS` on the strength of one perturbation carries
-no warrant for any other. `burstiness` was never wrong; it was only ever
+no ground for any other. `burstiness` was never wrong; it was only ever
 licensed for shuffle, and nothing said so.
 
 Evidence: `conformance/temporality.test.js`, "vacuity control 1" and "the
@@ -446,7 +446,7 @@ finding** (#6). No single cue decides temporality. State inheritance, duration
 coherence, causal precedence, recurrence, and reversal sensitivity are separate
 families, and each must establish its own sensitivity against its own
 perturbation — Amendment I applies in full, so a family admitted on the strength
-of shuffle carries no warrant for displacement or duration-removal.
+of shuffle carries no ground for displacement or duration-removal.
 
 **The orders are kept plural, never conflated.** Presentation, event, causal,
 measurement, narrator, remembered — projecting them onto one axis is an
@@ -1057,7 +1057,7 @@ irreversibility/phase      rank 0.910
 This is not five near-misses. It is one blind spot, seen five times: every
 licensed statistic asks about windowed bursts, distributional order, or
 reversal asymmetry — never about a single value's distance from the rest.
-Amendment I says a licence is a property of the pair and carries no warrant
+Amendment I says a licence is a property of the pair and carries no ground
 for any other pair; the gap above says something the pair-language alone
 doesn't: a whole *kind* of question — pointwise, not windowed — had no
 statistic asking it at all. #4's "a statistic must be sensitive to what its
