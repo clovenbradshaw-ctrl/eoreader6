@@ -9,7 +9,7 @@
 //
 // It walks the canonical SVO pipeline (referent-gated by the eoPriors coref
 // prior, first person bound by narrator scope — the same path read-tiered
-// uses), then hands the graph to emergence/people.js:
+// uses), then hands the graph to emergence/jati.js:
 //
 //   deriveBeingRecords   the net's incident structure, read as records —
 //                        identity by consequence, never by name

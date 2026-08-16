@@ -329,7 +329,10 @@ export const readBook = (text, book, spec = SPEC) => {
   const { pairs, nulls } = bindLinks(register, { window: LINK_WINDOW, draws: LINK_DRAWS, seed: LINK_SEED });
   const edges = pairs
     .map((p) => {
-      const key = `${p.a.id} ${p.b.id}`;
+      // binding.js:198 keys nulls with U+0000; this was a LITERAL NUL byte in
+      // source, which renders as a space and misread as one twice in one
+      // session. Behavior-identical, now visible:
+      const key = `${p.a.id}\u0000${p.b.id}`;
       const n = nulls.get(key);
       return { a: p.a.id, b: p.b.id, weight: p.overlap, pValue: n.pValue };
     })
