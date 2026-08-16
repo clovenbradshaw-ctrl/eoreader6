@@ -97,7 +97,7 @@ export const beatsAllBaselines = (ledger) => {
  * a competency number without them cannot be compared to any other, which is
  * the same defect SEED.md #5 names for two grounds built to different specs.
  *
- * `warrant_status` is carried separately from competency and defaults to
+ * `ground_status` is carried separately from competency and defaults to
  * "unknown" so nothing here is ever read as a causal claim.
  */
 export const finalizeCompetency = (ledger, scope) => {
@@ -124,7 +124,7 @@ export const finalizeCompetency = (ledger, scope) => {
     baseline_losses: { ...ledger.baseline_losses },
     competency_gain: competencyGain(ledger),
     beats_all_baselines: beatsAllBaselines(ledger),
-    warrant_status: scope.warrant_status ?? "unknown",
+    ground_status: scope.ground_status ?? "unknown",
     status: scope.status ?? "experimental",
   };
   const content_hash = canonicalHashSync(body);

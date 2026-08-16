@@ -162,7 +162,7 @@ if (u.understanding === "prior") {
     console.log(`\n  KIND ${k.label} (${k.members.length} members)`);
     console.log(`    height: ${k.height}${k.height === "above" ? ` — existence ${k.heightGate.existence.passed ? "earned" : "failed"}, constraint ${k.heightGate.constraint.passed ? "earned" : "failed"}` : ""}`);
     if (k.core) console.log(`    core: centred on ${k.core.centre}, lift ${k.core.lift.toFixed(3)}`);
-    console.log(`    warrant: ${k.warrant}`);
+    console.log(`    ground: ${k.ground}`);
     const roster = k.members.slice(0, 16).map((m) => m.replace(/^ref:(auto|narrator):/, ""));
     console.log(`    members: ${roster.join(", ")}${k.members.length > 16 ? ` … and ${k.members.length - 16} more` : ""}`);
   }

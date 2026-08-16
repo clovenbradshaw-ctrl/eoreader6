@@ -337,7 +337,7 @@ inside an organ — is provisional and must be reported as such. Gate by a Born
 test against a null built from the material, and let the refusal be typed.
 
 Two open defects surfaced by the same test: `induceKinds` returned
-`warrant: undefined` in all three conditions when called directly rather than
+`ground: undefined` in all three conditions when called directly rather than
 through `inventKind`/`understand`, so the key/value channel that
 `goldens/kinds` added is not being reported; and kinds are still labelled by a
 single field value (`partners=2`), which is a threshold on one attribute, not
@@ -457,7 +457,7 @@ induction ever sees.
 - `foldHolons` levels are not individually nulled.
 - Kinds are labelled by a single field value (`subject_share=0`), a threshold
   on one attribute rather than a profile across several.
-- `induceKinds` returns `warrant: undefined` when called directly rather than
+- `induceKinds` returns `ground: undefined` when called directly rather than
   through `inventKind`/`understand`, so the key/value channel is unreported.
 
 ### A11 · The helix does not stream — it re-grounds

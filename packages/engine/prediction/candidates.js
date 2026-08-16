@@ -184,7 +184,7 @@ export const regimeMean = ({ window, draws, tolerance, seed = 0, statistic = "bu
  * combinator can never clear the bar here — capped at peer/unstable no matter
  * how real the existence-dependency signal is. This is Amendment I's own
  * warning (SEED.md): a statistic licensed for one perturbation/material shape
- * carries no warrant for another. possibilityConstraintTest was licensed on
+ * carries no ground for another. possibilityConstraintTest was licensed on
  * holon_level's own short, roughly-symmetric calibration fixtures
  * (conformance/holon_level.test.js), never on a heavy-tailed causal-surprisal
  * series at document scale.
