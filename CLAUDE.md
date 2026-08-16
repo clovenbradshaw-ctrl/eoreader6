@@ -37,7 +37,7 @@ sitting one directory over the whole time.
 The check that would have caught it early: `grep -rln "cooccur\|co-arriv\|co-occur" packages/engine/` finds `emergence/binding.js` and `emergence/graph.js`
 immediately. The same is true for relationship extraction
 (`perceiver/text/relations.js` — measured, not hand-listed, SVO triples),
-population/kind induction (`emergence/people.js`, `emergence/kinds.js`), and
+population/kind induction (`emergence/jati.js`, `emergence/kinds.js`), and
 referent coreference (`perceiver/text/surfaces.js::discoverReferents`) —
 all real capabilities that a plausible-sounding from-scratch implementation
 could otherwise silently duplicate, worse.
