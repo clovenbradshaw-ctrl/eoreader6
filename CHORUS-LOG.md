@@ -37,10 +37,89 @@ this file should not assume this pass had the full Chorus's resolution.
 **Net**: 3 substantive fixes (Alexander's undisclosed fold limit, Frankfurt's
 missing drill-down path, Chekhov's dead option), 2 documentation fixes that
 prevent a future correct-thing-broken (Pearl, Holmes), 5 clean, 1 clean-with-
-a-methodological-caveat. All seven city artifacts regenerated after the
-drill-down fix. **Deferred, named:** re-run this file through the real
-eleven-agent Chorus when credits permit — this pass is a sequential
+a-methodological-caveat. **Deferred, named:** re-run this file through the
+real eleven-agent Chorus when credits permit — this pass is a sequential
 self-review and should not be cited as a full Chorus verdict.
+
+**Postscript, same day — a silent-no-op caught by checking rather than
+trusting.** The artifact regeneration that was supposed to follow Frankfurt's
+fix did not happen: the driving loop used `set -- $c` over a
+`for c in "menifee America/Los_Angeles"` list, and **zsh does not word-split
+unquoted parameter expansions**, so all six invocations received one malformed
+argument, printed the usage string, and exited 0. The wrapper reported
+`REGEN_DONE`. Only the separately-run Glendale carried the fix; the other six
+artifacts were stale, still missing `members`. Caught by asserting the
+drill-down property across all seven outputs (`drill=True/False` per city)
+instead of trusting the regeneration's own exit status — the same class of
+defect this repo's own history keeps naming: **a failure that reads
+downstream as an honest result.** (Cf. the 2026-08-12 run's silent API error
+swallowing, and the DFR provenance doc's `LineString`-only geometry bug.)
+An earlier draft of this very log entry asserted "all seven city artifacts
+regenerated"; it was false when written and is corrected here rather than
+quietly edited.
+
+> **SUPERSEDED by the run below (2026-08-17b).** The deferral was taken up the
+> same day. The real Chorus returned **33 findings where this pass found 5**,
+> and Marshall **overturned five of this entry's verdicts** — including both
+> clean verdicts that certified the two most serious defects in the file. Read
+> this entry as the record of what a sequential self-review failed to see; do
+> not cite its clean verdicts.
+
+---
+
+## Run: 2026-08-17b · commit: `HEAD` (`scripts/read-dfr-flights.mjs`, second pass)
+
+The eleven-persona Chorus, run in parallel via Workflow as the skill
+prescribes, against the same file the 2026-08-17 sequential self-review
+passed. **33 findings from ten personas; Marshall struck 1 citation, raised 4
+of his own, overturned 5 prior verdicts, and logged 7 recurrences.** The
+headline is methodological: every one of the highest-severity defects sat
+inside something the self-review had certified clean.
+
+| Persona | Cell | Article | File:line | Verdict | Summary |
+|---|---|---|---|---|---|
+| Feynman / Diaconis / Dijkstra / Frankfurt | DEF, NUL, SEG, INS | CLAUDE.md "never tune a parameter"; II.10 1st consequence | header vs `:136` | **fixed** | **Four-persona convergence.** The header's "launch exclusion — ZERO tuned constants" was false of the code: `DOCK_EXCL_KM = 0.15` excludes a ~150 m disc (≈37 cells on the 45 m grid) by DISTANCE, so the header's frequency-dominance safety argument never runs and its "a shared destination can never be swallowed" guarantee fails inside the radius — a real recurring destination 120 m from a dock is invisible to that flight, and `dist_km` then goes missing not-at-random on exactly the flights nearest the dock. Fixed by naming every hand-set constant and flagging them calibrated-by-inspection, not measured. |
+| Diaconis / Feynman / Dijkstra / Ostrom / Pearl | NUL, DEF, SEG, CON, EVA | II.10 2nd consequence ("selection is an axis") | `:308` | **fixed** | **Five-persona convergence.** E2 candidates are screened on co-arrival within WINDOW — the exact statistic `displacementNull` then tests — so every candidate reached the null with `observed >= 1` by construction while the null's draws had no such condition: a best-of-n observation against a drawn-at-random null. Fixed with a screen-matched conditional p, `|{draws >= observed}| / |{draws >= 1}|`, from the null's own samples, plus a typed refusal when no draw clears the screen. **Changed results:** Nashville's 7 "ambiguous" pairs reclassified to `refused_no_admissible_ground` — their raw p of 0 had looked maximally significant when no admissible ground existed at all. |
+| Diaconis / Ostrom | NUL, CON | II.10 3rd consequence | `:306-316` | **fixed (disclosure)** | With `DRAWS = 199` the finest non-zero p is 1/199 ≈ 0.0050, so `expected = p * n_candidates` (≈180–240) cannot fall below `ALPHA` for any non-zero p: the correction degenerated to "established iff p is exactly 0," and a p of exactly 0 multiplies to 0 for *any* family size, so a pair extreme by chance auto-establishes. Both halves now stated; p reported censored at `1/draws`, never as a measured zero. Raising DRAWS deliberately NOT done — choosing a draw count by its effect on these verdicts is the tuning CLAUDE.md forbids. |
+| Diaconis | NUL | II.10 2nd consequence, vs `binding.js:199` | `:306-307` | **fixed** | Every candidate pair was nulled with the same constant `SEED = 42`, so pairs of equal shape received bit-identical permutation streams and their nulls were perfectly rank-correlated — while the family arithmetic treats the tests as exchangeable independent draws. The organ varies the seed per pair (`seed + aArrivals.length`); the driver now does too. Distinct from the shared seed *between* the two pool variants of one pair, which is required and retained. |
+| Marshall | meta | II.10 1st consequence | `:308-319` | **fixed** | The declared-defective restricted pool governed every reported number about a *non-established* pair — `expected_null_count`, the ambiguous/independent boundary, the sort — while the corrected pool gated only `matter_established`. The reported expectation is now the more conservative of the two pools, so the known defect cannot flatter any verdict. |
+| Frankfurt / Dijkstra | INS, SEG | II.21 (fabrication at altitude) | `:182` | **fixed** | `hour` was fed as `numeric`, whose kernel is linear \|a−b\|/IQR, but hour-of-day is CIRCULAR and this algebra has no circular kernel. 23:00 and 00:00 read as maximally distant, and `reify`'s mean turns a midnight-spanning week into a midday value no member is near — content at altitude and nowhere below it. Live for exactly the 24/7 programs in the panel. Field withheld: a missing kernel is a typed gap, not a licence to use the wrong one. |
+| Marshall | meta | II.17 2nd consequence (`lens_cursor_undeclared`) | output block | **fixed** | The artifact declared no cursor and no extent — no source, no date range, no as-of — while every number depends on a single pull of a *live, growing* feed, and it is overwritten in place so successive runs are indistinguishable. Added `read_at` (host clock, III.2) and `feed` extent. |
+| Holmes | SIG | II.2 | `:325-326` | **fixed (disclosure)** | **Recurrence against a claimed fix.** The prior pass asserted the exact-string citation identity "never merges two real matters into one." False: E1 unions every flight sharing a literal ≥6-digit token with no null and no refusal. Claim retracted in place; `e1_flights_per_citation_distribution` + `e1_largest_citations` now report the exposure per city rather than assuming it away. |
+| Alexander / Ostrom | SYN, CON | II.21 | header | **fixed** | **Recurrence against a claimed fix.** The prior disclosure said the ladder finds week-kinds "that recur across weeks" — itself unmeasured. `reify` carries members and attributes but no week identity, so the upper induction cannot see which weeks its records came from and nothing measures recurrence. Withdrawn: two week-kinds sharing a label are two independent certifications that happen to share one. |
+| Ostrom | CON | III.3 | `:322` | **fixed** | An uncitable flight can never be unioned, so it necessarily lands in a singleton — and counting those inside `n_matters` converts "cannot be grouped" into "is its own matter": an unknown reported as a measurement. Split into `n_matters_among_citable` vs `n_flights_uncitable`; for Denver (99.6% uncitable) the unpartitioned count is near-meaningless and now visibly so. |
+| Feynman / Diaconis | DEF, NUL | IV.4 | `:314` | **fixed** | The `matter_established` verdict turned on an undeclared factor-3 p-ratio slack clause present in neither the header's declared block nor the emitted `declared` object; its only apparent provenance was an unrelated "2-3x FPR inflation" figure, a different quantity. Removed. |
+| Simon / Chekhov | SEG·Network, residual | II.21 | `:385` | **fixed** | `eoread-<label>-kinds-full.json` was labelled "Full level-0 kind objects" but holds `fold.ladder[0].kinds` — kinds *of week-kinds*. Relabelled, with the empty-where-halted case named as a halt, not an empty run. |
+| Chekhov | residual | IV.3 | `:140` | **fixed** | `r._home` assigned and never read — a dead write implying a per-flight dock record nothing consumes. Removed. |
+| Dijkstra | SEG·Field/Link | II.17 | `:119` | **fixed** | `launch_sites` shipped a top-8 truncation of an undeclared 2% bar as though it were the program's site set, with an inline comment still documenting the withdrawn 0.5% rule. Bar and cap named as display-only; `n_above_bar` and a `truncated` flag emitted. |
+| Simon | SEG·Network | CLAUDE.md "reconcile them — don't just dedupe" | `binding.js:151-153` | **deferred-with-reason (ESCALATED — this is the named incident, live)** | The restricted-pool defect is corrected only in this driver's private copy. Checking the organ while logging this made the finding sharper than Simon stated it: **`reversalNull` was already fixed on this very branch** (`fae1e6b`, 2026-08-15) and carries a 12-line comment explaining why excluding A's positions draws the null from a strictly smaller space than the observation, with measured FPR numbers — while **`displacementNull`, its sibling forty lines up in the same file, still reads `if (!aSet.has(p))`** and still documents that exclusion as intended. This is not an abstract debt; it is precisely the incident CLAUDE.md's third rule is named for ("Deduplication that preserves a known bug in one copy while fixing it in the other is not finished"), sitting unrepaired in the file where the repair was written. Deferred out of THIS commit only because `displacementNull` feeds `bindLinks` and thus the graph/terrain organs, so the fix moves numbers well outside a driver's blast radius and must land with its own conformance run — which CLAUDE.md explicitly permits ("fixing a shared bug underneath it is still correct, but say so explicitly and expect the pinned number to move"). **Next commit in this repo, not a someday item.** |
+| Dijkstra | SEG·Field/Link | II.10 / III.3 | `:182` | **struck** | Marshall: **citation struck, not the defect.** The circular-`hour` finding cited II.10 and III.3 and neither says what it claims — II.10's subject is a null against an observation, and its "extent, spec, n, direction" sentence is about the ground's commensurability, not a field's kernel. The defect is real and is fixed above on Frankfurt's II.21 grounds, which do hold. |
+
+**Marshall's audit of the 2026-08-17 self-review** — 5 overturned, 1
+unverifiable, 6 upheld:
+
+- **OVERTURNED** — Feynman clean, "the launch exclusion carries zero tuned constants": false against the file at the same commit, and the load-bearing failure of that pass.
+- **OVERTURNED** — Diaconis clean, "an expected-count over the *selected* candidate set": the word *selected* was precisely the defect the verdict passed over.
+- **OVERTURNED** — Diaconis clean, "the one known bias is declared and cross-checked": the cross-check did not govern the reported statistic, and a robustness argument scoped to the pool bias cannot license a clean verdict on multiplicity.
+- **OVERTURNED** — Holmes fixed, "runs conservative, never merges two real matters": the claimed fix shipped a false statement about the code.
+- **OVERTURNED (in part)** — Dijkstra clean, "positions used exactly as `bindLinks` does": the window-units half is true; the parity claim is not — the organ varies the seed per pair and the driver did not.
+- **UNVERIFIABLE** — Simon clean, citing `portable_profile.py`: no such file under the searched roots, and the entry gave no path. It lives in the sibling analysis repo's `scripts/`, outside `eoreader6`. **Future entries citing a file outside this repo must give its path.**
+- **UPHELD** — Alexander (fold limit named), Frankfurt (drill-down members), Chekhov (`KIND_SAMPLE` removed), Pearl (shared seed as matched counterfactual, strictly scoped), Ostrom (unfoldable weeks reported), and Marshall's own scoped clean-with-caveat — which Marshall notes is "vindicated rather than merely honest," since what a self-review structurally cannot check is the factual content of its own clean verdicts.
+
+**Raised against the constitution itself, not this file (IV.1, for a human to
+dispose per IV.2):** Article II has no body text for II.13–II.16 or
+II.18–II.20, though the amendment log ratifies the 8th (II.13), 9th (II.14)
+and 11th (II.16), and other articles cross-reference them as readable. The
+2026-08-12 Chorus entry already shipped a verdict citing **II.19**, an article
+with no text to check. Agents propose, humans dispose — surfaced, not edited.
+
+**Net**: 13 fixes (4 of them changing results or verdict logic, not prose),
+1 deferred-with-reason now properly recorded, 1 citation struck with its
+defect surviving on other grounds, 1 constitutional gap referred to a human.
+All seven city artifacts regenerated and re-verified. **The activation rule
+bit this run:** two findings were recurrences against fixes the previous pass
+claimed, and both were caused by the fix text itself asserting something
+unmeasured — the specific failure mode of a reviewer grading its own work.
 
 ---
 
