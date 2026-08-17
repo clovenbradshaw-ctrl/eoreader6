@@ -51,6 +51,49 @@ export const THIRD_PERSON_SINGULAR = Object.freeze({
 });
 export const THIRD_PERSON_SINGULAR_META = Object.freeze({ giver: "lang/en", scope: null });
 
+/**
+ * Determiners that INTRODUCE their noun — English's indefinite class. A
+ * closed grammatical class in the same standing as NEGATION_WORDS above, not
+ * a semantic list: "a widget" names something that need not already exist,
+ * and that is a fact about the determiner, not about widgets.
+ *
+ * The distinction this register makes available (indefinite introduces,
+ * definite and demonstrative point back) is what lets a caller decide
+ * "is this turn about something already here?" WITHOUT a verb list. That
+ * matters because a verb list is exactly what relations.js's own header
+ * records being refuted: a 90-word hand-typed English verb string that was
+ * "not a simplification of English, it was a sample of it standing in for
+ * the whole". Determiners admit no such sample — the class is closed, and
+ * this is the whole of it.
+ */
+export const INDEFINITE_DETERMINERS = Object.freeze(new Set(["a", "an", "another", "some", "any"]));
+export const INDEFINITE_DETERMINERS_META = Object.freeze({ giver: "lang/en", scope: null });
+
+/** Determiners that presuppose their noun — English's definite class. */
+export const DEFINITE_DETERMINERS = Object.freeze(new Set(["the", "this", "that", "these", "those", "its"]));
+export const DEFINITE_DETERMINERS_META = Object.freeze({ giver: "lang/en", scope: null });
+
+/**
+ * Pronoun forms that stand alone FOR something already introduced — English's
+ * anaphoric class, non-personal. WHICH thing they point at is not decided
+ * here (the same standing THIRD_PERSON_SINGULAR holds for gendered forms, and
+ * the same model-tier gap surfaces.js names): this register says only that
+ * the form points BACK rather than introducing.
+ *
+ * "they"/"them"/"their" are absent for the reason THIRD_PERSON_SINGULAR gives
+ * — number is not decidable from the pronoun alone — and because in English
+ * they also carry a generic non-anaphoric use ("they say") this class would
+ * silently absorb.
+ */
+export const ANAPHORIC_PRONOUNS = Object.freeze(new Set([
+  "it", "its", "this", "that", "these", "those", "one",
+  // Clitic forms, carried for the same reason NEVER_A_NAME carries "i'm" and
+  // "i'll": a class that admits "it" and refuses "it's" is not the class, it
+  // is a sample of it.
+  "it's", "its'", "that's", "this's", "there's",
+]));
+export const ANAPHORIC_PRONOUNS_META = Object.freeze({ giver: "lang/en", scope: null });
+
 // ── script/latn — Latin-script typographic conventions ──────────────────────
 
 /** Sentence-ending punctuation marks. */
