@@ -52,6 +52,15 @@ the stance is entailed. Terrain and stance both carry grain, so grain is claimed
 twice — and that redundancy is the whole point. Over-determination is what makes
 an address falsifiable.
 
+**The redundancy is not available in the code as written**, and
+`13-the-resolution-face.md` files why: `cellOf(op, grain)` takes one `grain`
+argument and stamps it into both projections, so the two claims cannot disagree
+and nothing can be refused by their disagreeing. That document argues the two
+readings do separate — terrain's grain is a *type*, stance's grain is a
+*resolution*, one declared number per grain (`window` / `draws` / `reseeds`) —
+and it carries a measurement whose own discriminating prediction was refused.
+Read it before treating the sentence above as load-bearing.
+
 The addressable space is operator × grain = **27**, not 729. Of 729, 702 are
 type errors by construction.
 

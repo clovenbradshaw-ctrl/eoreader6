@@ -379,7 +379,7 @@ const centralValue = (recs, fieldId, scale) => {
   return [...counts.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))[0][0];
 };
 
-export const def = ({ cluster, cohesion, existence, searched = null, warrant = null, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }) => {
+export const def = ({ cluster, cohesion, existence, searched = null, ground = null, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }) => {
   const members = cluster;
   const memberIds = new Set(members);
   const memberRecords = records.filter((r) => memberIds.has(r.id));
@@ -493,7 +493,7 @@ export const def = ({ cluster, cohesion, existence, searched = null, warrant = n
     }) : null,
     cohesion,
     height: relation,
-    heightGate: Object.freeze({ existence, constraint, relation, ...(searched ? { searched } : {}), ...(warrant ? { warrant } : {}) }),
+    heightGate: Object.freeze({ existence, constraint, relation, ...(searched ? { searched } : {}), ...(ground ? { ground } : {}) }),
     operator_chain: Object.freeze({ ...chain, stages: Object.freeze(stages) }),
   });
 };
@@ -551,7 +551,7 @@ export const def = ({ cluster, cohesion, existence, searched = null, warrant = n
 // itself degenerate and returns `degenerate_ground` — correctly, because
 // there is nothing here to distinguish "found by search" from "found by
 // chance," and the single-subset existence gate `eva` already runs is the
-// whole warrant exactly as it always was. Nothing that was induced by a
+// whole ground exactly as it always was. Nothing that was induced by a
 // small, disjoint key pool is induced differently now; what changes is that a
 // rich shared vocabulary can no longer borrow that degeneracy's protection it
 // never earned.
@@ -831,7 +831,7 @@ export const induceKinds = (records, opts = {}) => {
   // discarded kinds that were entirely key-carried, which is the Emma case and
   // the case this organ was built for. The null was not wrong; it was
   // answering "do values add anything here?" and being read as "does this
-  // kind exist?" So valued material needs warrant from at least ONE of its two
+  // kind exist?" So valued material needs ground from at least ONE of its two
   // channels — key-search when it resolves, value-search as the fallback
   // where a shared key pool leaves key-search structurally unable to move.
   //
@@ -839,7 +839,7 @@ export const induceKinds = (records, opts = {}) => {
   // is its search null outright, not a branch: where the vocabulary is a
   // handful of keys the null is itself quantised (`degenerate_ground`, no
   // information, `eva`'s single-subset existence gate — already required
-  // above — is the whole warrant, exactly as before this fix); where the
+  // above — is the whole ground, exactly as before this fix); where the
   // vocabulary is rich enough that the null actually resolves, it must be
   // beaten, not merely reported.
   const keySim = valued ? conSimilarity(profiles) : null;
@@ -851,23 +851,23 @@ export const induceKinds = (records, opts = {}) => {
     if (!existence.passed) continue;
 
     let searched;
-    let warrant = "key";
+    let ground = "key";
     if (valued) {
       searched = partitionNull({ samples: search, observed: cohesion, quantile, seed: seed + 2 });
       const keyGate = eva(profiles, keySim.sim, cluster, keySim.idxOf, { permutations, quantile, seed });
       const keySupported = !isGap(keyGate.existence) && keyGate.existence.passed;
       const valueSupported = !isGap(searched) && searched.passed;
       if (!keySupported && !valueSupported) continue;
-      warrant = keySupported && valueSupported ? "both" : keySupported ? "key" : "value";
+      ground = keySupported && valueSupported ? "both" : keySupported ? "key" : "value";
     } else {
       const keySearch = searchKeyCohesions(profiles, cluster.length, { minKindSize, permutations, quantile, seed, reseeds });
       // Where the perturbation is inert on this material, the search null has
       // no power and the kind rests on `eva` alone — which has never rejected
       // anything in measurement, because it nulls a best-first-SELECTED cluster
-      // against RANDOM subsets. That is a real weakening of the warrant and it
+      // against RANDOM subsets. That is a real weakening of the ground and it
       // is carried on the kind rather than left implicit, so a reader can tell
       // a kind the search null cleared from one it never spoke to.
-      if (keySearch.length === 0) warrant = "eva-only";
+      if (keySearch.length === 0) ground = "eva-only";
       // FAMILY-WISE CORRECTION ACROSS THE SIMULTANEOUS CANDIDATES. `con` hands
       // back `clusters.length` candidates from ONE search over ONE population,
       // each gated here independently — the identical multiple-comparisons
@@ -879,11 +879,11 @@ export const induceKinds = (records, opts = {}) => {
       // tuned number — the same status as `k` in `deriveCohesionThreshold`.
       const familyQuantile = 1 - (1 - quantile) / clusters.length;
       searched = partitionNull({ samples: keySearch, observed: cohesion, quantile: familyQuantile, seed: seed + 2 });
-      // AN UNRESOLVED SEARCH NULL IS NOT A WARRANT. This read
+      // AN UNRESOLVED SEARCH NULL IS NOT A GROUND. This read
       // `if (!isGap(searched) && !searched.passed) continue`, so a gap ADMITTED
       // — resting the whole verdict on `eva`'s existence gate, on the reasoning
       // that where the vocabulary is a handful of keys the search null is
-      // quantised and eva is the remaining warrant.
+      // quantised and eva is the remaining ground.
       //
       // That reasoning requires eva to be a gate. It is not: eva nulls a
       // cluster that best-first agglomeration CHOSE for being the most cohesive
@@ -929,7 +929,7 @@ export const induceKinds = (records, opts = {}) => {
       if (!isGap(searched) && !searched.passed) continue;
     }
 
-    kinds.push(def({ cluster, cohesion, existence, searched, warrant, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));
+    kinds.push(def({ cluster, cohesion, existence, searched, ground, sim, records, params, population, minPrevalence, permutations, quantile, seed, scales, valued }));
   }
   return kinds.sort((a, b) => b.cohesion - a.cohesion);
 };

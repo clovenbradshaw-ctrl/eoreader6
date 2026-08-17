@@ -65,7 +65,7 @@
               "gap": "degenerate_ground",
               "reason": "all 2 null samples equal (0.6666666666666666)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -168,7 +168,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -355,7 +355,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -560,7 +560,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -7633,7 +7633,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -7728,7 +7728,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -7820,7 +7820,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -7945,7 +7945,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -8050,7 +8050,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -8236,7 +8236,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -13938,7 +13938,7 @@
               "gap": "degenerate_ground",
               "reason": "all 1 null samples equal (0.6397745571658605)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -14058,7 +14058,7 @@
               "gap": "degenerate_ground",
               "reason": "all 1 null samples equal (0.6548582995951382)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -14200,7 +14200,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -14412,7 +14412,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -21665,7 +21665,7 @@
               "gap": "degenerate_ground",
               "reason": "all 2 null samples equal (0.75)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -21808,7 +21808,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -21920,7 +21920,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -25264,7 +25264,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -25431,7 +25431,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -29360,7 +29360,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -29500,7 +29500,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -29587,7 +29587,7 @@
               "gap": "degenerate_ground",
               "reason": "all 3 null samples equal (1)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -29825,7 +29825,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -37177,7 +37177,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -37278,7 +37278,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -37404,7 +37404,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -40186,7 +40186,7 @@
               "gap": "degenerate_ground",
               "reason": "all 1 null samples equal (0.6222222222222229)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -40318,7 +40318,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -40445,7 +40445,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -43829,7 +43829,7 @@
               "gap": "degenerate_ground",
               "reason": "all 3 null samples equal (1)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -43923,7 +43923,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -44011,7 +44011,7 @@
               "gap": "degenerate_ground",
               "reason": "all 1 null samples equal (0.6825396825396824)"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -44128,7 +44128,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -44284,7 +44284,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -47784,7 +47784,7 @@
               "pValue": 0,
               "passed": true
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -47882,7 +47882,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",
@@ -47977,7 +47977,7 @@
               "gap": "empty_material",
               "reason": "no null samples"
             },
-            "warrant": "key"
+            "ground": "key"
           },
           "operator_chain": {
             "operator_epoch": "eo-2026-07",

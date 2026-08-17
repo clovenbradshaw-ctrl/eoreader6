@@ -337,7 +337,7 @@ inside an organ — is provisional and must be reported as such. Gate by a Born
 test against a null built from the material, and let the refusal be typed.
 
 Two open defects surfaced by the same test: `induceKinds` returned
-`warrant: undefined` in all three conditions when called directly rather than
+`ground: undefined` in all three conditions when called directly rather than
 through `inventKind`/`understand`, so the key/value channel that
 `goldens/kinds` added is not being reported; and kinds are still labelled by a
 single field value (`partners=2`), which is a threshold on one attribute, not
@@ -357,6 +357,42 @@ honest negative and must not be reported as cross-modal reading having worked.
 
 The statistical substrate is genuinely domain-general. The naming layer above
 it is not, and no amount of the former converts the latter.
+
+## P7 — One fold per session; a name is a referent, not a byte sequence
+
+Two rules, one failure class. The class was measured twice before it was
+named: A21 (searchSpans returns three spans for "Natásha" and zero for
+"Natasha" while `surfaces.js::diaNorm` folds — two organs in one session
+disagreeing about what a word is), and the same shape in a consumer
+(the-fold, 2026-08-16): its retrieval folded diacritics and its grounding
+check did not, so the very chapters retrieval found were reported as not
+containing the names they are about. In both cases the reader is told the
+material lacks what the material is made of — retrieval seeming to work and
+the corpus seeming thin, which is the worst shape this failure takes.
+
+**P7.1 — Every organ that compares text to text uses the session's one
+fold.** Not "a" normalization — the same one, by import, never by local
+reimplementation. `diaNorm` is the earned fold (disclosed-narrow, the five
+Latin vowels' accent marks; the blanket combining-mark strip was tried and
+reverted for silently claiming cross-script generality — see the scope note
+in `surfaces.js`). An organ that needs a wider fold earns it with a giver
+and a fixture per script; it does not quietly diverge. Conformance owes a
+cross-organ agreement fixture: one accented name, every text-comparing path
+in a session, all agreeing. A21 stays open until that fixture exists and
+passes.
+
+**P7.2 — A check on a NAME asks about the referent, not the string.** The
+fold is only the orthographic slice of referent identity: no fold makes
+"Pierre" equal "Bezúkhov", yet both point at the being the cast
+establishes. Where a check must decide whether a name is supported by
+material, the unit is the referent (`discoverReferents` / `namesCorefer`) —
+with the direction watched, because coreference is symmetric and support is
+not: a sub-form of an established surface is supported; an extension beyond
+every established surface is new content and is refused. Disjoint aliases
+remain model-tier, typed as gaps, closed only by a received prior with a
+named giver — exactly the tier discipline `surfaces.js` already declares.
+First consumer implementation: the-fold's `cast.js` + `grounding.js`
+(engine organs injected, asymmetry pinned in its `grounding.test.mjs`).
 
 ---
 
@@ -457,7 +493,7 @@ induction ever sees.
 - `foldHolons` levels are not individually nulled.
 - Kinds are labelled by a single field value (`subject_share=0`), a threshold
   on one attribute rather than a profile across several.
-- `induceKinds` returns `warrant: undefined` when called directly rather than
+- `induceKinds` returns `ground: undefined` when called directly rather than
   through `inventKind`/`understand`, so the key/value channel is unreported.
 
 ### A11 · The helix does not stream — it re-grounds
@@ -988,3 +1024,62 @@ named above. `extractRelations`'s return shape is unchanged (still
 `{subject, verb, object, polarity}`); `functionWords` is a new optional
 parameter, defaulted to `null`, changing nothing for a caller that omits
 it.
+
+---
+
+### A20 · Admission does not strip the container, and the cap is silent
+
+Measured while wiring `packages/host` into a separate reader (`the-fold`),
+against War and Peace (`pg2600.txt`, 3,293,655 chars).
+
+**The container survives admission.** P5.3 says strip it, `spans.js` exports
+`stripContainer` for exactly that, and `admitChunked` does not call it.
+`wp:chunk-0` is the Project Gutenberg header followed by the book's entire
+table of contents — admitted, indexed, retrievable, quotable. The reader that
+found this had the same defect and fixed it: 47 of its 11,190 passages were
+the licence and the donation appeal, and dropping them cost nothing but a
+regex and an offset carried forward.
+
+**The unit is a byte budget, not a unit.** `CHUNK_SIZE = 2000` cuts every
+2000 chars regardless of sentence, paragraph or chapter: 1,647 units, all
+exactly 2000 long except the tail. The file's own comment already grants this
+is "an engineering starting point, not yet validated" — recorded here so the
+next reader does not mistake an admission unit for a segment. The same book
+through `segments.js` yields 376 boundaries found by form, which is what a
+passage should be cut at, and what a citation should be able to name.
+
+**The cap does not announce itself.** `spanCap` defaults to 2000 and
+admission is `if (session.spans.size < session.spanCap)`. War and Peace needs
+1,647. A book a quarter longer stops being admitted part way through, with no
+gap emitted and nothing in the return value to say so — `{chunks, admitted}`
+reports what was taken, never what was refused. P4 says a gap is a result;
+this one is silence. **The fix is a typed gap (`cast_truncated` already
+exists for this shape), not a bigger default.**
+
+### A21 · `searchSpans` does not fold diacritics
+
+Same session, same corpus. `searchSpans(session, {query: "Natásha"})` returns
+three spans; `"Natasha"` returns zero, against a text that writes the name
+1,213 times. The reader is told the material lacks her, which is the worst
+shape this failure can take: it reads as retrieval working and the corpus
+being thin. Folding NFD combining marks before tokenising costs one line and
+is the same rule already applied in `surfaces.js::diaNorm` — the organ that
+`segments.js` imports for exactly this reason. The two paths disagree.
+
+### A22 · A21's class measured in a consumer, and promoted to policy
+
+The-fold (2026-08-16) hit A21's failure class from the other side: its
+retrieval folded diacritics and its grounding check did not, so a holonic
+run over this same War and Peace text retrieved the right chapters and then
+flagged "Pierre Bezukhov" and "Helene" as not-in-the-material — five false
+findings on a clean run, the A21 shape exactly (the reader told the material
+lacks what it is made of). The instance was fixed with one shared fold on
+both sides of every containment; the class was fixed by routing name-support
+through the cast — `discoverReferents`/`namesCorefer` injected into the
+consumer's check, with support kept asymmetric where coreference is
+symmetric (sub-forms of an established surface resolve; extensions are
+refused as new content). What it changed: **P7 above** — one fold per
+session, names checked as referents — and a conformance debt: the
+cross-organ agreement fixture P7.1 names, which A21 stays open against.
+A21's one-line searchSpans fix remains unapplied; P7 is the reason it is no
+longer optional.

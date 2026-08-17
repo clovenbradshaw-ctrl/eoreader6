@@ -242,7 +242,7 @@ export const PERTURBATIONS = Object.freeze({
    * would be perturbing a magnitude while claiming not to.
    *
    * LICENSED FOR `irreversibility` ONLY. Amendment I: a perturbation admitted
-   * on the strength of one statistic carries no warrant for any other, and this
+   * on the strength of one statistic carries no ground for any other, and this
    * one was measured, not assumed. Against 96 real DNS lines
    * (scripts/turbulence-growth-rule.mjs) the growth rule's `level` test returns:
    *
@@ -499,7 +499,7 @@ export const STATISTICS = Object.freeze({ burstiness, windowMean, permutationEnt
  *
  * Amendment I says sensitivity is a property of the pair, and that "a
  * statistic admitted to STATISTICS on the strength of one perturbation
- * carries no warrant for any other." That was recorded as prose, and prose is
+ * carries no ground for any other." That was recorded as prose, and prose is
  * what SEED.md elsewhere calls a lint wearing an invariant's clothes. This is
  * the same claim in a form an organ can be refused by.
  *
@@ -509,7 +509,7 @@ export const STATISTICS = Object.freeze({ burstiness, windowMean, permutationEnt
  * `cascade`, which refuses to build on an unlicensed pair.
  *
  * `where` names the material each licence was earned on, because a licence
- * established on one kind of material is evidence, not a general warrant.
+ * established on one kind of material is evidence, not a general ground.
  */
 export const LICENSED = Object.freeze({
   "burstiness/shuffle": Object.freeze({ where: "conformance/temporality.test.js — vacuity controls; goldens/surprise" }),

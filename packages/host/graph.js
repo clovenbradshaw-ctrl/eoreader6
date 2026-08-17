@@ -51,8 +51,11 @@ export function attachGraph(session, { gamma = DEFAULT_GAMMA, pruneBelow = DEFAU
 
 // One document's discovered cast, as a surface -> canonical display name
 // lookup, longest surface first so "Victor Frankenstein" claims a mention
-// before "Frankenstein" alone gets the chance to.
-function referentLookup(session, sourceId) {
+// before "Frankenstein" alone gets the chance to. Exported since the staged
+// admission in host/terrains.js needs the SAME canonicalisation per batch —
+// a second copy of this logic would drift (SEED.md #5: two grounds built to
+// different specs were never comparable).
+export function referentLookup(session, sourceId) {
   const { referents } = sessionReferents(session, { sourceId });
   const lookup = new Map();
   for (const r of referents) {

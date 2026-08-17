@@ -71,7 +71,7 @@
 // PLACEMENT cleared a boundary-permutation null on real prose
 // (prediction/RESULTS.md: +3,700,838 against a null max of -438,711), so a
 // regime-local ground is not a guess on this material. That is a related
-// mechanism and not the same one, and it confers no warrant here — the scoped
+// mechanism and not the same one, and it confers no ground here — the scoped
 // reader has to earn its own number.
 //
 // Pure: no clock, no I/O, no randomness of its own.

@@ -50,7 +50,11 @@ export const GRAINS = Object.freeze(["Ground", "Figure", "Pattern"]);
 const OP_MODE = Object.freeze({ NUL: "Differentiate", SIG: "Relate", INS: "Generate", SEG: "Differentiate", CON: "Relate", SYN: "Generate", DEF: "Differentiate", EVA: "Relate", REC: "Generate" });
 const OP_DOMAIN = Object.freeze({ NUL: "Existence", SIG: "Existence", INS: "Existence", SEG: "Structure", CON: "Structure", SYN: "Structure", DEF: "Interpretation", EVA: "Interpretation", REC: "Interpretation" });
 
-const TERRAIN_BY_DOMAIN = Object.freeze({
+// Exported since 12-terrains-as-representation-standard.md ratified this
+// grid as the representation canon — a downstream surface (host/terrains.js)
+// reads the names from here rather than restating them. The constant itself
+// is unchanged and was already frozen.
+export const TERRAIN_BY_DOMAIN = Object.freeze({
   Existence: Object.freeze({ Ground: "Void", Figure: "Entity", Pattern: "Kind" }),
   Structure: Object.freeze({ Ground: "Field", Figure: "Link", Pattern: "Network" }),
   Interpretation: Object.freeze({ Ground: "Atmosphere", Figure: "Lens", Pattern: "Paradigm" }),
