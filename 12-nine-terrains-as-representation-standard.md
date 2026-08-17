@@ -124,8 +124,8 @@ Layer 2 ("Domain by Object").
 | **Kind** — Ex·Pattern | the taxonomy: category tree, pivot group-by, dendrogram, schema-as-type | legend, facet list, histogram bins | the individual |
 | **Field** — St·Ground | the raw layout: page scan, map tile, flowed doc, hex dump, raster | document viewer, tiled map background | named relations |
 | **Link** — St·Figure | the edge: one citation, hyperlink, foreign key, ER arrow, join row | cross-reference, "related to" chip | the whole |
-| **Network** — St·Pattern | the node-link graph: Gephi, org chart, citation net, adjacency matrix | sankey, chord, subway map | the moment & individual salience |
-| **Atmosphere** — Sig·Ground | the trace with a moving baseline: EKG strip, ticker, sparkline, running feed | activity stream, live log tail | fixed reference (it re-zeros) |
+| **Network** — St·Pattern | the node-link graph: Gephi, org chart, citation net, adjacency matrix | sankey, chord, subway map | the moment & individual salience‡ |
+| **Atmosphere** — Sig·Ground | the trace with a moving baseline†: EKG strip, ticker, sparkline, running feed | activity stream, live log tail | fixed reference (it re-zeros)† |
 | **Lens** — Sig·Figure | the saved view: SQL VIEW, dashboard filter, camera preset, a chart-as-argument | pinned report, annotated figure, diagnosis panel | its own contingency |
 | **Paradigm** — Sig·Pattern | the legend / ontology / style guide; a governing doc like the constitution | coding frame, controlled vocabulary | what it excludes |
 
@@ -136,11 +136,16 @@ only from recurring consequence clearing a void-mask null — never
 appearance. Kind clusters over relation terms, height discovered not
 assigned. Field is pure byte-contiguity reassembly with no statistics — the
 one terrain representable with zero inference. Link needs its endpoint
-Entities first. Network is a decaying belief graph (it forgets). Atmosphere
+Entities first§. Network is a decaying belief graph (it forgets). Atmosphere
 is literally the span between two re-zero events. Lens is a fold one tier up
 from Atmosphere (the "n-many lenses off one log at one cursor" mechanism,
 gated by `CONSTITUTION.md` II.17). Paradigm = induced Kinds + their core
 Fields, and refuses stretches carrying none of its cores.
+
+† ‡ § See §8 (2026-08-16 amendments) for the corrected wording and its
+evidence — the cells above are left as originally filed, per this
+document's own precedent of footnoting a needed correction rather than
+silently rewriting filed text (compare the Domain-axis footnote in §1).
 
 ## 3. The connections
 
@@ -166,6 +171,9 @@ Significance-terrain surface with empty Existence/Structure under it is a
 reading with nothing beneath it.
 
 ## 4. Corollary laws
+
+See §8 for five laws added 2026-08-16, filed there rather than merged in
+here so the original four stay exactly as ratified.
 
 - **One native terrain per atom** (composites declare the union). [canon]
 - **No terrain is a UI default** — choose from the data's home, not
@@ -207,10 +215,19 @@ The §2 surface exemplars are [proposed], not catalog canon — Appendix A of
 renderer), and §2's "canonical surface" column is a broader, domain-neutral
 catalog one level more general than Appendix A's ten shipped UI components;
 the two are complementary, not competing, and Appendix A is not superseded
-by this document. §0's "every composite decomposes" has no algorithm yet.
-§5 is subsumption, not a closure theorem of the kind that backs the nine
-operators against Codd's algebra — a representation-side proof that no
-display targets a tenth terrain is the right next artifact. And, entered at
+by this document. §0's "every composite decomposes" has no algorithm yet
+— §8's census exercises one by hand on eighteen cases and finds none it
+cannot run, but a hand-run census on eighteen cases is not the algorithm
+this line asks for. §5 is subsumption, not a closure theorem of the kind
+that backs the nine operators against Codd's algebra — **§8 (2026-08-16) is
+a first pass at the representation-side proof this line called for**: a
+falsification census against the closure claim specifically, six domains,
+eighteen candidates, eleven adversarially judged, zero that fit no cell or
+fit two natively. It is evidence toward closure, honestly short of a
+theorem — one candidate (the null-arm banner, flagged by its own falsifier
+as the sharpest of the batch) is still unjudged, the sweep is not
+exhaustive by construction, and "no falsifier found an escape in one
+round" is not the same claim as "no escape exists." And, entered at
 ratification rather than in the original draft: the Significance/Interpretation
 naming fork (Wiring notes, point 2) is itself an honest gap — this document
 records it rather than resolving it, and a future proposal that actually
@@ -226,3 +243,165 @@ proposed laws; (d) deprecation of "Identity" as a row label and no further
 deprecation of "Object" as a category label, since it remains live in
 `writing-code-in-eo`. Each point is acceptable or refusable independently,
 the way the ledger rules on organs one at a time.
+
+## 8. Amendments from the closure census (2026-08-16) [proposed, cited]
+
+Filed by direction of the project owner, from the consuming application
+(`the-fold`, a chat instrument built on this repo's read organs). Method:
+six independent sweeps hunted counterexamples to §0's closure claim from six
+directions — statistical/scientific graphics, software interfaces, text &
+narrative, time/space/body channels, machine-learning outputs, and the-fold's
+own screens — surfacing 18 candidates, blind to each other's finds. The
+strongest twelve went to a second, adversarial pass: a decomposer required to
+try placing the candidate first, on the reasoning that a ratified standard
+should not fall to a case that merely looks novel. Result: **zero escapes**
+across the eleven judged before a session limit interrupted the twelfth
+(the null-arm banner, held open — see §6). Every placement is either a
+variety of an existing terrain or a composite the grid already predicts. But
+six of those placements only held after showing the standard's own stated
+"blind to" column was wrong about its own canonical surface, and those
+corrections are what follows — evidence *for* closure, filed as amendments
+because the wording that survived was not the wording that shipped.
+
+Per this document's own precedent (Wiring notes), each correction is filed
+as an addition with the original left in place and footnoted, not a silent
+rewrite.
+
+**8.1 Atmosphere's blindness is origin, not units.** "Blind to: fixed
+reference (it re-zeros)" conflates scale with origin. The EKG's own inline
+1 mV calibration pulse — canon exemplar, §2 — fixes *gain*, not zero:
+clinicians read ST elevation against that same beat's PR-segment isoelectric
+line, a reference re-derived locally, beat by beat, while the machine
+high-pass filters baseline wander away by design. Corrected wording: "blind
+to its own ORIGIN — the trace does not carry where zero is; the origin is
+either re-derived from a recent window (a per-beat isoelectric line, a
+session open) or imported from an attached Paradigm atom (a calibration
+mark, a tidal datum). Not blind to units: gain and scale can be fixed by an
+attached Paradigm without the Atmosphere gaining an origin." Canonical
+surface wording corrected the same way: "the trace with a moving **origin**"
+in place of "moving baseline" — a tide gauge's benchmark is re-levelled on a
+~20-year epoch and looks fixed at any human timescale without being so; an
+interval longer than the observer's horizon reads as absolute and is not
+one.
+
+**8.2 Network's blindness is exogenous salience, not all salience.** Any
+centrality measure — degree, betweenness, closeness, eigenvector, PageRank —
+is a function of adjacency alone and is invariant under graph automorphism:
+two structurally interchangeable nodes get the same value regardless of what
+they are. That is Network reading itself, not a second terrain, and §2
+already lists sankey and chord (both encoding per-element magnitude
+endogenously) as canonical Network family members, so this was never in
+doubt for weighted edges — "Network is a decaying belief graph" already
+implies weight. Corrected wording: "blind to the moment & EXOGENOUS
+salience — a per-node or per-edge value that can differ between
+automorphic nodes (a seed vector, a hand-set weight, an imported metric) is
+not Network's own; the instant one is drawn as size or color, a Lens has
+been folded over the Network and the composite must be declared." A plain
+weighted adjacency matrix stays pure Network, no composite required.
+
+**8.3 New corollary law — order declares its source.** Sequence is never a
+terrain and never a third axis; every ordered surface must name which of
+four places its order lives in: *positional* (Field adjacency — byte- or
+spatial contiguity is order, and Field is the terrain made of nothing else);
+*ordinal* (an attribute the Entities themselves already carry); *constraining*
+(a Link/Network precedence chain whose linearization is chosen, not given);
+or *presentational* (a Lens's sort key — the canonical case is SQL's own
+`ORDER BY`, which sits outside relational algebra for exactly this reason
+and is confirming evidence for the grid rather than against it, since Codd's
+relations are explicitly unordered sets and the tradition still put order
+exactly where this law puts it). A surface that cannot say which of the four
+it means has not been decomposed yet. Worked minimal pair: a table of
+contents and a back-of-book index are both Lens, differing only in sort key
+(Field offset vs. lexeme) and in floor (Field-spans plus a containment
+Network, vs. induced Kind plus many-to-many occurrence Links).
+
+**8.4 New corollary law — terrain is mode-blind; evaluation is not
+admission.** The terrain grid is the (Domain, Grain) projection of the full
+cube and therefore carries no Mode (Differentiate·Relate·Generate) — exactly
+as Stance carries no Domain and the operator face carries no Grain. A
+representation that generates rather than displays (a spreadsheet formula, a
+parametric CAD constraint, a regex substitution, a layer blend mode) is
+therefore not a tenth terrain; its generativity is an operator-face fact.
+Lens already holds the canonical case — a SQL VIEW stores no rows and
+returns a different answer tomorrow with no edit to the view — so a formula
+cell is the same terrain in spreadsheet dress. Consequently: **a Lens's
+output is an appearance, not an Entity**, until a separate commit act
+(paste-values, flatten, bake, apply, materialize) admits it under §2's own
+recurring-consequence law for Entity — so a write-side Lens draws no
+backward Significance→Existence arrow and §3's Type B slope survives
+unbroken.
+
+**8.5 New corollary law — self-description is not self-transcendence.**
+Paradigm's blindness ("what it excludes") means blind to what it has *no
+term for*, not blind to what it *declares* excluded. A Limitations section,
+a spec's Non-goals list, a court's "we do not decide," and this document's
+own §6 all render their exclusions in their own governing vocabulary — every
+item in §6 is stated in this document's own terms (terrains, composites,
+closure) and not one names something the frame lacks words for. Each is
+therefore a Lens with a negative selection predicate over the frame's own
+body, hosted by a Paradigm and distinct from it, never a Paradigm itself:
+polarity of the selection (for/against) is dress, orthogonal to grain and
+domain, the same way channel and medium are elsewhere in this grid.
+
+**8.6 New corollary law — negation is a value, not a terrain.** A surface
+whose content is "this relation does not hold" acquires no cell of its own.
+A determinate negative fact decomposes as a Figure-grain address applied to
+Void — the shared null every terrain calls fresh (§2's own Void law): the
+Figure carries the address, Void carries the emptiness, and no terrain has
+a negative twin. Placement test, because the natural error is to place
+every negative at Link: if the absence is a property of the *slot* (an
+unfilled foreign key, a hyperlink that 404s), the native terrain is Link —
+Link's own canonical-surface list is amended to say so: "the edge, resolved:
+one citation, hyperlink, foreign key **with its referent admitted**, ER
+arrow, join row" (the unresolved "foreign key" name alone belongs to §8.7's
+law instead). If the absence is the *return of a query* evaluated over a
+corpus, the native terrain is Lens, and the surface inherits Lens's own
+stated blindness: a negative Lens must render its own scope — which
+records, which vocabulary, which moment — where the verdict renders, or it
+reads as "false in the world" when it means "empty in this index, right
+now."
+
+**8.7 New corollary law — blindness is unresolvability, not silence.** The
+"blind to" column names what an atom cannot *resolve at its own grain in
+isolation*, never what tokens it may carry. A slot bearing another terrain's
+name — a foreign key, a Message-ID, a media type, a type URL — is a
+reference to that terrain, not an instance of it, and does not by itself
+make the atom a composite; this is required, not optional, since §3's own
+Type B edges (Link ← Entity, Kind ← Link) consume exactly those tokens, so
+an Entity blind to relation *tokens* would make its own cross-Domain slope
+unbuildable. Operational test: excise the artifact from every other
+artifact and ask what it can still resolve — an unresolved In-Reply-To
+header alone cannot tell you whether its parent exists, which is why mail
+clients still run a separate threading pass over the whole mailbox.
+
+**8.8 Link's build law is incomplete — anonymous-endpoint Links need no
+Entity floor.** "Link needs its endpoint Entities first" holds for *named*
+Links (a foreign key, a citation) and fails for a second species this census
+found no home for otherwise: a *measured* Link, admitted directly from a
+Field by contiguity statistics over displacement, with no Entity floor at
+all — one Bragg reflection, one Fourier component, one autocorrelation lag,
+one variogram bin. Each is individuated in practice (indexed, integrated,
+scaled, flagged, rejectable one at a time) with anonymous endpoints — a
+class of position-pairs, never two admitted records. This is what makes a
+reciprocal-space display (a diffraction pattern, a power spectrum) place at
+Structure·Pattern rather than Existence·Pattern: Field → measured-Link →
+Network is a legal Type A ascent with no Entity anywhere underneath, and a
+Pattern built only from anonymous Links may not be re-read as an Existence
+claim without importing Entities from outside the measurement — which is
+the phase problem, restated as a corollary law. Cite alongside §5: a
+representation-side theorem (Patterson 1934, via Wiener–Khinchin) proving
+the backward arrow does not exist, stronger evidence than either subsumption
+already filed there.
+
+**8.9 New corollary law — terrain is addressability, never legibility.** A
+parameter that changes what a surface makes *perceptible* without changing
+what it makes *addressable* is a Lens or Stance-face resolution setting, not
+a terrain change — legibility is not terrain. Discriminator, because §2's
+own table invites the confusion by listing "histogram bins" one line above
+Field's "raster": a histogram bin answers a *membership* query (the bin IS
+the category, addressable by name — a Kind parameter, re-cutting bin width
+genuinely changes what's addressable); a spectrogram frequency bin answers a
+*location* query (a coordinate; no membership fact is stored in the array —
+a Lens parameter, changing STFT window length re-samples the lattice and
+changes only what's legible, bounded by one physical law, Δt·Δf, holding
+the same cell budget reshaped anisotropically either way).
