@@ -58,41 +58,9 @@ export const load = async (path, { sampleRate = 8000 } = {}) => {
   return new Int16Array(buf.buffer, buf.byteOffset, Math.floor(buf.length / 2));
 };
 
-const CHANNELS = Object.freeze(["rms", "flux"]);
-
-export const reduce = (samples, { fraction = 1, frameSamples = 400, channel = "rms" } = {}) => {
-  if (!CHANNELS.includes(channel)) throw new TypeError(`audio reduce: unknown channel "${channel}" (want one of ${CHANNELS.join(", ")})`);
-  const readLen = Math.max(frameSamples, Math.floor(samples.length * fraction));
-  const material = [];
-  for (let i = 0; i + frameSamples <= readLen; i += frameSamples) {
-    if (channel === "rms") {
-      let sumSq = 0;
-      for (let j = i; j < i + frameSamples; j++) sumSq += samples[j] * samples[j];
-      material.push(Math.sqrt(sumSq / frameSamples));
-    } else {
-      // flux: mean |sample[j] - sample[j-1]| over the frame's adjacent pairs.
-      // Order-sensitive (adjacency is exactly what a permutation destroys)
-      // and polarity-invariant (the difference of two negated values has the
-      // same absolute magnitude as the original).
-      let sumAbsDelta = 0;
-      for (let j = i + 1; j < i + frameSamples; j++) sumAbsDelta += Math.abs(samples[j] - samples[j - 1]);
-      material.push(sumAbsDelta / (frameSamples - 1));
-    }
-  }
-  return material;
-};
-
-// The inverse of reduce()'s framing: a surf()/atmosphere() material index
-// back to the raw sample range (and, given sampleRate, the real time range)
-// it was built from. Symmetric with reduce() by construction -- same
-// frameSamples stride, nothing re-derived -- so a standpoint found in a ride
-// over this material can be located without re-deciding what a frame is.
-// SEED.md Amendment XVI: addressing infrastructure, not a new statistic or
-// perturbation, so it does not trigger the growth rule.
-export const locate = (index, { frameSamples = 400, sampleRate = 8000 } = {}) => {
-  if (!Number.isInteger(index) || index < 0) return { error: "index must be a non-negative integer" };
-  if (!Number.isInteger(frameSamples) || frameSamples < 1) return { error: "frameSamples must be a positive integer" };
-  const sampleStart = index * frameSamples;
-  const sampleEnd = sampleStart + frameSamples;
-  return { sampleStart, sampleEnd, timeStart: sampleStart / sampleRate, timeEnd: sampleEnd / sampleRate };
-};
+// The pure half — reduce, locate, CHANNELS — lives in ./reduce.js since
+// 2026-08-17, because this module's ffmpeg import makes it unloadable in a
+// browser and the arithmetic touches no IO. Re-exported here verbatim so
+// every existing caller sees the surface this file always had; the channel
+// commentary above still describes what ./reduce.js computes.
+export { CHANNELS, reduce, locate } from "./reduce.js";
