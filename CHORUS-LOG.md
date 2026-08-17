@@ -7,6 +7,43 @@ skill for the discipline. Newest run at the top.
 
 ---
 
+## Run: 2026-08-17 · commit: `HEAD` (new file `scripts/read-dfr-flights.mjs`)
+
+Reviewed diff: one new script — a driver reading police DFR (drone-as-first-
+responder) public flight feeds through `induceKinds` / `reify` / `foldHolons`
+and `displacementNull`, across seven programs. **Run sequentially by the
+session, not via Workflow**: the eleven-persona parallel run was launched and
+all eleven agents died on usage credits before producing any output
+(0 tokens spent, 11/11 error) — the skill's stated fallback ("run the ten
+checks sequentially yourself rather than skipping the multi-perspective
+structure") was taken. Recorded here because a single reviewer holding ten
+lenses is a weaker instrument than ten independent ones, and the next run on
+this file should not assume this pass had the full Chorus's resolution.
+
+| Persona | Cell | Article | File:line | Verdict | Summary |
+|---|---|---|---|---|---|
+| Alexander | SYN | II.21 | `read-dfr-flights.mjs:18-31` (header, pre-fix) | **fixed** | The sideways-per-week fold was documented as a speed win with no statement of what it costs. It is *not* equivalent to inducing over the whole population: a diffuse kind (≈2 flights/week sustained for a year) is certified by no single week, is therefore never reified, and cannot appear at any altitude. Shipping it as "the fold used correctly" without that limit is a completeness overclaim of exactly the shape II.21/II.14 refuse. Fixed by naming the limit in the header — what the ladder finds is "kinds visible within a week that recur across weeks," never "kinds of the year." |
+| Frankfurt | INS | II.21 | `read-dfr-flights.mjs:~300` output block (pre-fix) | **fixed** | Week-level and upper-ladder kinds were serialized with `label` and `size` only — `members` dropped. At altitude the artifact asserted a kind with no path back to the flights beneath it: "a fold that cannot be drilled back down has not folded; it has fabricated a figure." Fixed by carrying `id` + `members` at every level (week-kind members are flight_ids; L1 members are week-kind ids resolvable against `week_level`), verified on Glendale: L0 kind `weekday=Thu` → 3 flight_ids. All seven city artifacts regenerated. |
+| Chekhov | residual | IV.3 | `read-dfr-flights.mjs:60-65` (pre-fix) | **fixed** | `KIND_SAMPLE` and its `kindSampleArg` positional survived the switch from subsampling to the holonic fold — parsed, documented in the usage string, referenced nowhere. An unwired option that silently accepts and ignores a 5th argument. Removed, usage string corrected. |
+| Pearl | EVA | II.10 | `read-dfr-flights.mjs:~200` | **fixed (documentation)** | The shipped and unrestricted-pool `displacementNull` runs share `seed`, `window`, and both arrival streams. Not a violation — it is the II.10 matched counterfactual, differing in exactly the one axis under test (the pool) — but undocumented it invites a future reviewer to "fix" the shared seed and destroy the comparison, and invites the stronger claim that the two agreeing constitutes independent corroboration. It does not: they share every cause but one. Both facts now stated at the call site. |
+| Holmes | SIG | II.2 | `read-dfr-flights.mjs:~130` | **fixed (documentation)** | Citation identity is exact-string-after-trim/split, so two spellings of one case number read as two citations and split a matter that is really one. Left as-is deliberately: the error runs conservative (never merges two real matters), and normalizing spellings would derive who-denotes-what from surface shape — the giver test's own refusal. Disclosed at the definition rather than silently normalized. |
+| Diaconis | NUL | II.10 | — | **clean** | The E2 window is measured from the feed's own ground-truth-positive class (p95 of same-citation relaunch gaps), not hand-set; refused outright where too few relaunches exist to measure one (Glendale, Denver, Menifee return a typed refusal, not a number). Multiple comparison is carried as an expected-count over the selected candidate set. The one known bias (restricted pool) is declared in the header and cross-checked, and it runs anticonservative — so the zero-established result is robust to it. |
+| Feynman | DEF | (jurisdiction: golden-tuning) | — | **clean** | No threshold in the file was selected by checking its effect on an outcome. The ≥6-digit CAD gate is justified by a failure it prevents (56,518 spurious LAPD shared-citation pairs from bare "TEST" strings), the launch exclusion carries zero tuned constants after the 0.5%-share draft was withdrawn, and the induceKinds opts are inherited unchanged from `read-kinds-networked.mjs` rather than fitted here. |
+| Dijkstra | SEG·Field/Link | II.10 / III.2 | — | **clean** | Flight-order positions are used as the reach unit for co-arrival exactly as `bindLinks` uses arrival positions in a text, and the window is measured in those same units. Esri part-order is respected (within-part sums only, inherited from the reducer); endpoint cells are treated as an unordered bag, never directionally. Clock and I/O live in the script (a host), not in an organ — III.2 constrains the engine, not its drivers. |
+| Simon | SEG·Network | IV.3 | — | **clean** | The python `portable_profile.py` computes an overlapping but separately-scoped set of descriptives; it is retained explicitly as a cross-check, not as a second implementation of the same organ, and no downstream consumer reads it as authoritative. Nothing in this diff makes an unverified thing a dependency. |
+| Ostrom | CON | II.5 | — | **clean** | Weeks below `minKindSize` are counted and reported (`records_in_unfoldable_weeks`), never silently dropped; "no kinds certified this week" and "this week had too few records to ask" stay distinguishable in the artifact. Matter union-find is scoped to the flight population it was computed from. |
+| Marshall | meta | IV.4 / II.12 | — | **clean, with one note** | No amendment content in the diff; the file self-enacts no law. Runs entirely on local compute (II.12). Every finding above cites an article whose text says what the finding claims. **Note for the record:** this pass had no independent Marshall — the same session produced and checked the findings, so the citation-conformity check is self-review, which is precisely the check Marshall exists to not be. Flagged as a known weakness of this run, not papered over. |
+
+**Net**: 3 substantive fixes (Alexander's undisclosed fold limit, Frankfurt's
+missing drill-down path, Chekhov's dead option), 2 documentation fixes that
+prevent a future correct-thing-broken (Pearl, Holmes), 5 clean, 1 clean-with-
+a-methodological-caveat. All seven city artifacts regenerated after the
+drill-down fix. **Deferred, named:** re-run this file through the real
+eleven-agent Chorus when credits permit — this pass is a sequential
+self-review and should not be cited as a full Chorus verdict.
+
+---
+
 ## Run: 2026-08-12 · commit: `HEAD` (this commit, `packages/engine/perceiver/text/relations.js` A19 diff)
 
 Reviewed diff: `perceiver/text/relations.js`'s object-bound + subject-strip
