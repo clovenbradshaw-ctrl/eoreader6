@@ -93,6 +93,41 @@ test("a span matching only common words scores far below one that also matches r
   assert.ok(out.spans[0].source_id.startsWith("source:the-real-one.txt"), "the rare-word match must rank first");
 });
 
+// REGRESSION (measured first from the-fold while wiring packages/host into
+// it, recorded there as "same bug class, opposite state"): searchSpans
+// tokenized without folding diacritics while the surfer's tokenize folds
+// through diaNorm — so against an admitted War and Peace, "Natásha" returned
+// three spans and "Natasha" returned zero. The fold is one, and shared
+// (the-fold POLICIES.md P11): both sides of every text-to-text comparison go
+// through the same canonical diaNorm, and a reader who types the unaccented
+// form must find what is plainly in the material. The returned span text
+// stays the admitted bytes untouched — the fold shapes matching, never the
+// material.
+test("a query without accents finds material written with them, and vice versa — same fold on both sides", () => {
+  const session = createSession();
+  admit(session, "Natásha Rostóva danced at her first grand ball that winter.", "source:accented.txt");
+  admit(session, "Natasha wrote to her brother from the estate every week.", "source:plain.txt");
+
+  const unaccented = searchSpans(session, { query: "natasha", limit: 10 });
+  assert.ok(
+    unaccented.spans.some((s) => s.source_id.startsWith("source:accented.txt")),
+    "the unaccented query must reach the accented material",
+  );
+
+  const accented = searchSpans(session, { query: "Natásha", limit: 10 });
+  assert.ok(
+    accented.spans.some((s) => s.source_id.startsWith("source:plain.txt")),
+    "the accented query must reach the unaccented material",
+  );
+  assert.ok(
+    accented.spans.some((s) => s.source_id.startsWith("source:accented.txt")),
+    "and still reach the accented material itself",
+  );
+
+  const spanText = unaccented.spans.find((s) => s.source_id.startsWith("source:accented.txt")).text;
+  assert.ok(spanText.includes("Natásha"), "the admitted bytes come back untouched — folding shapes matching, never the material");
+});
+
 test("empty and whitespace queries are typed no-ops, not searches", () => {
   const session = createSession();
   admit(session, FIXTURE);

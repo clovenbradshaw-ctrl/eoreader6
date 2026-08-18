@@ -151,7 +151,14 @@ export function deserializeSession(blob) {
   };
 }
 
-function chunkText(text, sourceId, session) {
+// `baseBytes` shifts every span address by the byte length of whatever the
+// caller cut off the front of the source before chunking (admitChunked's
+// container strip) — so byte_start/byte_end keep naming positions in the
+// RECEIVED text, the same coordinate space documentText/snipRange serve,
+// and slicing the original's UTF-8 bytes at [byte_start, byte_end) yields
+// exactly the span's text. Suppression stays reversible: the address still
+// names the file on disk.
+function chunkText(text, sourceId, session, baseBytes = 0) {
   const chunks = [];
   const bytes = utf8.encode(text);
   let offset = 0;
@@ -162,7 +169,7 @@ function chunkText(text, sourceId, session) {
     const chunkText = text.slice(offset, end);
     if (chunkText.trim().length >= MIN_CHUNK_CHARS) {
       const chunkId = `${sourceId}:chunk-${chunkIndex}`;
-      const byteStart = byteLength(text.slice(0, offset));
+      const byteStart = baseBytes + byteLength(text.slice(0, offset));
       const textBytes = byteLength(chunkText);
       const spanId = `span:${canonicalHashSync({ sourceId, chunkText })}`;
 
@@ -236,7 +243,23 @@ export function admitChunked(session, { text, sourceId, language }) {
     return { chunks: info.chunks.length, admitted: info.chunks, deduped: true };
   }
 
-  const chunks = chunkText(text, sourceId, session);
+  // P5.3, at the door (closes the container half of READING-POLICY A20): the
+  // container is separated from the work BEFORE any span exists. Only the body is chunked,
+  // so the Gutenberg header/license is never admitted, indexed, or retrievable
+  // as a span — while `info.text` below still keeps the received bytes whole,
+  // so documentText/snipRange still serve the file as it arrived and nothing
+  // is erased, only never admitted as material. Span addresses are shifted by
+  // the stripped front's byte length (chunkText's baseBytes) so they keep
+  // naming positions in the received text. extractDocSurfaces' own
+  // stripContainer call stays: on an already-stripped body it is a no-op (no
+  // start marker survives the cut), and a document grown in later calls still
+  // gets its tail license cut per call. A marker split across two admission
+  // calls is not caught — same boundary caveat as the chunker's own seams.
+  const container = stripContainer(text);
+  const body = container.text;
+  const baseBytes = byteLength(text.slice(0, container.offset));
+
+  const chunks = chunkText(body, sourceId, session, baseBytes);
   const pieces = chunks.map((c) => ({ byteStart: c.byteStart, text: c.text, length: c.byteEnd - c.byteStart }));
   if (info) {
     info.chunks = info.chunks.concat(chunks);
@@ -249,6 +272,9 @@ export function admitChunked(session, { text, sourceId, language }) {
     info.text = (info.text || "") + text;
     info.admissionHashes = (info.admissionHashes || []).concat(admissionHash);
     if (language) info.language = language;
+    if (!info.container && body.length !== text.length) {
+      info.container = { byteOffset: baseBytes, front: container.front };
+    }
   } else {
     session.documents.set(docId, {
       id: docId,
@@ -258,6 +284,11 @@ export function admitChunked(session, { text, sourceId, language }) {
       text,
       language: language ?? null,
       admissionHashes: [admissionHash],
+      // The turned-off part, kept addressable: what was cut and where the
+      // work begins in the received bytes, plus the front-matter fields the
+      // book uses to name itself (spans.js: chrome is stripped, the work's
+      // own Title/Author lines are carried, never inlined).
+      container: body.length !== text.length ? { byteOffset: baseBytes, front: container.front } : null,
     });
   }
   return { chunks: chunks.length, admitted: chunks };
@@ -333,7 +364,17 @@ const contiguousPhrase = (tokens, queryTokens) => {
 
 export function searchSpans(session, { query, limit = 10 }) {
   if (!query || !query.trim()) return { spans: [], gaps: null };
-  const phraseWords = tokenize(query);
+  // One fold per session (READING-POLICY P7.1, closing A21: this path
+  // returned three spans for "Natásha" and zero for "Natasha" against a text
+  // that writes the name 1,213 times, while the surfer's tokenize folds
+  // through diaNorm — two organs in one session disagreeing about what a
+  // word is). Both sides of every comparison in this function — query tokens
+  // against span tokens, query grams against span grams — go through the
+  // same canonical diaNorm, by import (surfaces.js — never a third map).
+  // Display fields (span.text, preview) stay the admitted bytes untouched;
+  // the fold shapes matching, never the material. Cross-organ agreement is
+  // pinned in conformance/fold-agreement.test.js.
+  const phraseWords = tokenize(diaNorm(query));
   if (phraseWords.length === 0) return { spans: [], gaps: null };
 
   // Lexical presence, never derivation: a span earns a match by containing a
@@ -368,7 +409,7 @@ export function searchSpans(session, { query, limit = 10 }) {
   const df = new Map(phraseWords.map((w) => [w, 0]));
   for (const span of session.spans.values()) {
     if (!span.text) continue;
-    const tokens = tokenize(span.text);
+    const tokens = tokenize(diaNorm(span.text));
     const words = new Set(tokens);
     const present = phraseWords.filter((w) => words.has(w));
     if (present.length === 0) continue;
@@ -381,7 +422,11 @@ export function searchSpans(session, { query, limit = 10 }) {
   const weight = (w) => Math.log(1 + n / (1 + (df.get(w) ?? 0)));
   const weights = new Map(phraseWords.map((w) => [w, weight(w)]));
   const totalW = phraseWords.reduce((s, w) => s + weights.get(w), 0);
-  const queryGrams = nGramProfile(query);
+  // Same transform on both sides of the gram signal too (P7.1) — the surfer
+  // already feeds this shared organ diaNorm'd text on both of ITS sides
+  // (surfer.js: queryGrams over diaNorm(prompt), candidates cut from
+  // diacritic-normalized lines); this path now agrees instead of diverging.
+  const queryGrams = nGramProfile(diaNorm(query));
 
   // A span's report is PRESENCE, and nothing else. The three terms a weighted
   // blend used to mix were measured against a full corpus and one of them is
@@ -405,7 +450,7 @@ export function searchSpans(session, { query, limit = 10 }) {
     const matchedW = present.reduce((s, w) => s + weights.get(w), 0);
     const coverage = totalW > 0 ? matchedW / totalW : 0;
     const phrase = contiguousPhrase(tokens, phraseWords);
-    const ngram = queryContainment(queryGrams, nGramProfile(span.text));
+    const ngram = queryContainment(queryGrams, nGramProfile(diaNorm(span.text)));
     span.score = coverage;
     span.coverage = coverage;
     span.phrase_score = phrase;

@@ -1083,3 +1083,58 @@ session, names checked as referents — and a conformance debt: the
 cross-organ agreement fixture P7.1 names, which A21 stays open against.
 A21's one-line searchSpans fix remains unapplied; P7 is the reason it is no
 longer optional.
+
+### A23 · A21 closed, A20's container half closed, P7.1's agreement fixture exists (2026-08-16)
+
+What was tried: applying the two fixes A20–A22 had already specified, and
+paying the conformance debt P7.1 names. What happened, in the order the
+policy asked for it:
+
+**A21 is closed.** `searchSpans` now folds BOTH sides of every comparison —
+query tokens against span tokens, query grams against span grams — through
+the same `diaNorm` the surfer already uses, by import, never a local
+reimplementation (P7.1's own wording). Display fields stay the admitted
+bytes untouched: the fold shapes matching, never the material. The measured
+shape ("Natásha" three spans, "Natasha" zero) is pinned as a regression in
+`conformance/search.test.js`, in both directions.
+
+**P7.1's cross-organ agreement fixture exists and passes**
+(`conformance/fold-agreement.test.js`): one accented name, both
+orthographies, asked of every text-comparing path in a session — `diaNorm`
+itself, `searchSpans`, the surfer's content rung (`executePrompt`), and
+`headingsMatch` — all agreeing, and the material always returned accents
+intact. This is the fixture A21 stayed open against; A21 closes with it.
+
+**A20's container half is closed.** `admitChunked` now calls
+`stripContainer` before any span exists: only the body is chunked, so the
+PG header, front matter and license are never admitted, indexed, or
+retrievable as spans. The turn-off is declared, addressed, and reversible —
+the three properties that make suppression a reading move rather than a
+loss: (a) declared: the markers are `spans.js`'s own, a fact about the file
+format, never about the work; (b) addressed: every span's byte range is
+shifted by the stripped front's byte length, so slicing the RECEIVED text's
+UTF-8 bytes at `[byte_start, byte_end)` reproduces the span exactly —
+pinned with a multi-byte character in the header so a char/byte mixup
+cannot hide (`conformance/corpus-admission-container.test.js`); (c)
+reversible: the document record keeps the received bytes whole
+(`documentText` still serves the file as it arrived), and the cut announces
+itself (`doc.container: { byteOffset, front }`, the front-matter fields the
+book names itself with carried, never inlined — the contiguity contract
+`stripContainer`'s own header states). Disclosed scope: the surfer's
+document-face ladder (`sessionSegments`/`snipRange` over `doc.text`) still
+reads the received bytes whole — the container is no longer admissible as
+material, but a document-face address can still name it. That is the
+reversibility half of the move kept deliberately, not a leak; a marker
+split across two admission calls of a streamed document is the one honest
+boundary caveat, same class as the chunker's own seams.
+
+What it changed: A21 and A20's first paragraph are answered; **A20's other
+two halves stay open** (the byte-budget admission unit, and the silent
+`spanCap` — the typed `cast_truncated`-shaped gap is still owed). And the
+general move all three entries instantiate now has its name in one place:
+information about the CONTAINER is turned off so the work becomes legible —
+found by silencing the channel, never by erasing it — and the silencing
+must be declared from the channel's side, byte-addressed, and undoable.
+Every organ that suppresses (the fold, the strip, the stoplists, L2's
+capitalisation veto in the-fold) is an instance of that one move, and P7
+plus P5.3 are its law here.
